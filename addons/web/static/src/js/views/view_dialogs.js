@@ -1,6 +1,7 @@
 odoo.define('web.view_dialogs', function (require) {
 "use strict";
 
+var config = require('web.config');
 var core = require('web.core');
 var data = require('web.data');
 var Dialog = require('web.Dialog');
@@ -94,19 +95,26 @@ var FormViewDialog = ViewDialog.extend({
     init: function (parent, options) {
         var self = this;
 
+        options = options || {};
+        options.fullModal = config.device.isMobile;
         this.res_id = options.res_id || null;
         this.on_saved = options.on_saved || (function () {});
+        this.on_remove = options.on_remove || (function () {});
         this.context = options.context;
         this.model = options.model;
         this.parentID = options.parentID;
         this.recordID = options.recordID;
         this.shouldSaveLocally = options.shouldSaveLocally;
+        this.activeActions = options.active_actions || {};
+
+        // Need to set readonly and disable_multiple_selection in this as we want to access it in set_buttons
+        this.readonly = options.readonly;
+        this.disable_multiple_selection = options.disable_multiple_selection;
 
         var multi_select = !_.isNumber(options.res_id) && !options.disable_multiple_selection;
         var readonly = _.isNumber(options.res_id) && options.readonly;
 
-        if (!options || !options.buttons) {
-            options = options || {};
+        if (!options.buttons) {
             options.buttons = [{
                 text: (readonly ? _t("Close") : _t("Discard")),
                 classes: "btn-default o_form_button_cancel",
@@ -136,6 +144,16 @@ var FormViewDialog = ViewDialog.extend({
                         click: function () {
                             this._save().then(self.form_view.createRecord.bind(self.form_view, self.parentID));
                         },
+                    });
+                }
+
+                if (!options.disable_multiple_selection && this.activeActions.delete && !options.fullModal) {
+                    options.buttons.push({
+                        text: _t("Remove"),
+                        classes: "btn-default o_btn_remove pull-right",
+                        click: function() {
+                            self._remove();
+                        }
                     });
                 }
             }
@@ -205,10 +223,30 @@ var FormViewDialog = ViewDialog.extend({
 
         return this;
     },
+    /**
+     * @override
+     * Adds a trash icon on header in full-screen mode
+     * if relational record is removable
+     */
+    set_buttons: function (buttons) {
+        var self = this;
+        this._super.apply(this, arguments);
+        if (!this.options.disable_multiple_selection && this.activeActions.delete && !this.readonly && this.fullModal) {
+            var $trash = $('<i class="fa fa-trash o_btn_right o_btn_remove" aria-hidden="true"/>').on('click', function() {
+                self._remove();
+            });
+            self.$header.find('.modal-title').after($trash);
+        }
+    },
 
     //--------------------------------------------------------------------------
     // Private
     //--------------------------------------------------------------------------
+
+    _remove: function () {
+        this.on_remove(this.form_view.model.get(this.form_view.handle));
+        this.close();
+    },
 
     _save: function () {
         var self = this;
@@ -271,7 +309,9 @@ var SelectCreateDialog = ViewDialog.extend({
      * - on_selected: optional callback to execute when records are selected
      * - disable_multiple_selection: true to allow create/select multiple records
      */
-    init: function () {
+    init: function (parent, options) {
+        options = options || {};
+        options.fullModal = config.device.isMobile;
         this._super.apply(this, arguments);
         _.defaults(this.options, { initial_view: 'search' });
         this.on_selected = this.options.on_selected || (function () {});
