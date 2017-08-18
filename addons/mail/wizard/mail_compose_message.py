@@ -114,6 +114,7 @@ class MailComposer(models.TransientModel):
     is_log = fields.Boolean('Log an Internal Note',
                             help='Whether the message is an internal note (comment mode only)')
     subject = fields.Char(default=False)
+    message_follower_list = fields.Char(readonly=True)
     # mass mode options
     notify = fields.Boolean('Notify followers', help='Notify followers of the document (mass post only)')
     auto_delete = fields.Boolean('Delete Emails', help='Delete sent emails (mass mailing only)')
@@ -172,7 +173,11 @@ class MailComposer(models.TransientModel):
                 partner_ids += [(4, parent.author_id.id)]
             result['partner_ids'] = partner_ids
         elif values.get('model') and values.get('res_id'):
-            doc_name_get = self.env[values.get('model')].browse(values.get('res_id')).name_get()
+            record = self.env[values.get('model')].browse(values.get('res_id'))
+            doc_name_get = record.name_get()
+            if hasattr(record, 'message_partner_ids'):
+                message_partner_ids = record.message_partner_ids - self.env.user.partner_id
+                result['message_follower_list'] = ', '.join(message_partner_ids.mapped('name'))
             result['record_name'] = doc_name_get and doc_name_get[0][1] or ''
             subject = tools.ustr(result['record_name'])
 
