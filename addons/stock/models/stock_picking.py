@@ -264,7 +264,7 @@ class Picking(models.Model):
         states={'done': [('readonly', True)], 'cancel': [('readonly', True)]})
 
     move_line_ids = fields.One2many('stock.move.line', 'picking_id', 'Operations')
-
+    backorder_ids = fields.One2many('stock.picking', 'backorder_id', 'Back Orders')
     move_line_exist = fields.Boolean(
         'Has Pack Operations', compute='_compute_move_line_exist',
         help='Check the existence of pack operation on the picking')
