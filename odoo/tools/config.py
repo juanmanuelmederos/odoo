@@ -18,6 +18,9 @@ from passlib.context import CryptContext
 crypt_context = CryptContext(schemes=['pbkdf2_sha512', 'plaintext'],
                              deprecated=['plaintext'])
 
+DEFAULT_IMPORT_IMAGE_TIMEOUT = 3
+DEFAULT_IMPORT_IMAGE_MAXBYTES = 10 * 1024 * 1024
+DEFAULT_IMPORT_IMAGE_REGEX = r"(?:http|https)://.*(?:png|jpe?g|tiff?|gif|bmp)"
 class MyOption (optparse.Option, object):
     """ optparse Option with two additional attributes.
 
@@ -75,6 +78,9 @@ class configmanager(object):
             'admin_passwd': 'admin',
             'csv_internal_sep': ',',
             'publisher_warranty_url': 'http://services.openerp.com/publisher-warranty/',
+            'import_image_timeout': DEFAULT_IMPORT_IMAGE_TIMEOUT,
+            'import_image_maxbytes': DEFAULT_IMPORT_IMAGE_MAXBYTES,
+            'import_image_regex': DEFAULT_IMPORT_IMAGE_REGEX,
             'reportgz': False,
             'root_path': None,
         }

@@ -587,6 +587,12 @@ class Users(models.Model):
         self.ensure_one()
         return self.id == SUPERUSER_ID
 
+    @api.multi
+    def _can_import_remote_urls(self):
+        # For the SaaS, to provide a hook for the trial/paid check.
+        self.ensure_one()
+        return self._is_admin()
+
     @api.model
     def get_company_currency_id(self):
         return self.env.user.company_id.currency_id.id

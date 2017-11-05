@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
+import base64
 import datetime
 import io
 import itertools
@@ -9,15 +10,19 @@ import psycopg2
 import operator
 import os
 import re
+import requests
 
 from odoo import api, fields, models
+from odoo.exceptions import AccessError
 from odoo.tools.translate import _
 from odoo.tools.mimetypes import guess_mimetype
 from odoo.tools.misc import ustr
-from odoo.tools import DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT, pycompat
+from odoo.tools import config, DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT, pycompat
 
 FIELDS_RECURSION_LIMIT = 2
 ERROR_PREVIEW_BYTES = 200
+DEFAULT_IMAGE_CHUNK_SIZE = 32768
+IMAGE_FIELDS = ["icon", "image", "logo", "picture"]
 _logger = logging.getLogger(__name__)
 
 try:
@@ -607,6 +612,9 @@ class Import(models.TransientModel):
     def _parse_import_data_recursive(self, model, prefix, data, import_fields, options):
         # Get fields of type date/datetime
         all_fields = self.env[model].fields_get()
+        url_regex = config.get("import_image_regex")
+        request_timeout = int(config.get("import_image_timeout"))
+        maxsize = int(config.get("import_image_maxbytes"))
         for name, field in all_fields.items():
             name = prefix + name
             if field['type'] in ('date', 'datetime') and name in import_fields:
@@ -637,6 +645,29 @@ class Import(models.TransientModel):
                 # We should be able to manage both case
                 index = import_fields.index(name)
                 self._parse_float_from_data(data, index, name, options)
+            elif field['type'] == 'binary' and field.get('attachment') and any(f in name for f in IMAGE_FIELDS) and name in import_fields:
+                if not self.env.user._can_import_remote_urls():
+                    raise AccessError(_("Only administrator can import images via URL"))
+
+                index = import_fields.index(name)
+
+                with requests.Session() as session:
+                    for num, line in enumerate(data):
+                        if re.match(url_regex, line[index]):
+                            try:
+                                response = session.get(line[index], stream=True, timeout=request_timeout)
+                                response.raise_for_status()
+                                if response.headers.get('Content-Length') and int(response.headers['Content-Length']) > maxsize:
+                                    raise ValueError(_("File size exceeds configured maximum (%s bytes)") % maxsize)
+                                content = bytearray()
+                                for chunk in response.iter_content(DEFAULT_IMAGE_CHUNK_SIZE):
+                                    content += chunk
+                                    if len(content) > maxsize:
+                                        raise ValueError(_("File size exceeds configured maximum (%s bytes)") % maxsize)
+                                line[index] = base64.b64encode(content)
+                            except Exception as e:
+                                raise ValueError(_("Could not retrieve URL:") +  "%s [%s: L%d]: %s" % (line[index], name, num + 1, e))
+
         return data
 
     @api.multi
@@ -667,10 +698,10 @@ class Import(models.TransientModel):
             data, import_fields = self._convert_import_data(fields, options)
             # Parse date and float field
             data = self._parse_import_data(data, import_fields, options)
-        except ValueError as error:
+        except Exception as error:
             return [{
                 'type': 'error',
-                'message': pycompat.text_type(error),
+                'message': pycompat.text_type(error.args[0]),
                 'record': False,
             }]
 
