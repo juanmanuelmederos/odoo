@@ -3,6 +3,8 @@
 import babel.dates
 import re
 import werkzeug
+
+from ast import literal_eval
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
@@ -257,8 +259,23 @@ class WebsiteEventController(http.Controller):
             registration['event_id'] = event
             Attendees += Attendees.sudo().create(
                 Attendees._prepare_attendee_values(registration))
-
+        urls = event._get_urls(Attendees.ids)
         return request.render("website_event.registration_complete", {
             'attendees': Attendees,
             'event': event,
+            'google_url': urls.get('google_url'),
+            'iCal_url': urls.get('iCal_url')
         })
+
+    @http.route(['/event/<model("event.event"):event>/ics/<string:name>.ics'], type='http', auth="public", website=True)
+    def calendar_appointment_ics(self, event, **kwargs):
+        if not event or not event.registration_ids:
+            return request.not_found()
+        attendee_ids = list(literal_eval(kwargs.get('attendees')).values())
+        files = event.with_context(attendee_ids=attendee_ids).get_ics_file()
+        content = files[event.id]
+        return request.make_response(content, [
+            ('Content-Type', 'application/octet-stream'),
+            ('Content-Length', len(content)),
+            ('Content-Disposition', 'attachment; filename=' + event.name + '.ics')
+        ])
