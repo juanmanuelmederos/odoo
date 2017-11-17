@@ -156,6 +156,22 @@ class TestAdvMailPerformance(TransactionCase):
                 'activity_type_id': self.env.ref('mail.mail_activity_data_todo').id,
             })
 
+    @users('admin', 'emp')
+    @warmup
+    @mute_logger('odoo.models.unlink')
+    def test_adv_activity_automated(self):
+        record = self.env['mail.test.activity'].create({'name': 'Test'})
+
+        with self.assertQueryCount(admin=777, emp=888):  # test_mail only: 26 - 60
+            record.action_start('Test Start')
+
+        record.write({'name': 'Dupe write'})
+
+        with self.assertQueryCount(admin=777, emp=888):  # test_mail only: 32 - 89
+            record.action_close('Dupe feedback')
+
+        self.assertEqual(record.activity_ids, self.env['mail.activity'])
+
 
 class TestHeavyMailPerformance(TransactionCase):
 
