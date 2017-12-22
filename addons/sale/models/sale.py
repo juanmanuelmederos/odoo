@@ -389,7 +389,7 @@ class SaleOrder(models.Model):
         return action
 
     @api.multi
-    def action_invoice_create(self, grouped=False, final=False):
+    def action_invoice_create(self, grouped=False, final=False, unbilled=False):
         """
         Create the invoice associated to the SO.
         :param grouped: if True, invoices are grouped by SO id. If False, invoices are grouped by
@@ -404,7 +404,7 @@ class SaleOrder(models.Model):
         for order in self:
             group_key = order.id if grouped else (order.partner_invoice_id.id, order.currency_id.id)
             for line in order.order_line.sorted(key=lambda l: l.qty_to_invoice < 0):
-                if float_is_zero(line.qty_to_invoice, precision_digits=precision):
+                if float_is_zero(line.qty_to_invoice, precision_digits=precision) and not unbilled:
                     continue
                 if group_key not in invoices:
                     inv_data = order._prepare_invoice()
@@ -418,10 +418,15 @@ class SaleOrder(models.Model):
                     if order.client_order_ref and order.client_order_ref not in invoices[group_key].name.split(', ') and order.client_order_ref != invoices[group_key].name:
                         vals['name'] = invoices[group_key].name + ', ' + order.client_order_ref
                     invoices[group_key].write(vals)
-                if line.qty_to_invoice > 0:
+                if line.qty_to_invoice > 0 and not unbilled:
                     line.invoice_line_create(invoices[group_key].id, line.qty_to_invoice)
-                elif line.qty_to_invoice < 0 and final:
+                elif line.qty_to_invoice < 0 and final and not unbilled:
                     line.invoice_line_create(invoices[group_key].id, line.qty_to_invoice)
+                elif unbilled:
+                    if (line.product_uom_qty - line.qty_invoiced) > 0:
+                        line.invoice_line_create(invoices[group_key].id, (line.product_uom_qty - line.qty_invoiced))
+                    elif line.qty_to_invoice < 0:
+                        line.invoice_line_create(invoices[group_key].id, line.qty_to_invoice)
 
             if references.get(invoices.get(group_key)):
                 if order not in references[invoices[group_key]]:
@@ -661,6 +666,39 @@ class SaleOrder(models.Model):
                 group_data['has_button_access'] = True
 
         return groups
+
+    @api.multi
+    def action_view_sale_advance_payment_inv(self):
+        unbill = 0.0
+        for line in self.order_line:
+            if line.is_downpayment is False:
+                unbill += (((line.price_unit + (line.price_tax/line.product_uom_qty)) * (line.product_uom_qty - line.qty_invoiced)) if (line.product_uom_qty - line.qty_invoiced) > 0.0 else 0.0)
+        invoiceable_vals = self.order_line.filtered(lambda line: line.invoice_status == 'to invoice' and not line.is_downpayment)
+        is_downpayment = self.order_line.filtered(lambda line: line.is_downpayment)
+
+        options = ['percentage', 'fixed']
+        if invoiceable_vals and not is_downpayment:
+            options.append('delivered')
+        if invoiceable_vals and is_downpayment:
+            options.append('all')
+        if unbill > 0 and (self.order_line.filtered(lambda line: line.invoice_status == 'no')):
+            options.append('unbilled')
+        visible = ','.join(options)
+        ctx = self.env.context.copy()
+        ctx.update({
+            'visibility': visible,
+        })
+        return {
+            'name': _('Create Invoice'),
+            'type': 'ir.actions.act_window',
+            'view_type': 'form',
+            'view_mode': 'form',
+            'res_model': 'sale.advance.payment.inv',
+            'view_id': self.env.ref('sale.view_sale_advance_payment_inv').id,
+            'target': 'new',
+            'groups_id': [(4, self.env.ref('sales_team.group_sale_salesman'))],
+            'context': ctx,
+        }
 
 
 class SaleOrderLine(models.Model):
