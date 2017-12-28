@@ -9,6 +9,26 @@ var options = require('web_editor.snippets.options');
 var _t = core._t;
 var qweb = core.qweb;
 
+options.Class.include({
+
+    //--------------------------------------------------------------------------
+    // Private
+    //--------------------------------------------------------------------------
+
+    /**
+     * Refreshes all animations related to the given element.
+     *
+     * @private
+     * @param {jQuery} [$el=this.$target]
+     */
+    _refreshAnimations: function ($el) {
+        this.trigger_up('animation_start_demand', {
+            editableMode: true,
+            $target: $el || this.$target,
+        });
+    },
+});
+
 options.registry.menu_data = options.Class.extend({
     xmlDependencies: ['/website/static/src/xml/website.editor.xml'],
 
@@ -346,13 +366,17 @@ options.registry.parallax = options.Class.extend({
             name: 'target',
             data: this.$target.find('> .s_parallax_bg'),
         });
-        this._refresh();
+        // Refresh the parallax animation on focus; at least useful because
+        // there may have been changes in the page that influenced the parallax
+        // rendering (new snippets, ...).
+        // TODO make this automatic.
+        this._refreshAnimations();
     },
     /**
      * @override
      */
     onMove: function () {
-        this._refresh();
+        this._refreshAnimations();
     },
 
     //--------------------------------------------------------------------------
@@ -366,27 +390,13 @@ options.registry.parallax = options.Class.extend({
      */
     scroll: function (previewMode, value) {
         this.$target.attr('data-scroll-background-ratio', value);
-        this._refresh();
+        this._refreshAnimations();
     },
 
     //--------------------------------------------------------------------------
     // Private
     //--------------------------------------------------------------------------
 
-    /**
-     * Notifies the parallax animation that it needs to be reinitialized.
-     *
-     * @private
-     */
-    _refresh: function () {
-        var self = this;
-        _.defer(function () {
-            self.trigger_up('animation_start_demand', {
-                editableMode: true,
-                $target: self.$target,
-            });
-        });
-    },
     /**
      * @override
      */
@@ -588,10 +598,7 @@ options.registry.facebookPage = options.Class.extend({
             $el.attr('data-' + key, value);
             $el.data(key, value);
         });
-        self.trigger_up('animation_start_demand', {
-            editableMode: true,
-            $target: $el,
-        });
+        self._refreshAnimations($el);
     },
 });
 
@@ -650,10 +657,7 @@ options.registry.ul = options.Class.extend({
         this.$target.find('li:has(.o_ul_toggle_self, .o_ul_toggle_next), li:has(>ul,>ol):not(:has(>li))').css('list-style', 'none');
 
         this.$target.find('li:not(:has(>ul))').css('list-style', '');
-        this.trigger_up('animation_start_demand', {
-            editableMode: true,
-            $target: this.$target,
-        });
+        this._refreshAnimations();
     },
 });
 
@@ -960,10 +964,7 @@ options.registry.gallery = options.Class.extend({
         // Apply layout animation
         this.$target.off('slide.bs.carousel').off('slid.bs.carousel');
         this.$('li.fa').off('click');
-        this.trigger_up('animation_start_demand', {
-            editableMode: true,
-            $target: this.$target,
-        });
+        this._refreshAnimations();
     },
     /**
      * Allows to change the style of the individual images.
