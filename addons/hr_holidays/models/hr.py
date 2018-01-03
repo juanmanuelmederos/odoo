@@ -6,6 +6,7 @@ from dateutil.relativedelta import relativedelta
 
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
+from odoo.tools.float_utils import float_round
 
 
 class Department(models.Model):
@@ -112,7 +113,7 @@ class Employee(models.Model):
     def _compute_remaining_leaves(self):
         remaining = self._get_remaining_leaves()
         for employee in self:
-            employee.remaining_leaves = remaining.get(employee.id, 0.0)
+            employee.remaining_leaves = float_round(remaining.get(employee.id, 0.0), precision_digits=2)
 
     @api.multi
     def _inverse_remaining_leaves(self):

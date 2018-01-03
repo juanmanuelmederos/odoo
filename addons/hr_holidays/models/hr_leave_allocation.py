@@ -5,6 +5,11 @@
 
 import logging
 
+import pytz
+
+from datetime import datetime, time
+from dateutil.relativedelta import relativedelta
+
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.tools.translate import _
@@ -38,6 +43,10 @@ class HolidaysAllocation(models.Model):
             "\nThe status is 'To Approve', when leave request is confirmed by user." +
             "\nThe status is 'Refused', when leave request is refused by manager." +
             "\nThe status is 'Approved', when leave request is approved by manager.")
+    date_from = fields.Datetime('Start Date', readonly=True, index=True, copy=False,
+        states={'draft': [('readonly', False)], 'confirm': [('readonly', False)]}, track_visibility='onchange')
+    date_to = fields.Datetime('End Date', readonly=True, copy=False,
+        states={'draft': [('readonly', False)], 'confirm': [('readonly', False)]}, track_visibility='onchange')
     holiday_status_id = fields.Many2one("hr.leave.type", string="Leave Type", required=True, readonly=True,
         states={'draft': [('readonly', False)], 'confirm': [('readonly', False)]},
         domain="[('valid', '=', True), ('employee_applicability', 'in', ['allocation', 'both']), ('limit', '=', False)]", default=_default_holiday_status_id)
@@ -73,6 +82,80 @@ class HolidaysAllocation(models.Model):
          "The employee, department or employee category of this request is missing. Please make sure that your user login is linked to an employee."),
         ('date_check', "CHECK ( number_of_days_temp >= 0 )", "The number of days must be greater than 0."),
     ]
+
+    # Tells us if we need to display the accrual field
+    accrual_shown = fields.Boolean(related='holiday_status_id.accrual')
+
+    accrual = fields.Boolean('Accrual Leaves', default=False, readonly=True, states={'draft': [('readonly', False)], 'confirm': [('readonly', False)]})
+
+    number_per_interval = fields.Float(readonly=True, states={'draft': [('readonly', False)], 'confirm': [('readonly', False)]})
+    interval_number = fields.Integer(readonly=True, states={'draft': [('readonly', False)], 'confirm': [('readonly', False)]})
+    unit_per_interval = fields.Selection([
+        ('hours', 'Hour(s)'),
+        ('days', 'Day(s)')
+        ], default='hours', readonly=True, states={'draft': [('readonly', False)], 'confirm': [('readonly', False)]})
+    interval_unit = fields.Selection([
+        ('weeks', 'Week(s)'),
+        ('months', 'Month(s)'),
+        ('years', 'Year(s)')
+        ], default='weeks', readonly=True, states={'draft': [('readonly', False)], 'confirm': [('readonly', False)]})
+
+    nextcall = fields.Date(default=False)
+
+    @api.model
+    def _update_accrual(self):
+        """
+            Method called by the cron task in order to increment the number_of_days when
+            necessary.
+        """
+        holidays = self.search([('accrual', '=', True), ('state', '=', 'validate'),
+                                '|', ('date_to', '=', False), ('date_to', '>', fields.Datetime.now())])
+
+        def to_tz(d, tz_name):
+            tz = pytz.timezone(tz_name) if tz_name else pytz.UTC
+            return pytz.UTC.localize(d.replace(tzinfo=None), is_dst=False).astimezone(tz).replace(tzinfo=None)
+
+        for holiday in holidays:
+            today = to_tz(fields.Datetime.from_string(fields.Datetime.now()), self.env.user.tz).date()
+            nextcall = fields.Date.from_string(holiday.nextcall)
+            # Update only when we never updated it or when next update date is already passed
+            if not holiday.nextcall or nextcall <= today:
+                leaves = holiday.number_per_interval
+                if holiday.unit_per_interval == 'hours':
+                    leaves = holiday.number_per_interval / holiday.employee_id.resource_calendar_id.hours_per_day
+
+                delta = relativedelta(days=0)
+
+                if holiday.interval_unit == 'weeks':
+                    delta = relativedelta(weeks=holiday.interval_number)
+                if holiday.interval_unit == 'months':
+                    delta = relativedelta(months=holiday.interval_number)
+                if holiday.interval_unit == 'years':
+                    delta = relativedelta(years=holiday.interval_number)
+
+                holiday.nextcall = (today if not holiday.nextcall else nextcall) + delta
+
+                df = datetime.combine(today, time(0, 0, 0)) - delta
+                dt = datetime.combine(today, time(0, 0, 0))
+
+                # We have to check when the employee has been created
+                # in order to not allocate him/her too much leaves
+                delta_2 = relativedelta(df, fields.Datetime.from_string(holiday.employee_id.create_date))
+
+                if delta_2.days < 0 or delta_2.months < 0 or delta_2.years < 0:
+                    newdelta = delta + delta_2
+                    if newdelta.days < 0 or newdelta.months < 0 or newdelta.years < 0:
+                        # Employee has been created after the period we are looking at
+                        continue
+
+                    # Employee has been created during the period we are looking at
+                    df = datetime.combine(today, time(0, 0, 0)) - newdelta
+
+                worked = holiday.employee_id.get_work_days_count(df, dt, domain=[('holiday_id.holiday_status_id.unpaid', '=', True)])
+                left = holiday.employee_id.get_leaves_day_count(df, dt, domain=[('holiday_id.holiday_status_id.unpaid', '=', True)])
+                prorata = 0 if not worked else worked / (left + worked)
+
+                holiday.number_of_days_temp += leaves * prorata
 
     @api.multi
     @api.depends('number_of_days_temp')
@@ -142,6 +225,8 @@ class HolidaysAllocation(models.Model):
     @api.model
     def create(self, values):
         """ Override to avoid automatic logging of creation """
+        if values.get('accrual', False):
+            values['date_from'] = fields.Datetime.now()
         employee_id = values.get('employee_id', False)
         if not values.get('department_id'):
             values.update({'department_id': self.env['hr.employee'].browse(employee_id).department_id.id})
