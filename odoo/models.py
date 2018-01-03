@@ -762,7 +762,9 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
         noupdate = self._context.get('noupdate', False)
 
         # add current module in context for the conversion of xml ids
-        self = self.with_context(_import_current_module=current_module)
+        self = self.with_context(
+            _import_current_module=current_module,
+            default_tz=self._context.get('tz') or self.env.user.tz)
 
         cr = self._cr
         cr.execute('SAVEPOINT model_load')
@@ -1736,7 +1738,7 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
                 dt_format = DEFAULT_SERVER_DATETIME_FORMAT if gb['type'] == 'datetime' else DEFAULT_SERVER_DATE_FORMAT
                 value = datetime.datetime.strptime(value, dt_format)
             if gb['tz_convert']:
-                value = pytz.timezone(self._context['tz']).localize(value)
+                value = value.astimezone(self._context['tz'])
         return value
 
     @api.model
@@ -1764,8 +1766,6 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
                     value = value[0]
                 elif ftype in ('date', 'datetime'):
                     locale = self._context.get('lang') or 'en_US'
-                    fmt = DEFAULT_SERVER_DATETIME_FORMAT if ftype == 'datetime' else DEFAULT_SERVER_DATE_FORMAT
-                    tzinfo = None
                     range_start = value
                     range_end = value + gb['interval']
                     # value from postgres is in local tz (so range is
@@ -1773,16 +1773,15 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
                     # local rather than UTC which could be [11:00, 11:00]
                     # local) but domain and raw value should be in UTC
                     if gb['tz_convert']:
-                        tzinfo = range_start.tzinfo
-                        range_start = range_start.astimezone(pytz.utc)
-                        range_end = range_end.astimezone(pytz.utc)
+                        range_start = range_start.to_utc()
+                        range_end = range_end.to_utc()
 
                     range_start = range_start.strftime(fmt)
                     range_end = range_end.strftime(fmt)
                     if ftype == 'datetime':
                         label = babel.dates.format_datetime(
                             value, format=gb['display_format'],
-                            tzinfo=tzinfo, locale=locale
+                            locale=locale
                         )
                     else:
                         label = babel.dates.format_date(

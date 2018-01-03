@@ -9,6 +9,7 @@ import pytz
 
 from odoo import api, fields, models, _
 from odoo.tools import ustr, pycompat
+from odoo.tools.datetime import utc_timezone
 
 REFERENCING_FIELDS = {None, 'id', '.id'}
 def only_ref_fields(record):
@@ -227,7 +228,7 @@ class IrFieldsConverter(models.AbstractModel):
                 pass
 
         # fallback if no tz in context or on user: UTC
-        return pytz.UTC
+        return utc_timezone
 
     @api.model
     def _str_to_datetime(self, model, field, value):
@@ -242,9 +243,9 @@ class IrFieldsConverter(models.AbstractModel):
             )
 
         input_tz = self._input_tz()# Apply input tz to the parsed naive datetime
-        dt = input_tz.localize(parsed_value, is_dst=False)
+        dt = parsed_value.astimezone(input_tz)
         # And convert to UTC before reformatting for writing
-        return fields.Datetime.to_string(dt.astimezone(pytz.UTC)), []
+        return fields.Datetime.to_string(dt.to_utc()), []
 
     @api.model
     def _get_translations(self, types, src):
