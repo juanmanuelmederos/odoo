@@ -3,12 +3,12 @@
 
 import babel
 import collections
-import datetime
 import pytz
 
 from odoo import fields, http
 from odoo.http import request
 from odoo.tools import html_escape as escape, html2plaintext
+from odoo.tools import datetime
 
 
 class WebsiteEventTrackController(http.Controller):
@@ -38,7 +38,7 @@ class WebsiteEventTrackController(http.Controller):
 
         forcetr = True
         for track in event_track_ids:
-            start_date = fields.Datetime.from_string(track.date).replace(tzinfo=pytz.utc).astimezone(local_tz)
+            start_date = track.date.replace(tzinfo=pytz.utc).astimezone(local_tz)
             end_date = start_date + datetime.timedelta(hours=(track.duration or 0.5))
             location = track.location_id or False
             locations.setdefault(location, [])
@@ -73,7 +73,7 @@ class WebsiteEventTrackController(http.Controller):
         for track in event.track_ids.sorted(lambda track: (track.date or '', bool(track.location_id))):
             if not track.date:
                 continue
-            date = fields.Datetime.from_string(track.date).replace(tzinfo=pytz.utc).astimezone(local_tz)
+            date = track.date.replace(tzinfo=pytz.utc).astimezone(local_tz)
             days_tracks[str(date)[:10]].append(track)
 
         days = {}

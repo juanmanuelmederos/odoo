@@ -29,18 +29,18 @@ def float_to_time(float_hour):
 def to_naive_user_tz(datetime, record):
     tz_name = record._context.get('tz') or record.env.user.tz
     tz = tz_name and pytz.timezone(tz_name) or pytz.UTC
-    return pytz.UTC.localize(datetime.replace(tzinfo=None), is_dst=False).astimezone(tz).replace(tzinfo=None)
+    return datetime.replace(tzinfo=pytz.UTC).astimezone(tz).replace(tzinfo=None)
 
 
 def to_naive_utc(datetime, record):
     tz_name = record._context.get('tz') or record.env.user.tz
     tz = tz_name and pytz.timezone(tz_name) or pytz.UTC
-    return tz.localize(datetime.replace(tzinfo=None), is_dst=False).astimezone(pytz.UTC).replace(tzinfo=None)
+    return datetime.replace(tzinfo=tz).astimezone(pytz.UTC).replace(tzinfo=None)
 
 
 def to_tz(datetime, tz_name):
     tz = pytz.timezone(tz_name) if tz_name else pytz.UTC
-    return pytz.UTC.localize(datetime.replace(tzinfo=None), is_dst=False).astimezone(tz).replace(tzinfo=None)
+    return datetime.replace(tzinfo=pytz.UTC).astimezone(tz).replace(tzinfo=None)
 
 
 class ResourceCalendar(models.Model):

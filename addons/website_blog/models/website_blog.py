@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from datetime import datetime
 import random
 
 import itertools
@@ -10,6 +9,7 @@ from odoo import api, models, fields, _
 from odoo.addons.http_routing.models.ir_http import slug
 from odoo.tools.translate import html_translate
 from odoo.tools import html2plaintext
+from odoo.tools.datetime import datetime
 
 
 class Blog(models.Model):
@@ -110,7 +110,7 @@ class BlogPost(models.Model):
         res = {}
         for blog_post in self:
             if blog_post.id:  # avoid to rank one post not yet saved and so withtout post_date in case of an onchange.
-                age = datetime.now() - fields.Datetime.from_string(blog_post.post_date)
+                age = datetime.now() - blog_post.post_date
                 res[blog_post.id] = blog_post.visits * (0.5 + random.random()) / max(3, age.days)
         return res
 

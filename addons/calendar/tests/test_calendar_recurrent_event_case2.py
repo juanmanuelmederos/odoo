@@ -119,7 +119,7 @@ class TestRecurrentEvent(common.TransactionCase):
 
         # I search for a recurrent weekly meetings that take place at a given date.
         meetings_count = self.CalendarEvent.with_context({'virtual_id': True}).search_count([
-            ('start', '<=', '2017-01-24'), ('stop', '>=', '2017-01-24'), ('name', '=', 'Review code with programmer')
+            ('start', '<', '2017-01-25'), ('stop', '>=', '2017-01-24'), ('name', '=', 'Review code with programmer')
         ])
         self.assertEqual(meetings_count, 1, 'Recurrent weekly meetings are not found using date filter !')
 
@@ -162,10 +162,10 @@ class TestRecurrentEvent(common.TransactionCase):
         meeting = self.CalendarEvent.with_context({'virtual_id': True}).search([
             ('start', '=', '2012-04-13 11:00:00'), ('stop', '=', '2012-04-13 12:00:00')
         ])
-        virutal_dates = calendar_id2real_id(meeting.id, with_date=True)
+        virtual_dates = calendar_id2real_id(meeting.id, with_date=True)
 
         # virtual_dates are used by the calendar view and I check if the start date for the first virtual event is correct.
-        self.assertEqual(virutal_dates[1], '2012-04-13 11:00:00', "The virtual event doesn't have the correct start date !")
+        self.assertEqual(virtual_dates[1], '2012-04-13 11:00:00', "The virtual event doesn't have the correct start date !")
 
         # virtual_dates are used by the calendar view and I check if the stop date for the first virtual event is correct.
-        self.assertEqual(virutal_dates[2], '2012-04-13 12:00:00', "The virtual event doesn't have the correct stop date !")
+        self.assertEqual(virtual_dates[2], '2012-04-13 12:00:00', "The virtual event doesn't have the correct stop date !")

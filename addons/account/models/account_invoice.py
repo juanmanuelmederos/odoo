@@ -6,12 +6,12 @@ import uuid
 from functools import partial
 
 from lxml import etree
-from dateutil.relativedelta import relativedelta
 from werkzeug.urls import url_encode
 
 from odoo import api, exceptions, fields, models, _
 from odoo.tools import float_is_zero, float_compare, pycompat
 from odoo.tools.misc import formatLang
+from odoo.tools.datetime import relativedelta
 
 from odoo.exceptions import AccessError, UserError, RedirectWarning, ValidationError, Warning
 
@@ -477,14 +477,14 @@ class AccountInvoice(models.Model):
         """
         assert self.recurrency_type, "Invalid `Recurrency` interval! Please set it to either of these: 'Day(s)', 'Week(s)', 'Month(s)' or 'Year(s)'."
         self.ensure_one()
-        recurring_next_date = fields.Date.from_string(current_date) + relativedelta(**{self.recurrency_type: self.recurrency_interval})
+        recurring_next_date = current_date + relativedelta(**{self.recurrency_type: self.recurrency_interval})
         # In case of monthly recurrent invoice, future invoices should always be created on same day as of it's main invoice but
         # if the reference invoice was made on last day of the month, then the recurring invoice should be created on last day of next month.
         # example, main invoice is set to 31st Jan, the next invoices should be created on 28/29th Feb, 31st Mar, 30 Apr and so on
         if self.recurrency_type == 'months':
-            reference_invoice_day = fields.Date.from_string(self.date_invoice).day
+            reference_invoice_day = self.date_invoice.day
             recurring_next_date += relativedelta(day=reference_invoice_day)
-            if reference_invoice_day == fields.Date.from_string(self.date_invoice) + relativedelta(day=31):
+            if reference_invoice_day == self.date_invoice + relativedelta(day=31):
                 recurring_next_date += relativedelta(day=31)
         return recurring_next_date
 
@@ -1800,7 +1800,7 @@ class AccountPaymentTerm(models.Model):
             elif line.value == 'balance':
                 amt = currency.round(amount)
             if amt:
-                next_date = fields.Date.from_string(date_ref)
+                next_date = date_ref
                 if line.option == 'day_after_invoice_date':
                     next_date += relativedelta(days=line.days)
                     if line.day_of_the_month > 0:

@@ -2,12 +2,11 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 import logging
-from datetime import datetime, timedelta, date
-from dateutil.relativedelta import relativedelta
 
 from odoo import api, fields, models, tools, SUPERUSER_ID
 from odoo.tools.translate import _
 from odoo.tools import email_re, email_split
+from odoo.tools.datetime import datetime, timedelta, date, relativedelta
 from odoo.exceptions import UserError, AccessError
 
 from . import crm_stage
@@ -157,7 +156,7 @@ class Lead(models.Model):
         for lead in self:
             kanban_state = 'grey'
             if lead.activity_date_deadline:
-                lead_date = fields.Date.from_string(lead.activity_date_deadline)
+                lead_date = lead.activity_date_deadline
                 if lead_date >= today:
                     kanban_state = 'green'
                 else:
@@ -168,16 +167,16 @@ class Lead(models.Model):
     def _compute_day_open(self):
         """ Compute difference between create date and open date """
         for lead in self.filtered(lambda l: l.date_open):
-            date_create = fields.Datetime.from_string(lead.create_date)
-            date_open = fields.Datetime.from_string(lead.date_open)
+            date_create = lead.create_date
+            date_open = lead.date_open
             lead.day_open = abs((date_open - date_create).days)
 
     @api.depends('date_closed')
     def _compute_day_close(self):
         """ Compute difference between current date and log date """
         for lead in self.filtered(lambda l: l.date_closed):
-            date_create = fields.Datetime.from_string(lead.create_date)
-            date_close = fields.Datetime.from_string(lead.date_closed)
+            date_create = lead.create_date
+            date_close = lead.date_closed
             lead.day_close = abs((date_close - date_create).days)
 
     @api.multi
@@ -935,7 +934,7 @@ class Lead(models.Model):
         else:
             duration = str(duration)
         meet_date = fields.Datetime.from_string(meeting_date)
-        meeting_usertime = fields.Datetime.to_string(fields.Datetime.context_timestamp(self, meet_date))
+        meeting_usertime = fields.Datetime.context_timestamp(self, meet_date)
         html_time = "<time datetime='%s+00:00'>%s</time>" % (meeting_date, meeting_usertime)
         message = _("Meeting scheduled at '%s'<br> Subject: %s <br> Duration: %s hour(s)") % (html_time, meeting_subject, duration)
         return self.message_post(body=message)
@@ -979,7 +978,7 @@ class Lead(models.Model):
             # Expected closing
             if opp.activity_date_deadline:
                 if opp.date_deadline:
-                    date_deadline = fields.Date.from_string(opp.date_deadline)
+                    date_deadline = opp.date_deadline
                     if date_deadline == date.today():
                         result['closing']['today'] += 1
                     if date.today() <= date_deadline <= date.today() + timedelta(days=7):
@@ -988,7 +987,7 @@ class Lead(models.Model):
                         result['closing']['overdue'] += 1
                 # Next activities
                 for activity in opp.activity_ids:
-                    date_deadline = fields.Date.from_string(activity.date_deadline)
+                    date_deadline = activity.date_deadline
                     if date_deadline == date.today():
                         result['activity']['today'] += 1
                     if date.today() <= date_deadline <= date.today() + timedelta(days=7):
@@ -997,7 +996,7 @@ class Lead(models.Model):
                         result['activity']['overdue'] += 1
             # Won in Opportunities
             if opp.date_closed and opp.stage_id.probability == 100:
-                date_closed = fields.Date.from_string(opp.date_closed)
+                date_closed = opp.date_closed
                 if date.today().replace(day=1) <= date_closed <= date.today():
                     if opp.planned_revenue:
                         result['won']['this_month'] += opp.planned_revenue
@@ -1025,7 +1024,7 @@ class Lead(models.Model):
         activites_done = self._cr.dictfetchall()
         for activity in activites_done:
             if activity['date']:
-                date_act = fields.Date.from_string(activity['date'])
+                date_act = activity['date']
                 if date.today().replace(day=1) <= date_act <= date.today():
                     result['done']['this_month'] += 1
                 elif date.today() + relativedelta(months=-1, day=1) <= date_act < date.today().replace(day=1):
@@ -1033,7 +1032,7 @@ class Lead(models.Model):
 
         # Meetings
         min_date = fields.Datetime.now()
-        max_date = fields.Datetime.to_string(datetime.now() + timedelta(days=8))
+        max_date = datetime.now() + timedelta(days=8)
         meetings_domain = [
             ('start', '>=', min_date),
             ('start', '<=', max_date),
@@ -1042,7 +1041,7 @@ class Lead(models.Model):
         meetings = self.env['calendar.event'].search(meetings_domain)
         for meeting in meetings:
             if meeting['start']:
-                start = datetime.strptime(meeting['start'], tools.DEFAULT_SERVER_DATETIME_FORMAT).date()
+                start = meeting['start']
                 if start == date.today():
                     result['meeting']['today'] += 1
                 if date.today() <= start <= date.today() + timedelta(days=7):

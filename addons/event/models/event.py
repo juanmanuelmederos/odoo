@@ -6,8 +6,7 @@ from odoo import _, api, fields, models
 from odoo.addons.mail.models.mail_template import format_tz
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tools.translate import html_translate
-
-from dateutil.relativedelta import relativedelta
+from odoo.tools.datetime import relativedelta
 
 
 class EventType(models.Model):
@@ -268,11 +267,11 @@ class EventEvent(models.Model):
     def name_get(self):
         result = []
         for event in self:
-            date_begin = fields.Datetime.from_string(event.date_begin)
-            date_end = fields.Datetime.from_string(event.date_end)
-            dates = [fields.Date.to_string(fields.Datetime.context_timestamp(event, dt)) for dt in [date_begin, date_end] if dt]
+            date_begin = event.date_begin
+            date_end = event.date_end
+            dates = [fields.Datetime.context_timestamp(event, dt) for dt in [date_begin, date_end] if dt]
             dates = sorted(set(dates))
-            result.append((event.id, '%s (%s)' % (event.name, ' - '.join(dates))))
+            result.append((event.id, '%s (%s)' % (event.name, ' - '.join([str(event_date) for event_date in dates]))))
         return result
 
     @api.model
@@ -493,8 +492,8 @@ class EventRegistration(models.Model):
     @api.multi
     def get_date_range_str(self):
         self.ensure_one()
-        today = fields.Datetime.from_string(fields.Datetime.now())
-        event_date = fields.Datetime.from_string(self.event_begin_date)
+        today = fields.Datetime.now()
+        event_date = self.event_begin_date
         diff = (event_date.date() - today.date())
         if diff.days <= 0:
             return _('today')
