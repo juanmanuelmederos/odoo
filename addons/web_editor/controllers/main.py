@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import re
+import requests
 import time
 import werkzeug.wrappers
 from PIL import Image, ImageFont, ImageDraw
@@ -354,6 +355,14 @@ class Web_Editor(http.Controller):
             views = get_views and views or [],
             less = get_less and less_files_data_by_bundle or [],
         )
+
+    #------------------------------------------------------
+    # Cross origin image
+    #------------------------------------------------------
+    @http.route('/web_editor/get_cross_origin_img', type='http', auth='user')
+    def get_cross_origin_img(self, **kw):
+        content = requests.get(kw['url'], stream=True).raw
+        return request.make_response(content, headers=[('Content-Type', 'image/png')])
 
     ## The save_less route is in charge of saving a given modification of a LESS file.
     ## @param url - the original url of the LESS file which has to be modified
