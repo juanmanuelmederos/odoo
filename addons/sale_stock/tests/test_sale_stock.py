@@ -3,7 +3,7 @@
 
 from odoo.addons.sale.tests.test_sale_common import TestSale
 from odoo.exceptions import UserError
-from odoo.tests import tagged
+from odoo.tests import Form, tagged
 
 
 @tagged('post_install', '-at_install')
@@ -423,3 +423,138 @@ class TestSaleStock(TestSale):
         # check the delivered quantity
         self.assertEqual(so1.order_line.qty_delivered, 3.0)
 
+    def test_07_advance_payment_method(self):
+        """ Create a sale order of product with invoicing policy = delivery, confirm it, create invoice
+        with advance payment method = unbilled : the invoice should be created
+        before delivery of the product, even if its invoicing pilicy is delivery.
+        """
+        item2 = self.products['prod_del']
+        so_form = Form(self.env['sale.order'])
+        so_form.partner_id = self.partner
+        with so_form.order_line.new() as line:
+            line.name = item2.name
+            line.product_id = item2
+            line.product_uom_qty = 1
+            line.product_uom = item2.uom_id
+            line.price_unit = item2.list_price
+        so = so_form.save()
+        so.action_confirm()
+        payment_form = Form(self.env['sale.advance.payment.inv'].with_context(active_model='sale.order', active_ids=[so.id], active_id=so.id))
+        payment_form.advance_payment_method = 'unbilled'
+        payment = payment_form.save()
+        payment.create_invoices()
+        self.assertEquals(so.amount_total, so.invoice_ids.amount_total)
+
+    def test_08_advance_payment_method(self):
+        """ Create a sale order of two products one with invoicing policy = delivery and
+        one with invoicing policy = ordered, confirm it, create invoice with
+        advance payment method = unbilled : the invoice should be created for both the products."""
+        item1 = self.products['prod_order']
+        item2 = self.products['prod_del']
+
+        so_form = Form(self.env['sale.order'])
+        so_form.partner_id = self.partner
+        with so_form.order_line.new() as line:
+            line.name = item1.name
+            line.product_id = item1
+            line.product_uom_qty = 1
+            line.product_uom = item1.uom_id
+            line.price_unit = item1.list_price
+        with so_form.order_line.new() as line:
+            line.name = item2.name
+            line.product_id = item2
+            line.product_uom_qty = 1
+            line.product_uom = item2.uom_id
+            line.price_unit = item2.list_price
+        so = so_form.save()
+        so.action_confirm()
+        payment_form = Form(self.env['sale.advance.payment.inv'].with_context(active_model='sale.order', active_ids=[so.id], active_id=so.id))
+        payment_form.advance_payment_method = 'unbilled'
+        payment = payment_form.save()
+        payment.create_invoices()
+        self.assertEquals(so.amount_total, so.invoice_ids.amount_total)
+
+    def test_09_advance_payment_method(self):
+        """ Create a sale order of two products one with invoicing policy = delivery and
+        one with invoicing policy = ordered, confirm it, create one invoice with downpayment and then with
+        advance payment method = unbilled : the invoice should be created after deduction of downpayment."""
+
+        item1 = self.products['prod_order']
+        item2 = self.products['prod_del']
+
+        so_form = Form(self.env['sale.order'])
+        so_form.partner_id = self.partner
+        with so_form.order_line.new() as line:
+            line.name = item1.name
+            line.product_id = item1
+            line.product_uom_qty = 1
+            line.product_uom = item1.uom_id
+            line.price_unit = item1.list_price
+        with so_form.order_line.new() as line:
+            line.name = item2.name
+            line.product_id = item2
+            line.product_uom_qty = 1
+            line.product_uom = item2.uom_id
+            line.price_unit = item2.list_price
+        so = so_form.save()
+        so.action_confirm()
+
+        context = {"active_model": 'sale.order', "active_ids": [so.id], "active_id": so.id}
+        payment_form = Form(self.env['sale.advance.payment.inv'].with_context(context))
+        payment_form.advance_payment_method = 'fixed'
+        payment_form.amount = 5
+        payment_form.product_id = self.env.ref('sale.advance_product_0')
+        payment = payment_form.save()
+        payment.create_invoices()
+
+        payment_form = Form(self.env['sale.advance.payment.inv'].with_context(context))
+        payment_form.advance_payment_method = 'unbilled'
+        payment = payment_form.save()
+        payment.create_invoices()
+
+        amount_total = 0
+        for invoice in so.invoice_ids:
+            amount_total += invoice.amount_total
+        self.assertEquals(so.amount_total, amount_total)
+
+    def test_10_advance_payment_method(self):
+        """ Create a sale order of two products one with invoicing policy = delivery and
+        one with invoicing policy = ordered, confirm it, create one invoice with
+        advance payment method = delivered : the invoice should be created for invoiceable lines.
+        and then create one invoice with advance payment method = unbilled :
+        the invoice should be created after deduction of previous payments."""
+        item1 = self.products['prod_order']
+        item2 = self.products['prod_del']
+
+        so_form = Form(self.env['sale.order'])
+        so_form.partner_id = self.partner
+        with so_form.order_line.new() as line:
+            line.name = item1.name
+            line.product_id = item1
+            line.product_uom_qty = 1
+            line.product_uom = item1.uom_id
+            line.price_unit = item1.list_price
+        with so_form.order_line.new() as line:
+            line.name = item2.name
+            line.product_id = item2
+            line.product_uom_qty = 1
+            line.product_uom = item2.uom_id
+            line.price_unit = item2.list_price
+        so = so_form.save()
+        so.action_confirm()
+
+        context = {"active_model": 'sale.order', "active_ids": [so.id], "active_id": so.id}
+        payment_form = Form(self.env['sale.advance.payment.inv'].with_context(context))
+        payment_form.advance_payment_method = 'delivered'
+        payment = payment_form.save()
+        payment.create_invoices()
+
+        payment_form = Form(self.env['sale.advance.payment.inv'].with_context(context))
+        payment_form.advance_payment_method = 'unbilled'
+        payment = payment_form.save()
+        payment.create_invoices()
+
+        amount_total = 0
+        for invoice in so.invoice_ids:
+            amount_total += invoice.amount_total
+        self.assertEquals(so.amount_total, amount_total)
