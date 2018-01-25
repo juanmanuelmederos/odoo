@@ -9,6 +9,7 @@
         Track equipment and manage maintenance requests.""",
     'depends': ['mail'],
     'summary': 'Equipments, Assets, Internal Hardware, Allocation Tracking',
+    'website': 'https://www.odoo.com/page/tpm-maintenance-software',
     'data': [
         'security/maintenance.xml',
         'security/ir.model.access.csv',

@@ -3,7 +3,7 @@
 {
     'name' : 'Invoicing',
     'version' : '1.1',
-    'summary': 'Send Invoices and Track Payments',
+    'summary': 'Invoices & Payments',
     'sequence': 30,
     'description': """
 Core mechanisms for the accounting modules. To display the menuitems, install the module account_invoicing.

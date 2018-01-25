@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
 {
-    'name': 'Online Events',
+    'name': 'Events',
     'category': 'Marketing',
     'sequence': 166,
-    'summary': 'Publish Events and Manage Online Registrations on your Website',
-    'website': 'https://www.odoo.com/page/website-builder',
+    'summary': 'Events Promotion & Online Registrations',
+    'website': 'https://www.odoo.com/page/events',
     'description': "",
     'depends': ['website', 'website_partner', 'website_mail', 'event'],
     'data': [

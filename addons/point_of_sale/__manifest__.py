@@ -2,11 +2,11 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 {
-    'name': 'Point of Sale',
+    'name': 'Point of Sale (POS)',
     'version': '1.0.1',
     'category': 'Point Of Sale',
     'sequence': 20,
-    'summary': 'Touchscreen Interface for Shops',
+    'summary': 'Touchscreen Interface for Shops and Restaurants',
     'description': "",
     'depends': ['stock_account', 'barcodes', 'web_editor'],
     'data': [
@@ -47,5 +47,5 @@
     'installable': True,
     'application': True,
     'qweb': ['static/src/xml/pos.xml'],
-    'website': 'https://www.odoo.com/page/point-of-sale',
+    'website': 'https://www.odoo.com/page/point-of-sale-shop',
 }
