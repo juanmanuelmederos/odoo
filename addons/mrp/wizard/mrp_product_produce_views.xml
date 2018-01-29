@@ -33,8 +33,9 @@
                         </field>
                     </group>
                     <footer>
+                        <button name="continue_production" type="object" string="Save &amp; Continue"/>
                         <button name="do_produce" type="object" string="Record Production" class="btn-primary"/>
-                        <button string="Cancel" class="btn-default" special="cancel" />
+                        <button string="Cancel" class="btn-default" special="cancel" options='{"reload": 1}'/>
                     </footer>
                 </form>
             </field>
