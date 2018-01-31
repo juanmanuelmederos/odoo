@@ -3280,82 +3280,95 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
                 vals.setdefault(name, False)
 
         # determine SQL values
-        columns = []                    # list of (column_name, format, value)
-        other_fields = []               # list of non-column fields
-        protected_fields = []           # list of fields to not recompute on self
-        translated_names = []           # list of translated field names
+        protected = set()               # fields to not recompute on record
+        formats = {}                    # {colname: format}
+        data = Data(
+            columns={},                 # {colname: value}
+            others={},                  # non-column field values
+            translated={},              # translated field values
+        )
 
-        columns.append(('id', "nextval(%s)", self._sequence))
+        formats['id'] = "nextval(%s)"
+        data.columns['id'] = self._sequence
 
         for name, val in vals.items():
             field = self._fields[name]
             assert field.store
 
             if field.column_type:
-                column_val = field.convert_to_column(val, self, vals)
-                columns.append((name, field.column_format, column_val))
+                formats[name] = field.column_format
+                data.columns[name] = field.convert_to_column(val, self, vals)
                 if field.translate is True:
-                    translated_names.append(name)
+                    data.translated[name] = val
             else:
-                other_fields.append(field)
+                data.others[name] = val
 
             if field.inverse:
-                protected_fields.append(field)
+                protected.add(field)
 
         if self._log_access:
-            columns.append(('create_uid', '%s', self._uid))
-            columns.append(('write_uid', '%s', self._uid))
-            columns.append(('create_date', '%s', AsIs("(now() at time zone 'UTC')")))
-            columns.append(('write_date', '%s', AsIs("(now() at time zone 'UTC')")))
+            formats['create_uid'] = "%s"
+            formats['write_uid'] = "%s"
+            formats['create_date'] = "%s"
+            formats['write_date'] = "%s"
+            data.columns['create_uid'] = self._uid
+            data.columns['write_uid'] = self._uid
+            data.columns['create_date'] = AsIs("(now() at time zone 'UTC')")
+            data.columns['write_date'] = AsIs("(now() at time zone 'UTC')")
 
         # insert a row for this record
-        query = """INSERT INTO "%s" (%s) VALUES(%s) RETURNING id""" % (
-                self._table,
-                ', '.join('"%s"' % column[0] for column in columns),
-                ', '.join(column[1] for column in columns),
-            )
-        cr.execute(query, [column[2] for column in columns])
+        quote = '"{}"'.format
+        names = ['id'] + sorted(name for name in formats if name != 'id')
+        row_fmt = "({})".format(", ".join(formats[name] for name in names))
+        query = "INSERT INTO {} ({}) VALUES {} RETURNING id".format(
+            quote(self._table),
+            ", ".join(quote(name) for name in names),
+            row_fmt,
+        )
+        params = [data.columns[name] for name in names]
+        cr.execute(query, params)
 
-        # from now on, self is the new record
-        self = self.browse(cr.fetchone()[0])
+        # the new record
+        record = self.browse(cr.fetchone()[0])
 
         # update parent_path
-        self._parent_store_create()
+        record._parent_store_create()
 
-        with self.env.protecting(protected_fields, self):
+        with self.env.protecting(protected, record):
             # mark fields to recompute; do this before setting other fields,
             # because the latter can require the value of computed fields, e.g.,
             # a one2many checking constraints on records
-            self.modified(self._fields)
+            record.modified(self._fields)
 
             # set the value of non-column fields
-            if other_fields:
+            if data.others:
                 # discard default values from context
-                other = self.with_context({
+                other = record.with_context({
                     key: val
                     for key, val in self._context.items()
                     if not key.startswith('default_')
                 })
 
+                other_fields = [self._fields[name] for name in data.others]
                 for field in sorted(other_fields, key=attrgetter('_sequence')):
-                    field.write(other, vals[field.name], create=True)
+                    field.write(other, data.others[field.name], create=True)
 
                 # mark fields to recompute
-                self.modified(field.name for field in other_fields)
+                record.modified(data.others)
 
             # check Python constraints
-            self._validate_fields(vals)
+            record._validate_fields(vals)
 
-        self.check_access_rule('create')
+        record.check_access_rule('create')
 
         # add translations
         if self.env.lang and self.env.lang != 'en_US':
-            for name in translated_names:
+            Translations = self.env['ir.translation']
+            for name, val in data.translated.items():
                 tname = "%s,%s" % (self._name, name)
-                val = vals[name]
-                self.env['ir.translation']._set_ids(tname, 'model', self.env.lang, self.ids, val, val)
+                Translations._set_ids(tname, 'model', self.env.lang, record.ids, val, val)
 
-        return self
+        return record
 
     def _parent_store_create(self):
         """ Set the parent_path field on ``self`` after its creation. """
