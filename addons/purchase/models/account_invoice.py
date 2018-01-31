@@ -8,8 +8,8 @@ from odoo.tools.float_utils import float_compare
 class AccountInvoice(models.Model):
     _inherit = 'account.invoice'
 
-    purchase_id = fields.Many2one(
-        comodel_name='purchase.order',
+    purchase_ids = fields.Many2many('purchase.order', 'purchase_account_invoice_default_rel',
+        'account_invoice_id', 'purchase_order_id',
         string='Add Purchase Order',
         readonly=True, states={'draft': [('readonly', False)]},
         help='Encoding help. When selected, the associated purchase order lines are added to the vendor bill. Several PO can be selected.'
@@ -27,7 +27,7 @@ class AccountInvoice(models.Model):
         purchase_line_ids = self.invoice_line_ids.mapped('purchase_line_id')
         purchase_ids = self.invoice_line_ids.mapped('purchase_id').filtered(lambda r: r.order_line <= purchase_line_ids)
 
-        result['domain'] = {'purchase_id': [
+        result['domain'] = {'purchase_ids': [
             ('invoice_status', '=', 'to invoice'),
             ('partner_id', 'child_of', self.partner_id.id),
             ('id', 'not in', purchase_ids.ids),
@@ -65,33 +65,43 @@ class AccountInvoice(models.Model):
 
     def _onchange_product_id(self):
         domain = super(AccountInvoice, self)._onchange_product_id()
-        if self.purchase_id:
+        if self.purchase_ids:
             # Use the purchase uom by default
             self.uom_id = self.product_id.uom_po_id
         return domain
 
     # Load all unsold PO lines
-    @api.onchange('purchase_id')
+    @api.onchange('purchase_ids')
     def purchase_order_change(self):
-        if not self.purchase_id:
+        if not self.purchase_ids:
             return {}
-        if not self.partner_id:
-            self.partner_id = self.purchase_id.partner_id.id
+        max_payment_term = None
+        for purchase in self.purchase_ids:
 
-        if not self.invoice_line_ids:
-            #as there's no invoice line yet, we keep the currency of the PO
-            self.currency_id = self.purchase_id.currency_id
-        new_lines = self.env['account.invoice.line']
-        for line in self.purchase_id.order_line - self.invoice_line_ids.mapped('purchase_line_id'):
-            data = self._prepare_invoice_line_from_po_line(line)
-            new_line = new_lines.new(data)
-            new_line._set_additional_fields(self)
-            new_lines += new_line
+            if not self.partner_id:
+                self.partner_id = purchase.partner_id.id
 
-        self.invoice_line_ids += new_lines
-        self.payment_term_id = self.purchase_id.payment_term_id
+            if not self.invoice_line_ids:
+                #as there's no invoice line yet, we keep the currency of the PO
+                self.currency_id = purchase.currency_id
+
+            new_lines = self.env['account.invoice.line']
+            for line in purchase.order_line - self.invoice_line_ids.mapped('purchase_line_id'):
+                data = self._prepare_invoice_line_from_po_line(line)
+                new_line = new_lines.new(data)
+                new_line._set_additional_fields(self)
+                new_lines += new_line
+
+            self.invoice_line_ids += new_lines
+
+            if max_payment_term == None:
+                max_payment_term = purchase.payment_term_id
+            if purchase.payment_term_id.line_ids.mapped('days') > max_payment_term.line_ids.mapped('days'):
+                max_payment_term = purchase.payment_term_id
+
+        self.payment_term_id = max_payment_term
         self.env.context = dict(self.env.context, from_purchase_order_change=True)
-        self.purchase_id = False
+
         return {}
 
     @api.onchange('currency_id')

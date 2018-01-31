@@ -556,7 +556,7 @@ class PurchaseOrder(models.Model):
 
         #override the context to get rid of the default filtering
         result['context'] = {'type': 'in_invoice',
-            'default_purchase_id': self.id,
+            'default_purchase_ids': [(6, 0, self.ids)],
             'default_currency_id': self.currency_id.id,
             'default_company_id': self.company_id.id,
             'company_id': self.company_id.id
