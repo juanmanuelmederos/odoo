@@ -3,6 +3,8 @@
 
 import odoo
 from odoo.exceptions import UserError, AccessError
+from odoo.tests import Form
+from odoo.tools import float_compare
 
 from .test_sale_common import TestCommonSaleNoChart
 
@@ -13,6 +15,9 @@ class TestSaleOrder(TestCommonSaleNoChart):
     def setUpClass(cls):
         super(TestSaleOrder, cls).setUpClass()
 
+        cls.Pricelist = cls.env['product.pricelist']
+        cls.PricelistItem = cls.env['product.pricelist.item']
+        cls.SaleOrderLine = cls.env['sale.order.line']
         # set up users
         cls.setUpUsers()
         group_salemanager = cls.env.ref('sales_team.group_sale_manager')
@@ -24,6 +29,22 @@ class TestSaleOrder(TestCommonSaleNoChart):
         cls.setUpAdditionalAccounts()
         cls.setUpClassicProducts()
         cls.setUpAccountJournal()
+
+        # Create a pricelist with/without discount policy
+        cls.pricelist_with_disct = cls.Pricelist.create({
+            'name': 'Pricelist A',
+            'discount_policy': 'with_discount',
+        })
+        cls.pricelist_without_disct = cls.Pricelist.create({
+            'name': 'Pricelist B',
+            'discount_policy': 'without_discount',
+        })
+
+        # Create the SO with pricelist
+        cls.sale_order_pricelist = cls.env['sale.order'].create({
+            'partner_id': cls.partner_customer_usd.id,
+            'pricelist_id': cls.pricelist_with_disct.id
+        })
 
         # create a generic Sale Order with all classical products
         cls.sale_order = cls.env['sale.order'].create({
@@ -196,3 +217,160 @@ class TestSaleOrder(TestCommonSaleNoChart):
         sol = so.order_line.filtered(lambda l: l.product_id == serv_cost)
         self.assertTrue(sol, 'Sale: cost invoicing does not add lines when confirming vendor invoice')
         self.assertEquals((sol.price_unit, sol.qty_delivered, sol.product_uom_qty, sol.qty_invoiced), (160, 2, 0, 0), 'Sale: line is wrong after confirming vendor invoice')
+
+    def test_sale_with_pricelist_multi_price_per_product(self):
+        """ Test pricelist apply or not on order lines when pricelist on SO """
+        # Create the pricelist items
+        self.PricelistItem.create({
+            'pricelist_id': self.pricelist_with_disct.id,
+            'applied_on': '1_product',
+            'product_tmpl_id': self.product_order.product_tmpl_id.id,
+            'compute_price': 'percentage',
+            'percent_price': 10
+        })
+        self.PricelistItem.create({
+            'pricelist_id': self.pricelist_with_disct.id,
+            'applied_on': '1_product',
+            'product_tmpl_id': self.service_deliver.product_tmpl_id.id,
+            'compute_price': 'percentage',
+            'percent_price': 20
+        })
+        self.PricelistItem.create({
+            'pricelist_id': self.pricelist_without_disct.id,
+            'applied_on': '1_product',
+            'product_tmpl_id': self.service_order.product_tmpl_id.id,
+            'compute_price': 'percentage',
+            'percent_price': 20
+        })
+        self.PricelistItem.create({
+            'pricelist_id': self.pricelist_without_disct.id,
+            'applied_on': '1_product',
+            'product_tmpl_id': self.product_deliver.product_tmpl_id.id,
+            'compute_price': 'percentage',
+            'percent_price': 10
+        })
+
+        # Create an order lines
+        self.SaleOrderLine.create({
+            'order_id': self.sale_order_pricelist.id,
+            'product_id': self.product_order.id
+        })
+        self.SaleOrderLine.create({
+            'order_id': self.sale_order_pricelist.id,
+            'product_id': self.service_deliver.id
+        })
+        self.SaleOrderLine.create({
+            'order_id': self.sale_order_pricelist.id,
+            'product_id': self.service_order.id
+        })
+        self.SaleOrderLine.create({
+            'order_id': self.sale_order_pricelist.id,
+            'product_id': self.product_deliver.id
+        })
+
+        # Check that pricelist of the SO has been applied on the sale order lines or not
+        for line in self.sale_order_pricelist.order_line:
+            if self.sale_order_pricelist.pricelist_id in line.product_id.item_ids.mapped('pricelist_id'):
+                for item in self.sale_order_pricelist.pricelist_id.item_ids.filtered(lambda l: l.product_tmpl_id == line.product_id.product_tmpl_id):
+                    price = item.percent_price
+                    self.assertEquals(price, (line.product_id.list_price - line.price_unit)/line.product_id.list_price*100, 'Pricelist of the SO should be applied on an order line')
+            else:
+                self.assertEquals(line.price_unit, line.product_id.list_price, 'Pricelist of the SO should not be applied on an order line')
+
+    def test_sale_with_pricelist_formulas(self):
+        """ Test SO with the pricelist which one have compute price formula """
+        # Add group 'Discount on Lines' to the user
+        self.env.user.write({'groups_id': [(4, self.env.ref('sale.group_discount_per_so_line').id)]})
+        product_categ = self.env.ref('product.product_category_1')
+
+        # Apply product category on consumable products and also on a peicelist
+        with Form(self.product_order) as product:
+            product.categ_id = product_categ
+        with Form(self.product_deliver) as product:
+            product.categ_id = product_categ
+
+        # Create the pricelist items
+        self.PricelistItem.create({
+            'pricelist_id': self.pricelist_without_disct.id,
+            'applied_on': '2_product_category',
+            'categ_id': product_categ.id,
+            'compute_price': 'formula',
+            'base': 'standard_price',
+            'price_discount': 15
+        })
+        self.PricelistItem.create({
+            'pricelist_id': self.pricelist_with_disct.id,
+            'applied_on': '3_global',
+            'compute_price': 'percentage',
+            'price_discount': 10
+        })
+
+        # Apply pricelist on the SO and create an order lines
+        sale_order = Form(self.sale_order_pricelist)
+        with sale_order as order:
+            order.pricelist_id = self.pricelist_without_disct
+            with order.order_line.new() as line:
+                line.product_id = self.product_order
+            with order.order_line.new() as line:
+                line.product_id = self.service_deliver
+            with order.order_line.new() as line:
+                line.product_id = self.service_order
+            with order.order_line.new() as line:
+                line.product_id = self.product_deliver
+        order = sale_order.save()
+
+        # Check pricelist of the SO apply or not on order lines where pricelist contains formula that add 15% on the cost price
+        for line in order.order_line:
+            if line.product_id.categ_id in order.pricelist_id.item_ids.mapped('categ_id'):
+                for item in order.pricelist_id.item_ids.filtered(lambda l: l.categ_id == line.product_id.categ_id):
+                    discount = item.price_discount
+                    self.assertEquals(line.discount, discount, 'Pricelist of the SO should be applied on an order line')
+                self.assertEquals(line.price_unit, line.product_id.standard_price, 'Pricelist formula should be applied on the cost price')
+            else:
+                self.assertEquals(line.discount, 0.0, 'Pricelist of SO should not be applied on an order line')
+                self.assertEquals(line.price_unit, line.product_id.list_price, 'Unit price of order line should be a sale price as the pricelist not applied on the other category\'s product')
+
+    def test_sale_wtih_taxes(self):
+        """ Test SO with taxes """
+        # Create a tax with price included
+        tax_include = self.env['account.tax'].create({
+            'name': 'Tax with price include',
+            'amount': 10,
+            'price_include': True
+        })
+        # Create a tax with price not included
+        tax_exclude = self.env['account.tax'].create({
+            'name': 'Tax with no price include',
+            'amount': 10,
+        })
+
+        # Apply tax with price included on two products and tax with price not included on other two products
+        with Form(self.product_order) as product:
+            product.taxes_id.add(tax_include)
+        with Form(self.service_deliver) as product:
+            product.taxes_id.add(tax_include)
+        with Form(self.service_order) as product:
+            product.taxes_id.add(tax_exclude)
+        with Form(self.product_deliver) as product:
+            product.taxes_id.add(tax_exclude)
+
+        # Apply taxes on the sale order lines
+        sale_order = Form(self.sale_order)
+        with sale_order as order:
+            with order.order_line.edit(0) as line:
+                line.tax_id.add(tax_include)
+            with order.order_line.edit(1) as line:
+                line.tax_id.add(tax_include)
+            with order.order_line.edit(2) as line:
+                line.tax_id.add(tax_exclude)
+            with order.order_line.edit(3) as line:
+                line.tax_id.add(tax_exclude)
+        order = sale_order.save()
+
+        for line in order.order_line:
+            if line.tax_id == tax_include:
+                price = line.price_unit * line.product_uom_qty - line.price_tax
+                self.assertEquals(float_compare(line.price_subtotal, price, precision_digits=2), 0,'Tax should be included on an order line')
+            else:
+                self.assertEquals(line.price_subtotal, line.price_unit * line.product_uom_qty, 'Tax should not be included on an order line')
+        self.assertEquals(order.amount_total, order.amount_untaxed + order.amount_tax, 'Taxes should be applied')
