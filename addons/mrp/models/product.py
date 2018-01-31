@@ -56,14 +56,9 @@ class ProductProduct(models.Model):
     mo_count = fields.Integer('# Manufacturing Orders', compute='_compute_mo_count')
 
     def _compute_bom_count(self):
-        read_group_res = self.env['mrp.bom'].read_group([('product_id', 'in', self.ids)], ['product_id'], ['product_id'])
-        mapped_data = dict([(data['product_id'][0], data['product_id_count']) for data in read_group_res])
+        Bom = self.env['mrp.bom']
         for product in self:
-            if product.product_tmpl_id.product_variant_count == 1:
-                bom_count = mapped_data.get(product.id, product.product_tmpl_id.bom_count)
-            else:
-                bom_count = mapped_data.get(product.id, 0)
-            product.bom_count = bom_count
+            product.bom_count = Bom.search_count(['|', ('product_id', '=', product.id), '&', ('product_id', '=', False), ('product_tmpl_id', '=', product.product_tmpl_id.id)])
 
     @api.multi
     def _compute_used_in_bom_count(self):

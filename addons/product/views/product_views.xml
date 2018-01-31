@@ -48,7 +48,7 @@
                                 </group>
                                 <group name="group_standard_price">
                                     <field name="list_price" string="Sales Price" widget='monetary' options="{'currency_field': 'currency_id', 'field_digits': True}"/>
-                                    <label for="standard_price" groups="base.group_user" attrs="{'invisible': [('product_variant_count', '&gt;', 1)]}"/>
+                                    <label for="standard_price" name="standard_price" groups="base.group_user" attrs="{'invisible': [('product_variant_count', '&gt;', 1)]}"/>
                                     <div name="standard_price_uom" groups="base.group_user" attrs="{'invisible': [('product_variant_count', '&gt;', 1)]}">
                                         <field name="standard_price" widget='monetary' options="{'currency_field': 'currency_id'}"/>
                                     </div>
@@ -319,6 +319,12 @@
                    <attribute name="name">lst_price</attribute>
                    <attribute name="attrs">{'readonly': [('product_variant_count', '&gt;', 1)]}</attribute>
                 </field>
+                <label name="standard_price" position="attributes">
+                   <attribute name="attrs">{'invisible': 0}</attribute>
+                </label>
+                <div name="standard_price_uom" position="attributes">
+                   <attribute name="attrs">{'invisible': 0}</attribute>
+                </div>
                 <group name="packaging" position="attributes">
                     <attribute name="attrs">{'invisible': 0}</attribute>
                 </group>
