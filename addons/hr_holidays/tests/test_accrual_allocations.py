@@ -25,14 +25,12 @@ class TestAccrualAllocations(TestHrHolidaysBase):
         self.accrual_type = self.LeaveType.create({
             'name': 'accrual',
             'limit': False,
-            'double_validation': False,
             'accrual': True,
         })
 
         self.unpaid_type = self.LeaveType.create({
             'name': 'unpaid',
             'limit': True,
-            'double_validation': False,
             'unpaid': True,
         })
 
