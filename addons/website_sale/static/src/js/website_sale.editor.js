@@ -70,14 +70,16 @@ editor.Class.include({
         this.toDelete = [];
         $('#product_detail').on('click', '.o_website_sale_product_add_img', function (e) {
             var $parent = e.target.closest('li');
-            var $image = $('<img>', {class: 'img img-responsive'});
-            var editor = new widget.MediaDialog(self, {only_images: true}, $image, $image[0]).open();
-            var index = parseInt($parent.dataset.slideTo);
-            editor.on("save", this, function (event) {
-                var $li = $("<li class='o_website_sale_new_img ml4' data-target='#o-carousel-product'/>").attr('data-slide-to', index);
-                $image.appendTo($li);
-                $parent.dataset.slideTo = index + 1;
-                $li.insertBefore($parent);
+            var editor = new widget.MediaDialog(self, {multiImages: true}, $(e.target.closest('.o_editable')), null).open();
+            var index = parseInt($parent.dataset.slideTo)
+            editor.on("save", this, function (attachments) {
+                for (var i = 0 ; i < attachments.length; i++) {
+                    var $li = $("<li class='o_website_sale_new_img ml4' data-target='#o-carousel-product'/>").attr('data-slide-to', index);
+                    var $image = $('<img>', {class: 'img img-responsive', 'src': attachments[i].src});
+                    $image.appendTo($li);
+                    $parent.dataset.slideTo = index + 1;
+                    $li.insertBefore($parent);
+                }
             });
         });
         $('#product_detail').on('click', '.o_website_sale_delete_img', function (e){
