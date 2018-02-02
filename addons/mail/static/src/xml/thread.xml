@@ -115,6 +115,10 @@
                     <p>No starred message</p>
                     <p>You can mark any message as 'starred', and it shows up in this channel.</p>
                 </t>
+                <t t-if="options.channel_id==='channel_history'">
+                    <p>No history message</p>
+                    <p>Your history is clear.</p>
+                </t>
             </div>
         </div>
     </div>
