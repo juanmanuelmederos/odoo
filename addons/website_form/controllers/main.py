@@ -50,8 +50,7 @@ class WebsiteForm(http.Controller):
         return json.dumps({'id': id_record})
 
     # Constants string to make custom info and metadata readable on a text field
-
-    _custom_label = "%s\n___________\n\n" % _("Custom infos")  # Title for custom fields
+    _custom_label = "%s\n___________________________________________\n\n" % _("This message has been posted on your Odoo website!")  # Title for custom fields
     _meta_label = "%s\n________\n\n" % _("Metadata")  # Title for meta data
 
     # Dict of dynamically called filters following type of field to be fault tolerent
