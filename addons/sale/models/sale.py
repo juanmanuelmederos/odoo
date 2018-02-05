@@ -670,12 +670,12 @@ class SaleOrder(models.Model):
     @api.multi
     def action_view_sale_advance_payment_inv(self):
         options = ['percentage', 'fixed']
-        invoiceable_vals = self.order_line.filtered(lambda line: line.invoice_status == 'to invoice' and not line.is_downpayment)
+        invoiceable_lines = self.order_line.filtered(lambda line: line.invoice_status == 'to invoice' and not line.is_downpayment)
         is_downpayment = self.order_line.filtered(lambda line: line.is_downpayment)
 
-        if invoiceable_vals and not is_downpayment:
+        if invoiceable_lines and not is_downpayment:
             options.append('delivered')
-        if invoiceable_vals and is_downpayment:
+        if invoiceable_lines and is_downpayment:
             options.append('all')
         if self.order_line.filtered(lambda line: line.invoice_status == 'no'):
             options.append('unbilled')

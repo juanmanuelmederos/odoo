@@ -120,6 +120,15 @@ class SaleOrder(models.Model):
         sol = SaleOrderLine.sudo().create(values)
         return sol
 
+    @api.depends('state', 'order_line.invoice_status')
+    def _get_invoiced(self):
+        super(SaleOrder, self)._get_invoiced()
+        for order in self:
+            result = order.order_line.filtered(lambda x: not x.is_delivery)
+            if not any([line.product_id.invoice_policy == 'order' for line in result]):
+                for line in order.order_line.filtered(lambda x: x.state not in ('sale', 'done') or x.is_delivery):
+                    line.invoice_status = 'no'
+
 
 class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'
@@ -133,12 +142,3 @@ class SaleOrderLine(models.Model):
             if not line.product_id or not line.product_uom or not line.product_uom_qty:
                 return 0.0
             line.product_qty = line.product_uom._compute_quantity(line.product_uom_qty, line.product_id.uom_id)
-
-    @api.depends('state')
-    def _compute_invoice_status(self):
-        super(SaleOrderLine, self)._compute_invoice_status()
-        result = self.filtered(lambda x: not x.is_delivery)
-        is_order_qty = any([line.product_id.invoice_policy == 'order' for line in result])
-        for line in self:
-            if (line.state not in ('sale', 'done') or line.is_delivery) and not is_order_qty:
-                line.invoice_status = 'no'
