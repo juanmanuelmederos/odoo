@@ -55,6 +55,48 @@ class AccountInvoice(models.Model):
                 }
 
     @api.multi
+    def _get_group_by_hsn_data(self):
+        self.ensure_one()
+        tax_datas = {}
+        TAX = self.env['account.tax']
+        company_id = self.env.user.company_id
+        gst_tag = self._get_gst_tag_ids()
+        hsn_group_data = {}
+        for line in self.mapped('invoice_line_ids'):
+            igst_amount = cgst_amount = sgst_amount = cess_amount = 0
+            price_unit = line.price_unit * (1 - (line.discount or 0.0) / 100.0)
+            tax_lines = line.invoice_line_tax_ids.compute_all(price_unit, line.invoice_id.currency_id, line.quantity, line.product_id, line.invoice_id.partner_id)['taxes']
+            for tax_line in tax_lines:
+                tax = TAX.browse(tax_line['id'])
+                tax_rate = tax.amount
+                tag_ids = tax.tag_ids.ids
+
+                igst_amount += tax_line.get('amount') if gst_tag.get('cgst_tag_tax_id') in tag_ids else 0
+                cgst_amount += tax_line.get('amount') if gst_tag.get('cgst_tag_tax_id') in tag_ids else 0
+                sgst_amount += tax_line.get('amount') if gst_tag.get('cgst_tag_tax_id') in tag_ids else 0
+                cess_amount += tax_line.get('amount') if gst_tag.get('cgst_tag_tax_id') in tag_ids else 0
+                if invoice.currency_id != request.env.user.company_id.currency_id:
+                    igst_amount = invoice.currency_id.with_context(date=invoice.date_invoice).compute(igst_amount, company_id.currency_id)
+                    cgst_amount = invoice.currency_id.with_context(date=invoice.date_invoice).compute(cgst_amount, company_id.currency_id)
+                    sgst_amount = invoice.currency_id.with_context(date=invoice.date_invoice).compute(sgst_amount, company_id.currency_id)
+                    cess_amount = invoice.currency_id.with_context(date=invoice.date_invoice).compute(cess_amount, company_id.currency_id)
+
+                hsn_group_key = (line.product_id.l10n_in_hsn_code , line.product_id.l10n_in_hsn_description, line.uom_id.name or '')
+                hsn_group_data.setdefault(hsn_group_key, {}).update({
+                    'hsn_code':line.product_id.l10n_in_hsn_code,
+                    'hsn_description':line.product_id.l10n_in_hsn_description,
+                    'uom': line.uom_id.name,
+                    'quantity': line.quantity + hsn_group_data[hsn_group_key].get('quantity', 0),
+                    'price_total': line.price_total + hsn_group_data[hsn_group_key].get('price_total', 0),
+                    'taxable_value': line.price_subtotal_signed + hsn_group_data[hsn_group_key].get('taxable_value', 0),
+                    'igst': igst_amount + hsn_group_data[hsn_group_key].get('igst', 0),
+                    'cgst': cgst_amount + hsn_group_data[hsn_group_key].get('cgst', 0),
+                    'sgst': sgst_amount + hsn_group_data[hsn_group_key].get('sgst', 0),
+                    'cess': cess_amount + hsn_group_data[hsn_group_key].get('cess', 0),
+                    })
+        return hsn_group_data
+
+    @api.multi
     def _invoice_line_group_tax_values(self):
         self.ensure_one()
         tax_datas = {}

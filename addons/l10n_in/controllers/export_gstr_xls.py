@@ -181,39 +181,12 @@ class ExportXLS(http.Controller):
             first_row_data = ['No. of HSN', '', '', '', 'Total Value', 'Total Taxable Value', 'Total Integrated Tax', 'Total Central Tax', 'Total State/UT Tax', 'Total Cess']
             second_row_data = ['', '', '', '', self.column_total_value_sum(5), self.column_total_value_sum(6), self.column_total_value_sum(7), self.column_total_value_sum(8), self.column_total_value_sum(9), self.column_total_value_sum(10)]
             third_row_data = ['HSN', 'Description', 'UQC', 'Total Quantity', 'Total Value', 'Taxable Value', 'Integrated Tax Amount', 'Central Tax Amount', 'State/UT Tax Amount', 'Cess Amount']
-            hsn_group_data = {}
             domain += [('journal_id.code','in',('RET','EXP','INV')), ('type', '=', 'out_invoice')]
             invoices = request.env['account.invoice'].search(domain)
-            gst_tag = request.env['account.invoice']._get_gst_tag_ids()
             for invoice in invoices:
-                for invoice_line_id, line_taxs in invoice._invoice_line_tax_values().items():
-                    invoice_line = request.env['account.invoice.line'].browse(invoice_line_id)
-                    igst_amount = cgst_amount = sgst_amount = cess_amount = 0
-                    for line_tax in line_taxs:
-                        igst_amount += line_tax.get('amount') if gst_tag.get('cgst_tag_tax_id') in line_tax.get('tag_ids') else 0
-                        cgst_amount += line_tax.get('amount') if gst_tag.get('cgst_tag_tax_id') in line_tax.get('tag_ids') else 0
-                        sgst_amount += line_tax.get('amount') if gst_tag.get('cgst_tag_tax_id') in line_tax.get('tag_ids') else 0
-                        cess_amount += line_tax.get('amount') if gst_tag.get('cgst_tag_tax_id') in line_tax.get('tag_ids') else 0
-                    if invoice.currency_id != request.env.user.company_id.currency_id:
-                        igst_amount = invoice.currency_id.with_context(date=invoice.date_invoice).compute(igst_amount, company_id.currency_id)
-                        cgst_amount = invoice.currency_id.with_context(date=invoice.date_invoice).compute(cgst_amount, company_id.currency_id)
-                        sgst_amount = invoice.currency_id.with_context(date=invoice.date_invoice).compute(sgst_amount, company_id.currency_id)
-                        cess_amount = invoice.currency_id.with_context(date=invoice.date_invoice).compute(cess_amount, company_id.currency_id)
-                    hsn_group_key = (invoice_line.product_id.l10n_in_hsn_code or'' , invoice_line.product_id.l10n_in_hsn_description or '', invoice_line.uom_id.name or '')
-                    hsn_group_data.setdefault(hsn_group_key,{}).update({
-                            'hsn_code':invoice_line.product_id.l10n_in_hsn_code or'',
-                            'hsn_description':invoice_line.product_id.l10n_in_hsn_description or '',
-                            'uom':invoice_line.uom_id.name or '',
-                            'quantity': [invoice_line.quantity] + (hsn_group_data[hsn_group_key].get('quantity') or []),
-                            'price_total': [invoice_line.price_total] + (hsn_group_data[hsn_group_key].get('price_total') or []),
-                            'taxable_value':[invoice_line.price_subtotal_signed] + (hsn_group_data[hsn_group_key].get('taxable_value') or []),
-                            'igst': [igst_amount] + (hsn_group_data[hsn_group_key].get('igst') or []),
-                            'cgst': [cgst_amount] + (hsn_group_data[hsn_group_key].get('cgst') or []),
-                            'sgst': [sgst_amount] + (hsn_group_data[hsn_group_key].get('sgst') or []),
-                            'cess': [cess_amount] + (hsn_group_data[hsn_group_key].get('cess') or []),
-                            })
-            for values in hsn_group_data.values():
-                invoice_data.append((values['hsn_code'], values['hsn_description'], values['uom'], sum(values['quantity']), sum(values['price_total']), sum(values['taxable_value']), sum(values['igst']), sum(values['cgst']), sum(values['sgst']), sum(values['cess'])))
+                group_by_hsn_data = invoice._get_group_by_hsn_data()
+                for values in group_by_hsn_data.values():
+                    invoice_data.append((values['hsn_code'], values['hsn_description'], values['uom'], values['quantity'], values['price_total'], values['taxable_value'], values['igst'], values['cgst'], values['sgst'], values['cess']))
 
         if gstr_type == 'docs':
             first_row_data = ['', '', '', 'Total Number', 'Total Cancelled']
