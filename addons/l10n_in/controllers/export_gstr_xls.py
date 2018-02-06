@@ -174,9 +174,20 @@ class ExportXLS(http.Controller):
 
         if gstr_type == 'exemp':
             first_row_data = ['', 'Total Nil Rated Supplies', 'Total Exempted Supplies', 'Total Non-GST Supplies']
-            second_row_data = ['', self.column_total_value_sum(3), self.column_total_value_sum(4), self.column_total_value_sum(5)]
+            second_row_data = ['', self.column_total_value_sum(2), self.column_total_value_sum(3), self.column_total_value_sum(4)]
             third_row_data = ['Description', 'Nil Rated Supplies', 'Exempted (other than nil rated/non GST supply )', 'Non-GST supplies']
+            domain += [('journal_id.code','in',('RET','EXP','INV'))]
+            invoices = request.env['account.invoice'].search(domain)
+            for invoice in invoices:
+                for invoice_line_id, line_taxs in invoice._invoice_line_tax_values().items():
+                    invoice_line = request.env['account.invoice.line'].browse(invoice_line_id)
+                    nil_rated_supplies = exempted = zero_rated_supplies = 0
+                    # for line_tax in line_taxs:
+                    #     if line_tax.get('amount') == 0:
+                             
 
+                    #         invoice_data.append(('',,'',''))
+        
         if gstr_type == 'hsn':
             first_row_data = ['No. of HSN', '', '', '', 'Total Value', 'Total Taxable Value', 'Total Integrated Tax', 'Total Central Tax', 'Total State/UT Tax', 'Total Cess']
             second_row_data = ['', '', '', '', self.column_total_value_sum(5), self.column_total_value_sum(6), self.column_total_value_sum(7), self.column_total_value_sum(8), self.column_total_value_sum(9), self.column_total_value_sum(10)]
