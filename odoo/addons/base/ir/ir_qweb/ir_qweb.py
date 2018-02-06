@@ -9,6 +9,7 @@ from lxml import etree
 from collections import OrderedDict
 
 from odoo import api, models, tools
+from odoo.addons.base.ir.ir_qweb.qweb import escape, unicodifier
 from odoo.tools.safe_eval import assert_valid_codeobj, _BUILTINS, _SAFE_OPCODES
 from odoo.http import request
 from odoo.modules.module import get_resource_path
@@ -190,8 +191,33 @@ class IrQWeb(models.AbstractModel, QWeb):
     )
     def _get_asset(self, xmlid, options, css=True, js=True, debug=False, async=False, values=None):
         files, remains = self._get_asset_content(xmlid, options)
-        asset = AssetsBundle(xmlid, files, remains, env=self.env)
-        return asset.to_html(css=css, js=js, debug=debug, async=async, url_for=(values or {}).get('url_for', lambda url: url))
+        asset = AssetsBundle(xmlid, files, env=self.env)
+        nodes = asset.to_node(css=css, js=js, debug=debug, async=async)
+
+        html = []
+        append = html.append
+        for node in nodes:
+            append('\n            ')
+            append("<")
+            append(node["tag"])
+            append(" ")
+            t_attrs = self._post_processing_att(node["tag"], node["att"], options, values)
+            for name, value in t_attrs.iteritems():
+                if value or isinstance(value, basestring):
+                    append(u' ')
+                    append(name)
+                    append(u'="')
+                    append(escape(unicodifier((value))))
+                    append(u'"')
+            if "content" in node:
+                append(">")
+                append(escape(unicodifier(node["content"])))
+                append("</")
+                append(node["tag"])
+                append(">")
+            else:
+                append("/>")
+        return u''.join(html) + ('\n            ' if remains else u'') + '\n            '.join(remains)
 
     @tools.ormcache_context('xmlid', 'options.get("lang", "en_US")', keys=("website_id",))
     def _get_asset_content(self, xmlid, options):

@@ -79,14 +79,14 @@ class AssetsBundle(object):
     rx_preprocess_imports = re.compile("""(@import\s?['"]([^'"]+)['"](;?))""")
     rx_css_split = re.compile("\/\*\! ([a-f0-9-]+) \*\/")
 
-    def __init__(self, name, files, remains, env=None):
+    # remains attribute is depreciated and will remove after v11
+    def __init__(self, name, files, remains=None, env=None):
         self.name = name
         self.env = request.env if env is None else env
         self.max_css_rules = self.env.context.get('max_css_rules', MAX_CSS_RULES)
         self.javascripts = []
         self.stylesheets = []
         self.css_errors = []
-        self.remains = []
         self._checksum = None
         self.files = files
         self.remains = remains
@@ -100,6 +100,7 @@ class AssetsBundle(object):
             elif f['atype'] == 'text/javascript':
                 self.javascripts.append(JavascriptAsset(self, url=f['url'], filename=f['filename'], inline=f['content']))
 
+    # depreciated and will remove after v11
     def to_html(self, sep=None, css=True, js=True, debug=False, async=False, url_for=(lambda url: url)):
         if sep is None:
             sep = '\n            '
@@ -121,17 +122,59 @@ class AssetsBundle(object):
                 css_attachments = self.css()
                 if not self.css_errors:
                     for attachment in css_attachments:
-                        response.append('<link href="%s" rel="stylesheet"/>' % url_for(attachment.url))
+                        response.append('<link href="%s" rel="stylesheet"/>' % attachment.url)
                 else:
                     msg = '\n'.join(self.css_errors)
                     self.stylesheets.append(StylesheetAsset(self, inline=self.css_message(msg)))
                     for style in self.stylesheets:
                         response.append(style.to_html())
             if js and self.javascripts:
-                response.append('<script %s type="text/javascript" src="%s"></script>' % (async and 'async="async"' or '', url_for(self.js().url)))
+                response.append('<script %s type="text/javascript" src="%s"></script>' % (async and 'async="async"' or '', self.js().url))
         response.extend(self.remains)
 
         return sep + sep.join(response)
+
+    def to_node(self, sep=None, css=True, js=True, debug=False, async=False):
+        response = []
+        if debug == 'assets':
+            if css and self.stylesheets:
+                if not self.is_css_preprocessed():
+                    self.preprocess_css(debug=debug)
+                    if self.css_errors:
+                        msg = '\n'.join(self.css_errors)
+                        self.stylesheets.append(StylesheetAsset(self, inline=self.css_message(msg)))
+                for style in self.stylesheets:
+                    response.append(style.to_node())
+            if js:
+                for jscript in self.javascripts:
+                    response.append(jscript.to_node())
+        else:
+            if css and self.stylesheets:
+                css_attachments = self.css()
+                if not self.css_errors:
+                    for attachment in css_attachments:
+                        response.append({
+                            "tag": "link",
+                            "att": {
+                                "href": attachment.url,
+                                "rel": "stylesheet",
+                            }
+                        })
+                else:
+                    msg = '\n'.join(self.css_errors)
+                    self.stylesheets.append(StylesheetAsset(self, inline=self.css_message(msg)))
+                    for style in self.stylesheets:
+                        response.append(style.to_node())
+            if js and self.javascripts:
+                response.append({
+                    "tag": "script",
+                    "async": "async" if async else None,
+                    "att": {
+                        "src": self.js().url,
+                        "type": "text/javascript",
+                    }
+                })
+        return response
 
     @func.lazy_property
     def last_modified(self):
@@ -448,7 +491,11 @@ class WebAsset(object):
             except Exception:
                 raise AssetNotFound("Could not find %s" % self.name)
 
+    # depreciated and will remove after v11
     def to_html(self):
+        raise NotImplementedError()
+
+    def to_node(self):
         raise NotImplementedError()
 
     @func.lazy_property
@@ -509,12 +556,32 @@ class JavascriptAsset(WebAsset):
         except AssetError, e:
             return "console.error(%s);" % json.dumps(e.message)
 
+    # depreciated and will remove after v11
     def to_html(self):
         if self.url:
             return '<script type="text/javascript" src="%s"></script>' % (self.html_url)
         else:
             return '<script type="text/javascript" charset="utf-8">%s</script>' % self.with_header()
 
+    def to_node(self):
+        if self.url:
+            return {
+                "tag": "script",
+                "att": {
+                    "type": "text/javascript",
+                    "src": self.html_url,
+                }
+            }
+            return '<script type="text/javascript" src="%s"></script>' % (self.html_url)
+        else:
+            return {
+                "tag": "script",
+                "content": self.with_header(),
+                "att": {
+                    "type": "text/javascript",
+                    "charset": "utf-8",
+                }
+            }
 
 class StylesheetAsset(WebAsset):
     rx_import = re.compile(r"""@import\s+('|")(?!'|"|/|https?://)""", re.U)
@@ -569,6 +636,7 @@ class StylesheetAsset(WebAsset):
         content = re.sub(r' *([{}]) *', r'\1', content)
         return self.with_header(content)
 
+    # depreciated and will remove after v11
     def to_html(self):
         media = (' media="%s"' % werkzeug.utils.escape(self.media)) if self.media else ''
         if self.url:
@@ -577,6 +645,26 @@ class StylesheetAsset(WebAsset):
         else:
             return '<style type="text/css"%s>%s</style>' % (media, self.with_header())
 
+    def to_node(self):
+        if self.url:
+            return {
+                "tag": "link",
+                "att": {
+                    "rel": "stylesheet",
+                    "type": "text/css",
+                    "href": self.html_url,
+                    "media": werkzeug.utils.escape(self.media) if self.media else None
+                }
+            }
+        else:
+            return {
+                "tag": "style",
+                "content": self.with_header(),
+                "att": {
+                    "type": "text/css",
+                    "media": werkzeug.utils.escape(self.media) if self.media else None
+                }
+            }
 
 class PreprocessedCSS(StylesheetAsset):
     rx_import = None

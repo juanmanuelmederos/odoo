@@ -788,6 +788,22 @@ class QWeb(object):
                         starargs=None, kwargs=None
                     )))
 
+            # self._post_processing_att(tagName, t_attrs, options, values)
+            body.append(ast.Call(
+                func=ast.Attribute(
+                    value=ast.Name(id='self', ctx=ast.Load()),
+                    attr='_post_processing_att',
+                    ctx=ast.Load()
+                ),
+                args=[
+                    ast.Str(el.tag),
+                    ast.Name(id='t_attrs', ctx=ast.Load()),
+                    ast.Name(id='options', ctx=ast.Load()),
+                    ast.Name(id='values', ctx=ast.Load()),
+                ], keywords=[],
+                starargs=None, kwargs=None
+            ))
+
         if attr_already_created:
             # for name, value in t_attrs.iteritems():
             #     if value or isinstance(value, basestring)):
@@ -1358,6 +1374,15 @@ class QWeb(object):
             atts = [atts]
         if isinstance(atts, (list, tuple)):
             atts = OrderedDict(atts)
+        return atts
+
+    def _post_processing_att(self, tagName, atts, options, values):
+        """ Method called by the compiled code. This method may be overwrited
+            to filter or modify the attributes after they are compiled
+        """
+        for name, value in atts.iteritems():
+            if value is None:
+                atts.pop(name)
         return atts
 
     def _get_field(self, record, field_name, expression, tagName, field_options, options, values):
