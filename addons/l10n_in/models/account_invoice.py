@@ -47,10 +47,10 @@ class AccountInvoice(models.Model):
     @api.model
     def _get_gst_tag_ids(self):
         return {
-                'cgst_tag_id': self.env.ref('l10n_in.cgst_tag_tax').id,
-                'sgst_tag_id': self.env.ref('l10n_in.sgst_tag_tax').id,
-                'igst_tag_tax': self.env.ref('l10n_in.igst_tag_tax').id,
-                'cess_tag_id': self.env.ref('l10n_in.cess_tag_tax').id,
+                'cgst_tag_tax_id': self.env.ref('l10n_in.cgst_tag_tax').id,
+                'sgst_tag_tax_id': self.env.ref('l10n_in.sgst_tag_tax').id,
+                'igst_tag_tax_id': self.env.ref('l10n_in.igst_tag_tax').id,
+                'cess_tag_tax_id': self.env.ref('l10n_in.cess_tag_tax').id,
                 }
 
     @api.multi
@@ -60,20 +60,23 @@ class AccountInvoice(models.Model):
         TAX = self.env['account.tax']
         company_id = self.env.user.company_id
         gst_tag = self._get_gst_tag_ids()
-        
-        for line_id, line_taxes in self._invoice_line_tax_values().items():
+        for line in self.mapped('invoice_line_ids'):
             rate = base_amount = cess_amount = 0
-            for line_tax in line_taxes:
-                base_amount = line_tax.get('base') or 0
-                tax_rate = TAX.browse(line_tax['id']).amount
-                if gst_tag['cgst_tag_id'] in line_tax.get('tag_ids', []):
+            price_unit = line.price_unit * (1 - (line.discount or 0.0) / 100.0)
+            tax_lines = line.invoice_line_tax_ids.compute_all(price_unit, line.invoice_id.currency_id, line.quantity, line.product_id, line.invoice_id.partner_id)['taxes']
+            for tax_line in tax_lines:
+                tax = TAX.browse(tax_line['id'])
+                tax_rate = tax.amount
+                tag_ids = tax.tag_ids.ids
+                base_amount = tax_line.get('base')
+                if gst_tag['cgst_tag_tax_id'] in tag_ids:
                     rate += tax_rate
-                if gst_tag['sgst_tag_id'] in line_tax.get('tag_ids', []):
+                if gst_tag['sgst_tag_tax_id'] in tag_ids:
                     rate += tax_rate
-                if gst_tag['igst_tag_tax'] in line_tax.get('tag_ids', []):
+                if gst_tag['igst_tag_tax_id'] in tag_ids:
                     rate = tax_rate
-                if gst_tag['cess_tag_id'] in line_tax.get('tag_ids', []):
-                    cess_amount += line_tax['amount']
-            base_amount = self.currency_id.with_context(date=self.date_invoice).compute(base_amount,company_id.currency_id)
-            tax_datas.setdefault(rate, {}).update({'base_amount': [base_amount] + (tax_datas[rate].get('base_amount', [])), 'cess_amount': [cess_amount] + (tax_datas[rate].get('cess_amount', []))})
+                if gst_tag['cess_tag_tax_id'] in tag_ids:
+                    cess_amount += tax_line.get('amount')
+            base_amount = self.currency_id.with_context(date=self.date_invoice).compute(base_amount, company_id.currency_id)
+            tax_datas.setdefault(rate, {}).update({'base_amount': base_amount + (tax_datas[rate].get('base_amount', 0)), 'cess_amount': cess_amount + (tax_datas[rate].get('cess_amount', 0))})
         return tax_datas

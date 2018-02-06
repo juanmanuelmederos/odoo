@@ -43,8 +43,6 @@ class ExportXLS(http.Controller):
         return str_date and fields.Date.from_string(str_date).strftime('%d-%b-%Y') or ''
 
     def column_total_value_sum(self, column_no):
-        if column_no <= 0:
-            return ""
         column_string = ""
         while column_no > 0:
             column_no, remainder = divmod(column_no - 1, 26)
@@ -74,7 +72,7 @@ class ExportXLS(http.Controller):
             for invoice in invoices:
                 for rate, value in invoice._invoice_line_group_tax_values().items():
                     invoice_data.append((invoice.partner_id.vat, invoice.partner_id.name or '', invoice.number, self.change_date_to_other_format(invoice.date_invoice), invoice.amount_total, invoice.partner_id.state_id.name_with_tin_number(), 'N',
-                        'Regular', '', rate, sum(value.get('base_amount')), sum(value.get('cess_amount'))))
+                        'Regular', '', rate, value.get('base_amount'), value.get('cess_amount')))
 
         if gstr_type == 'b2cl':
             first_row_data = ['No. of Invoices', '', 'Total Inv Value', '', '', 'Total Taxable Value', 'Total Cess', '']
@@ -84,7 +82,7 @@ class ExportXLS(http.Controller):
             invoices = request.env['account.invoice'].search(domain)
             for invoice in invoices:
                 for rate, value in invoice._invoice_line_group_tax_values().items():
-                    invoice_data.append((invoice.number, self.change_date_to_other_format(invoice.date_invoice), invoice.amount_total, invoice.partner_id.state_id.name_with_tin_number(), rate, sum(value.get('base_amount')), sum(value.get('cess_amount')), ''))
+                    invoice_data.append((invoice.number, self.change_date_to_other_format(invoice.date_invoice), invoice.amount_total, invoice.partner_id.state_id.name_with_tin_number(), rate, value.get('base_amount'), value.get('cess_amount'), ''))
 
         if gstr_type == 'b2cs':
             first_row_data = ['', '', '', 'Total Taxable  Value', 'Total Cess', '']
@@ -95,7 +93,7 @@ class ExportXLS(http.Controller):
             for invoice in invoices:
                 for rate, value in invoice._invoice_line_group_tax_values().items():
                     invoice_data.append(('OE', invoice.partner_id.state_id.name_with_tin_number(),
-                                            rate, sum(value.get('base_amount')), sum(value.get('cess_amount')), ''))
+                                            rate, value.get('base_amount'), value.get('cess_amount'), ''))
 
         if gstr_type == 'cdnr':
             first_row_data = ['No. of Recipients','', 'No. of Invoices', '', 'No. of Notes/Vouchers', '', '', '', '', 'Total Note/Refund Voucher Value', '', 'Total Taxable Value', 'Total Cess', '']
@@ -107,7 +105,7 @@ class ExportXLS(http.Controller):
             for invoice in invoices:
                 pre_gst = 'Y' if pre_gst_date > fields.Date.from_string(invoice.date_invoice) else 'N'
                 for rate, value in invoice._invoice_line_group_tax_values().items():
-                    invoice_data.append((invoice.partner_id.vat, invoice.partner_id.name or '', invoice.refund_invoice_id.number or '', self.change_date_to_other_format(invoice.refund_invoice_id.date_invoice), invoice.number or '', self.change_date_to_other_format(invoice.date_invoice), 'C', invoice.refund_reason_id.display_name or '', invoice.partner_id.state_id.name_with_tin_number(), invoice.amount_total, rate, sum(value.get('base_amount')), sum(value.get('cess_amount')), pre_gst))
+                    invoice_data.append((invoice.partner_id.vat, invoice.partner_id.name or '', invoice.refund_invoice_id.number or '', self.change_date_to_other_format(invoice.refund_invoice_id.date_invoice), invoice.number or '', self.change_date_to_other_format(invoice.date_invoice), 'C', invoice.refund_reason_id.display_name or '', invoice.partner_id.state_id.name_with_tin_number(), invoice.amount_total, rate, value.get('base_amount'), value.get('cess_amount'), pre_gst))
 
         if gstr_type == 'cdnur':
             first_row_data = ['', 'No. of Notes/Vouchers', '', '', 'No. of Invoices', '', '', '','Total Note Value', '','Total Taxable Value', 'Total Cess', '']
@@ -120,7 +118,7 @@ class ExportXLS(http.Controller):
                 pre_gst = 'Y' if pre_gst_date > fields.Date.from_string(invoice.date_invoice) else 'N'
                 ur_type = invoice.tax_line_ids and 'WPAY' or 'WOPAY' if invoice.journal_id.code == 'EXP'  else 'B2CL'
                 for rate, value in invoice._invoice_line_group_tax_values().items():
-                    invoice_data.append((ur_type, invoice.refund_invoice_id.number, self.change_date_to_other_format(invoice.refund_invoice_id.date_invoice), 'C', invoice.number, self.change_date_to_other_format(invoice.date_invoice), invoice.refund_reason_id.display_name or '', invoice.partner_id.state_id.name_with_tin_number(), invoice.amount_total, rate, sum(value.get('base_amount')), sum(value.get('cess_amount')), pre_gst))
+                    invoice_data.append((ur_type, invoice.refund_invoice_id.number, self.change_date_to_other_format(invoice.refund_invoice_id.date_invoice), 'C', invoice.number, self.change_date_to_other_format(invoice.date_invoice), invoice.refund_reason_id.display_name or '', invoice.partner_id.state_id.name_with_tin_number(), invoice.amount_total, rate, value.get('base_amount'), value.get('cess_amount'), pre_gst))
 
         if gstr_type == 'exp':
             first_row_data = ['', 'No. of Invoices', '', 'Total Invoice Value', '', 'No. of Shipping Bill', '', '', 'Total Taxable Value']
@@ -130,7 +128,7 @@ class ExportXLS(http.Controller):
             invoices = request.env['account.invoice'].search(domain)
             for invoice in invoices:
                 for rate, value in invoice._invoice_line_group_tax_values().items():
-                    invoice_data.append((invoice.tax_line_ids and 'WPAY' or 'WOPAY', invoice.number, self.change_date_to_other_format(invoice.date_invoice), invoice.amount_total_company_signed, invoice.port_code_id.code or '', '', '', rate, sum(value.get('base_amount'))))
+                    invoice_data.append((invoice.tax_line_ids and 'WPAY' or 'WOPAY', invoice.number, self.change_date_to_other_format(invoice.date_invoice), invoice.amount_total_company_signed, invoice.port_code_id.code or '', '', '', rate, value.get('base_amount')))
 
         if gstr_type == 'at':
             first_row_data = ['', '', 'Total Advance Received', 'Total Cess']
