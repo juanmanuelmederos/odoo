@@ -83,7 +83,7 @@ class TestPurchaseOrder(AccountingTestCase):
 
         self.invoice = self.AccountInvoice.create({
             'partner_id': self.partner_id.id,
-            'purchase_id': self.po.id,
+            'purchase_ids': [(6, 0, [self.po.id])],
             'account_id': self.partner_id.property_account_payable_id.id,
             'type': 'in_invoice',
         })
@@ -118,7 +118,7 @@ class TestPurchaseOrder(AccountingTestCase):
         #After Receiving all products create vendor bill.
         self.invoice = self.AccountInvoice.create({
             'partner_id': self.partner_id.id,
-            'purchase_id': self.po.id,
+            'purchase_ids': [(6, 0, [self.po.id])],
             'account_id': self.partner_id.property_account_payable_id.id,
             'type': 'in_invoice',
         })
@@ -150,7 +150,7 @@ class TestPurchaseOrder(AccountingTestCase):
         #Create vendor bill for refund qty
         self.invoice = self.AccountInvoice.create({
             'partner_id': self.partner_id.id,
-            'purchase_id': self.po.id,
+            'purchase_ids': [(6, 0, [self.po.id])],
             'account_id': self.partner_id.property_account_payable_id.id,
             'type': 'in_refund',
         })
