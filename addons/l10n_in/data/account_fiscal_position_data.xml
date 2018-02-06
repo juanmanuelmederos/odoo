@@ -23,6 +23,11 @@
     </record>
 
     <!-- Fiscal Position Tax Templates -->
+    <record id="account_fiscal_position_tax_in_sale_0_inter" model="account.fiscal.position.tax.template">
+        <field name="position_id" ref="fiscal_position_in_inter_state"/>
+        <field name="tax_src_id" ref="gst_sale_0"/>
+        <field name="tax_dest_id" ref="igst_sale_0"/>
+    </record>
     <record id="account_fiscal_position_tax_in_sale_1_inter" model="account.fiscal.position.tax.template">
         <field name="position_id" ref="fiscal_position_in_inter_state"/>
         <field name="tax_src_id" ref="sgst_sale_1"/>
@@ -54,6 +59,11 @@
         <field name="tax_dest_id" ref="igst_sale_28"/>
     </record>
 
+    <record id="account_fiscal_position_tax_in_purchase_0_inter" model="account.fiscal.position.tax.template">
+        <field name="position_id" ref="fiscal_position_in_inter_state"/>
+        <field name="tax_src_id" ref="gst_purchase_0"/>
+        <field name="tax_dest_id" ref="igst_purchase_0"/>
+    </record>
     <record id="account_fiscal_position_tax_in_purchase_1_inter" model="account.fiscal.position.tax.template">
         <field name="position_id" ref="fiscal_position_in_inter_state"/>
         <field name="tax_src_id" ref="sgst_purchase_1"/>
@@ -85,6 +95,11 @@
         <field name="tax_dest_id" ref="igst_purchase_28"/>
     </record>
 
+    <record id="account_fiscal_position_tax_in_sale_0_exp" model="account.fiscal.position.tax.template">
+        <field name="position_id" ref="fiscal_position_in_export"/>
+        <field name="tax_src_id" ref="gst_sale_0"/>
+        <field name="tax_dest_id" ref="igst_sale_0"/>
+    </record>
     <record id="account_fiscal_position_tax_in_sale_1_exp" model="account.fiscal.position.tax.template">
         <field name="position_id" ref="fiscal_position_in_export"/>
         <field name="tax_src_id" ref="sgst_sale_1"/>
@@ -116,6 +131,11 @@
         <field name="tax_dest_id" ref="igst_sale_28"/>
     </record>
 
+    <record id="account_fiscal_position_tax_in_purchase_0_exp" model="account.fiscal.position.tax.template">
+        <field name="position_id" ref="fiscal_position_in_export"/>
+        <field name="tax_src_id" ref="gst_purchase_0"/>
+        <field name="tax_dest_id" ref="igst_purchase_0"/>
+    </record>
     <record id="account_fiscal_position_tax_in_purchase_1_exp" model="account.fiscal.position.tax.template">
         <field name="position_id" ref="fiscal_position_in_export"/>
         <field name="tax_src_id" ref="sgst_purchase_1"/>
@@ -147,6 +167,11 @@
         <field name="tax_dest_id" ref="igst_purchase_28"/>
     </record>
 
+    <record id="account_fiscal_position_tax_in_sale_0_sez_wp" model="account.fiscal.position.tax.template">
+        <field name="position_id" ref="fiscal_position_in_sez_wp"/>
+        <field name="tax_src_id" ref="gst_sale_0"/>
+        <field name="tax_dest_id" ref="igst_sale_0"/>
+    </record>
     <record id="account_fiscal_position_tax_in_sale_1_sez_wp" model="account.fiscal.position.tax.template">
         <field name="position_id" ref="fiscal_position_in_sez_wp"/>
         <field name="tax_src_id" ref="sgst_sale_1"/>
@@ -178,6 +203,11 @@
         <field name="tax_dest_id" ref="igst_sale_28"/>
     </record>
 
+    <record id="account_fiscal_position_tax_in_purchase_0_sez_wp" model="account.fiscal.position.tax.template">
+        <field name="position_id" ref="fiscal_position_in_sez_wp"/>
+        <field name="tax_src_id" ref="gst_purchase_0"/>
+        <field name="tax_dest_id" ref="igst_purchase_0"/>
+    </record>
     <record id="account_fiscal_position_tax_in_purchase_1_sez_wp" model="account.fiscal.position.tax.template">
         <field name="position_id" ref="fiscal_position_in_sez_wp"/>
         <field name="tax_src_id" ref="sgst_purchase_1"/>
@@ -209,6 +239,10 @@
         <field name="tax_dest_id" ref="igst_purchase_28"/>
     </record>
 
+    <record id="account_fiscal_position_tax_in_sale_0_sez_wop" model="account.fiscal.position.tax.template">
+        <field name="position_id" ref="fiscal_position_in_sez_wop"/>
+        <field name="tax_src_id" ref="gst_sale_0"/>
+    </record>
     <record id="account_fiscal_position_tax_in_sale_1_sez_wop" model="account.fiscal.position.tax.template">
         <field name="position_id" ref="fiscal_position_in_sez_wop"/>
         <field name="tax_src_id" ref="sgst_sale_1"/>
@@ -234,6 +268,10 @@
         <field name="tax_src_id" ref="sgst_sale_28"/>
     </record>
 
+    <record id="account_fiscal_position_tax_in_purchase_0_sez_wop" model="account.fiscal.position.tax.template">
+        <field name="position_id" ref="fiscal_position_in_sez_wop"/>
+        <field name="tax_src_id" ref="gst_purchase_0"/>
+    </record>
     <record id="account_fiscal_position_tax_in_purchase_1_sez_wop" model="account.fiscal.position.tax.template">
         <field name="position_id" ref="fiscal_position_in_sez_wop"/>
         <field name="tax_src_id" ref="sgst_purchase_1"/>
