@@ -9,7 +9,5 @@ class CountryState(models.Model):
 
     l10n_in_tin = fields.Char('TIN Number', size=2, help="TIN number-first two digits")
 
-    @api.multi
-    def tin_and_name(self):
-        self.ensure_one()
+    def name_with_tin_number(self):
         return self.l10n_in_tin and "%s-%s"%(self.l10n_in_tin, self.name) or ''

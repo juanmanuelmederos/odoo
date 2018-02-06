@@ -31,6 +31,7 @@ class ExportXLS(http.Controller):
         for row_index, data in enumerate(datas):
             for colm_index, colm_data  in enumerate(data):
                 worksheet.write(4+row_index, colm_index, colm_data)
+
         fp = io.BytesIO()
         workbook.save(fp)
         fp.seek(0)
@@ -41,7 +42,7 @@ class ExportXLS(http.Controller):
     def change_date_to_other_format(self, str_date):
         return str_date and fields.Date.from_string(str_date).strftime('%d-%b-%Y') or ''
 
-    def xls_column_total_sum(self, column_no):
+    def column_total_value_sum(self, column_no):
         if column_no <= 0:
             return ""
         column_string = ""
@@ -53,87 +54,79 @@ class ExportXLS(http.Controller):
     @http.route(['/xls/download/<string:month>/<string:year>/<string:gstr_type>/<float:advance_rate>'], type='http', auth='public')
     def download_xls_report(self, month=None, year=None, gstr_type=None, advance_rate=0, **post):
         invoice_data = []
+
         _, num_days = calendar.monthrange(int(year), int(month))
         first_day = datetime.date(int(year), int(month), 1)
         last_day = datetime.date(int(year), int(month), num_days)
         pre_gst_date = datetime.date(2017, 7, 1)
         #Get value from account settings
-        ICPSudo = request.env['ir.config_parameter'].sudo()
-        b2cs_amount = ICPSudo.get_param('l10n_in.l10n_in_b2cs_max_amount') or 250000
-        invoice_data = []
+        IrConfigSudo = request.env['ir.config_parameter'].sudo()
+        b2cs_amount = IrConfigSudo.get_param('l10n_in.l10n_in_b2cs_max_amount') or 250000
         domain = [('date_invoice', '>=' , first_day), ('date_invoice', '<=', last_day), ('state', 'in', ['open', 'paid'])]
-        if gstr_type in ['b2b','b2cl','b2cs','exp','hsn']:
-            domain += [('type', '=', 'out_invoice')]
-        if gstr_type in ['docs']:
-            domain = [('date_invoice', '>=' , first_day), ('date_invoice', '<=', last_day), ('state', 'in', ['open', 'paid','cancel']),('number','!=',False)]
 
         if gstr_type == 'b2b':
             first_row_data = ['No. of Recipients','', 'No. of Invoices', '', 'Total Invoice Value', '', '', '', '', '', 'Total Taxable Value', 'Total Cess']
-            second_row_data = ['', '', '', '', self.xls_column_total_sum(5), '', '', '', '', '', self.xls_column_total_sum(11), self.xls_column_total_sum(12)]
+            second_row_data = ['', '', '', '', self.column_total_value_sum(5), '', '', '', '', '', self.column_total_value_sum(11), self.column_total_value_sum(12)]
             third_row_data = ['GSTIN/UIN of Recipient', 'Name of Recipient', 'Invoice Number', 'Invoice date', 'Invoice Value', 'Place Of Supply', 'Reverse Charge', 'Invoice Type',
             'E-Commerce GSTIN', 'Rate', 'Taxable Value', 'Cess Amount']
-            domain += [('journal_id.code','=','INV')]
+            domain += [('journal_id.code','=','INV'), ('type', '=', 'out_invoice'), ('partner_id.vat', '!=', False)]
             invoices = request.env['account.invoice'].search(domain)
             for invoice in invoices:
                 for rate, value in invoice._invoice_line_group_tax_values().items():
-
-                    invoice_data.append((invoice.partner_id.vat or '', invoice.partner_id.name or '', invoice.number, self.change_date_to_other_format(invoice.date_invoice), invoice.amount_total, invoice.partner_id.state_id.tin_and_name(), 'N',
-                        'Regular', '', rate, sum(value.get('base_amount') or []), sum(value.get('cess_amount') or [])))
-
+                    invoice_data.append((invoice.partner_id.vat, invoice.partner_id.name or '', invoice.number, self.change_date_to_other_format(invoice.date_invoice), invoice.amount_total, invoice.partner_id.state_id.name_with_tin_number(), 'N',
+                        'Regular', '', rate, sum(value.get('base_amount')), sum(value.get('cess_amount'))))
 
         if gstr_type == 'b2cl':
             first_row_data = ['No. of Invoices', '', 'Total Inv Value', '', '', 'Total Taxable Value', 'Total Cess', '']
-            second_row_data = ['', '', self.xls_column_total_sum(3), '', '', self.xls_column_total_sum(6), self.xls_column_total_sum(7), '']
+            second_row_data = ['', '', self.column_total_value_sum(3), '', '', self.column_total_value_sum(6), self.column_total_value_sum(7), '']
             third_row_data = ['Invoice Number', 'Invoice Date', 'Invoice Value', 'Place Of Supply', 'Rate', 'Taxable Value', 'Cess Amount', 'E-Commerce GSTIN']
-            domain += [('amount_total', '>', b2cs_amount),('journal_id.code','=','RET')]
+            domain += [('amount_total', '>', b2cs_amount), ('journal_id.code','=','RET'), ('type', '=', 'out_invoice')]
             invoices = request.env['account.invoice'].search(domain)
             for invoice in invoices:
                 for rate, value in invoice._invoice_line_group_tax_values().items():
-                    invoice_data.append((invoice.number, self.change_date_to_other_format(invoice.date_invoice), invoice.amount_total, invoice.partner_id.state_id.tin_and_name(), rate, sum(value.get('base_amount') or []), sum(value.get('cess_amount') or []), ''))
+                    invoice_data.append((invoice.number, self.change_date_to_other_format(invoice.date_invoice), invoice.amount_total, invoice.partner_id.state_id.name_with_tin_number(), rate, sum(value.get('base_amount')), sum(value.get('cess_amount')), ''))
 
         if gstr_type == 'b2cs':
             first_row_data = ['', '', '', 'Total Taxable  Value', 'Total Cess', '']
-            second_row_data = ['', '', '', self.xls_column_total_sum(4), self.xls_column_total_sum(5), '']
+            second_row_data = ['', '', '', self.column_total_value_sum(4), self.column_total_value_sum(5), '']
             third_row_data = ['Type', 'Place Of Supply', 'Rate', 'Taxable Value', 'Cess Amount', 'E-Commerce GSTIN']
-            domain += [('amount_total', '<=', b2cs_amount),('journal_id.code','=','RET')]
+            domain += [('amount_total', '<=', b2cs_amount), ('journal_id.code','=','RET'), ('type', '=', 'out_invoice')]
             invoices = request.env['account.invoice'].search(domain)
             for invoice in invoices:
                 for rate, value in invoice._invoice_line_group_tax_values().items():
-                    invoice_data.append(('OE',invoice.partner_id.state_id.tin_and_name(),
-                                            rate,
-                                            sum(value.get('base_amount') or []),
-                                            sum(value.get('cess_amount') or []), ''))
+                    invoice_data.append(('OE', invoice.partner_id.state_id.name_with_tin_number(),
+                                            rate, sum(value.get('base_amount')), sum(value.get('cess_amount')), ''))
 
         if gstr_type == 'cdnr':
             first_row_data = ['No. of Recipients','', 'No. of Invoices', '', 'No. of Notes/Vouchers', '', '', '', '', 'Total Note/Refund Voucher Value', '', 'Total Taxable Value', 'Total Cess', '']
-            second_row_data = ['','', '', '', '', '', '', '', '', self.xls_column_total_sum(10), '', self.xls_column_total_sum(12), self.xls_column_total_sum(13), '']
+            second_row_data = ['','', '', '', '', '', '', '', '', self.column_total_value_sum(10), '', self.column_total_value_sum(12), self.column_total_value_sum(13), '']
             third_row_data = ['GSTIN/UIN of Recipient','Name of Recipient', 'Invoice/Advance Receipt Number', 'Invoice/Advance Receipt date', 'Note/Refund Voucher Number', 'Note/Refund Voucher date', 'Document Type', 'Reason For Issuing document',
             'Place Of Supply', 'Note/Refund Voucher Value', 'Rate', 'Taxable Value', 'Cess Amount', 'Pre GST']
-            domain += [('type', '=', 'out_refund'),('journal_id.code','=','INV')]
+            domain += [('type', '=', 'out_refund'), ('journal_id.code','=','INV'), ('partner_id.vat', '!=', False)]
             invoices = request.env['account.invoice'].search(domain)
             for invoice in invoices:
                 pre_gst = 'Y' if pre_gst_date > fields.Date.from_string(invoice.date_invoice) else 'N'
                 for rate, value in invoice._invoice_line_group_tax_values().items():
-                    invoice_data.append((invoice.partner_id.vat or '', invoice.partner_id.name or '', invoice.refund_invoice_id.number or '', self.change_date_to_other_format(invoice.refund_invoice_id.date_invoice), invoice.number or '', self.change_date_to_other_format(invoice.date_invoice), 'C', invoice.refund_reason_id.display_name or '', invoice.partner_id.state_id.tin_and_name(), invoice.amount_total, rate, sum(value.get('base_amount') or []), sum(value.get('cess_amount') or []), pre_gst))
+                    invoice_data.append((invoice.partner_id.vat, invoice.partner_id.name or '', invoice.refund_invoice_id.number or '', self.change_date_to_other_format(invoice.refund_invoice_id.date_invoice), invoice.number or '', self.change_date_to_other_format(invoice.date_invoice), 'C', invoice.refund_reason_id.display_name or '', invoice.partner_id.state_id.name_with_tin_number(), invoice.amount_total, rate, sum(value.get('base_amount')), sum(value.get('cess_amount')), pre_gst))
 
         if gstr_type == 'cdnur':
             first_row_data = ['', 'No. of Notes/Vouchers', '', '', 'No. of Invoices', '', '', '','Total Note Value', '','Total Taxable Value', 'Total Cess', '']
-            second_row_data = ['', '', '', '', '', '', '', '', self.xls_column_total_sum(9), '', self.xls_column_total_sum(11), self.xls_column_total_sum(12), '']
+            second_row_data = ['', '', '', '', '', '', '', '', self.column_total_value_sum(9), '', self.column_total_value_sum(11), self.column_total_value_sum(12), '']
             third_row_data = ['UR Type', 'Note/Refund Voucher Number', 'Note/Refund Voucher date', 'Document Type', 'Invoice/Advance Receipt Number', 'Invoice/Advance Receipt date', 'Reason For Issuing document',
             'Place Of Supply', 'Note/Refund Voucher Value', 'Rate', 'Taxable Value', 'Cess Amount', 'Pre GST']
-            domain += [('type', '=', 'out_refund'),('journal_id.code','in',('RET','EXP'))]
+            domain += [('type', '=', 'out_refund'), ('journal_id.code','in',('RET','EXP'))]
             invoices = request.env['account.invoice'].search(domain)
             for invoice in invoices:
                 pre_gst = 'Y' if pre_gst_date > fields.Date.from_string(invoice.date_invoice) else 'N'
                 ur_type = invoice.tax_line_ids and 'WPAY' or 'WOPAY' if invoice.journal_id.code == 'EXP'  else 'B2CL'
                 for rate, value in invoice._invoice_line_group_tax_values().items():
-                    invoice_data.append((ur_type, invoice.refund_invoice_id.number, self.change_date_to_other_format(invoice.refund_invoice_id.date_invoice), 'C', invoice.number, self.change_date_to_other_format(invoice.date_invoice), invoice.refund_reason_id.display_name or '', invoice.partner_id.state_id.tin_and_name(), invoice.amount_total, rate, sum(value.get('base_amount')), sum(value.get('cess_amount')), pre_gst))
+                    invoice_data.append((ur_type, invoice.refund_invoice_id.number, self.change_date_to_other_format(invoice.refund_invoice_id.date_invoice), 'C', invoice.number, self.change_date_to_other_format(invoice.date_invoice), invoice.refund_reason_id.display_name or '', invoice.partner_id.state_id.name_with_tin_number(), invoice.amount_total, rate, sum(value.get('base_amount')), sum(value.get('cess_amount')), pre_gst))
 
         if gstr_type == 'exp':
             first_row_data = ['', 'No. of Invoices', '', 'Total Invoice Value', '', 'No. of Shipping Bill', '', '', 'Total Taxable Value']
-            second_row_data = ['', '', '', self.xls_column_total_sum(4), '', '', '', '', self.xls_column_total_sum(9)]
+            second_row_data = ['', '', '', self.column_total_value_sum(4), '', '', '', '', self.column_total_value_sum(9)]
             third_row_data = ['Export Type', 'Invoice Number', 'Invoice date', 'Invoice Value', 'Port Code', 'Shipping Bill Number', 'Shipping Bill Date', 'Rate', 'Taxable Value']
-            domain += [('journal_id.code','=','EXP')]
+            domain += [('journal_id.code','=','EXP'), ('type', '=', 'out_invoice')]
             invoices = request.env['account.invoice'].search(domain)
             for invoice in invoices:
                 for rate, value in invoice._invoice_line_group_tax_values().items():
@@ -141,7 +134,7 @@ class ExportXLS(http.Controller):
 
         if gstr_type == 'at':
             first_row_data = ['', '', 'Total Advance Received', 'Total Cess']
-            second_row_data = ['', '', self.xls_column_total_sum(3), self.xls_column_total_sum(4)]
+            second_row_data = ['', '', self.column_total_value_sum(3), self.column_total_value_sum(4)]
             third_row_data = ['Place Of Supply', 'Rate', 'Gross Advance Received', 'Cess Amount']
             payments = request.env['account.payment'].search([('payment_date', '>=', first_day),
                                                               ('payment_date', '<=', last_day),
@@ -155,13 +148,13 @@ class ExportXLS(http.Controller):
                         if invoice_payment.get('account_payment_id') == payment.id:
                            advance_amount -= invoice_payment.get('amount') or 0
                 if advance_amount > 0.00:
-                    pos_group_data.setdefault(payment.partner_id.state_id.tin_and_name(),[]).append(advance_amount)
+                    pos_group_data.setdefault(payment.partner_id.state_id.name_with_tin_number(), []).append(advance_amount)
             for pos, value in pos_group_data.items():
                 invoice_data.append((pos, advance_rate, sum(value), ''))
 
         if gstr_type == 'atadj':
             first_row_data = ['', '', 'Total Advance Adjusted', 'Total Cess']
-            second_row_data = ['', '', self.xls_column_total_sum(3), self.xls_column_total_sum(4)]
+            second_row_data = ['', '', self.column_total_value_sum(3), self.column_total_value_sum(4)]
             third_row_data = ['Place Of Supply', 'Rate', 'Gross Advance Adjusted', 'Cess Amount']
             pos_group_data = {}
             domain += [('journal_id.code','in',('RET','INV'))]
@@ -169,21 +162,21 @@ class ExportXLS(http.Controller):
             for invoice in invoices:
                 for invoice_payment in invoice._get_payments_vals():
                     if invoice_payment.get('date') < invoice.date_invoice and invoice_payment.get('date') < fields.Date.to_string(first_day):
-                        pos_group_data.setdefault(invoice.partner_id.state_id.tin_and_name(),[]).append(invoice_payment.get('amount') or 0)
+                        pos_group_data.setdefault(invoice.partner_id.state_id.name_with_tin_number(), []).append(invoice_payment.get('amount') or 0)
             for pos, value in pos_group_data.items():
                 invoice_data.append((pos,'',sum(value),''))
 
         if gstr_type == 'exemp':
             first_row_data = ['', 'Total Nil Rated Supplies', 'Total Exempted Supplies', 'Total Non-GST Supplies']
-            second_row_data = ['', self.xls_column_total_sum(3), self.xls_column_total_sum(4), self.xls_column_total_sum(5)]
+            second_row_data = ['', self.column_total_value_sum(3), self.column_total_value_sum(4), self.column_total_value_sum(5)]
             third_row_data = ['Description', 'Nil Rated Supplies', 'Exempted (other than nil rated/non GST supply )', 'Non-GST supplies']
 
         if gstr_type == 'hsn':
             first_row_data = ['No. of HSN', '', '', '', 'Total Value', 'Total Taxable Value', 'Total Integrated Tax', 'Total Central Tax', 'Total State/UT Tax', 'Total Cess']
-            second_row_data = ['', '', '', '', self.xls_column_total_sum(5), self.xls_column_total_sum(6), self.xls_column_total_sum(7), self.xls_column_total_sum(8), self.xls_column_total_sum(9), self.xls_column_total_sum(10)]
+            second_row_data = ['', '', '', '', self.column_total_value_sum(5), self.column_total_value_sum(6), self.column_total_value_sum(7), self.column_total_value_sum(8), self.column_total_value_sum(9), self.column_total_value_sum(10)]
             third_row_data = ['HSN', 'Description', 'UQC', 'Total Quantity', 'Total Value', 'Taxable Value', 'Integrated Tax Amount', 'Central Tax Amount', 'State/UT Tax Amount', 'Cess Amount']
             hsn_group_data = {}
-            domain += [('journal_id.code','in',('RET','EXP','INV'))]
+            domain += [('journal_id.code','in',('RET','EXP','INV')), ('type', '=', 'out_invoice')]
             invoices = request.env['account.invoice'].search(domain)
             gst_tag = request.env['account.invoice']._get_gst_tag_ids()
             for invoice in invoices:
@@ -218,8 +211,10 @@ class ExportXLS(http.Controller):
 
         if gstr_type == 'docs':
             first_row_data = ['', '', '', 'Total Number', 'Total Cancelled']
-            second_row_data = ['', '', '', self.xls_column_total_sum(4), self.xls_column_total_sum(5)]
+            second_row_data = ['', '', '', self.column_total_value_sum(4), self.column_total_value_sum(5)]
             third_row_data = ['Nature  of Document', 'Sr. No. From', 'Sr. No. To', 'Total Number', 'Cancelled']
+            domain += [('state', 'in', ['open', 'paid','cancel']), ('number','!=',False)]
+
 
         return http.request.make_response(self.export_xls(first_row_data, second_row_data, third_row_data, gstr_type, invoice_data),
             headers=[('Content-Disposition',
