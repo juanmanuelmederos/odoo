@@ -61,6 +61,7 @@ class ExportXLS(http.Controller):
         IrConfigSudo = request.env['ir.config_parameter'].sudo()
         b2cs_amount = IrConfigSudo.get_param('l10n_in.l10n_in_b2cs_max_amount') or 250000
         domain = [('date_invoice', '>=' , first_day), ('date_invoice', '<=', last_day), ('state', 'in', ['open', 'paid'])]
+        company_id = request.env.user.company_id
 
         if gstr_type == 'b2b':
             first_row_data = ['No. of Recipients','', 'No. of Invoices', '', 'Total Invoice Value', '', '', '', '', '', 'Total Taxable Value', 'Total Cess']
@@ -70,9 +71,16 @@ class ExportXLS(http.Controller):
             domain += [('journal_id.code','=','INV'), ('type', '=', 'out_invoice'), ('partner_id.vat', '!=', False)]
             invoices = request.env['account.invoice'].search(domain)
             for invoice in invoices:
+                invoice_type = "Regular"
+                if invoice.fiscal_position_id == request.env.ref("l10n_in.%s_fiscal_position_in_export"%(company_id.id), False):
+                    invoice_type = "Deemed Exp"
+                if invoice.fiscal_position_id == request.env.ref("l10n_in.%s_fiscal_position_in_sez_wp"%(company_id.id), False):
+                    invoice_type = "SEZ supplies with payment"
+                if invoice.fiscal_position_id == request.env.ref("l10n_in.%s_fiscal_position_in_sez_wop"%(company_id.id), False):
+                    invoice_type = "SEZ supplies without payment"
                 for rate, value in invoice._invoice_line_group_tax_values().items():
                     invoice_data.append((invoice.partner_id.vat, invoice.partner_id.name or '', invoice.number, self.change_date_to_other_format(invoice.date_invoice), invoice.amount_total, invoice.partner_id.state_id.name_with_tin_number(), 'N',
-                        'Regular', '', rate, value.get('base_amount'), value.get('cess_amount')))
+                        invoice_type, '', rate, value.get('base_amount'), value.get('cess_amount')))
 
         if gstr_type == 'b2cl':
             first_row_data = ['No. of Invoices', '', 'Total Inv Value', '', '', 'Total Taxable Value', 'Total Cess', '']
@@ -182,15 +190,15 @@ class ExportXLS(http.Controller):
                     invoice_line = request.env['account.invoice.line'].browse(invoice_line_id)
                     igst_amount = cgst_amount = sgst_amount = cess_amount = 0
                     for line_tax in line_taxs:
-                        igst_amount += line_tax.get('amount') if gst_tag.get('igst_tag_id') in line_tax.get('tag_ids') else 0
-                        cgst_amount += line_tax.get('amount') if gst_tag.get('cgst_tag_id') in line_tax.get('tag_ids') else 0
-                        sgst_amount += line_tax.get('amount') if gst_tag.get('sgst_tag_id') in line_tax.get('tag_ids') else 0
-                        cess_amount += line_tax.get('amount') if gst_tag.get('cess_tag_id') in line_tax.get('tag_ids') else 0
+                        igst_amount += line_tax.get('amount') if gst_tag.get('cgst_tag_tax_id') in line_tax.get('tag_ids') else 0
+                        cgst_amount += line_tax.get('amount') if gst_tag.get('cgst_tag_tax_id') in line_tax.get('tag_ids') else 0
+                        sgst_amount += line_tax.get('amount') if gst_tag.get('cgst_tag_tax_id') in line_tax.get('tag_ids') else 0
+                        cess_amount += line_tax.get('amount') if gst_tag.get('cgst_tag_tax_id') in line_tax.get('tag_ids') else 0
                     if invoice.currency_id != request.env.user.company_id.currency_id:
-                        igst_amount = invoice.currency_id.with_context(date=invoice.date_invoice).compute(igst_amount, request.env.user.company_id.currency_id)
-                        cgst_amount = invoice.currency_id.with_context(date=invoice.date_invoice).compute(cgst_amount, request.env.user.company_id.currency_id)
-                        sgst_amount = invoice.currency_id.with_context(date=invoice.date_invoice).compute(sgst_amount, request.env.user.company_id.currency_id)
-                        cess_amount = invoice.currency_id.with_context(date=invoice.date_invoice).compute(cess_amount, request.env.user.company_id.currency_id)
+                        igst_amount = invoice.currency_id.with_context(date=invoice.date_invoice).compute(igst_amount, company_id.currency_id)
+                        cgst_amount = invoice.currency_id.with_context(date=invoice.date_invoice).compute(cgst_amount, company_id.currency_id)
+                        sgst_amount = invoice.currency_id.with_context(date=invoice.date_invoice).compute(sgst_amount, company_id.currency_id)
+                        cess_amount = invoice.currency_id.with_context(date=invoice.date_invoice).compute(cess_amount, company_id.currency_id)
                     hsn_group_key = (invoice_line.product_id.l10n_in_hsn_code or'' , invoice_line.product_id.l10n_in_hsn_description or '', invoice_line.uom_id.name or '')
                     hsn_group_data.setdefault(hsn_group_key,{}).update({
                             'hsn_code':invoice_line.product_id.l10n_in_hsn_code or'',

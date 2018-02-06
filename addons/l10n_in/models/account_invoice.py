@@ -16,6 +16,7 @@ class AccountInvoice(models.Model):
     amount_total_words = fields.Char("Total (In Words)", compute="_compute_amount_total_words")
     refund_reason_id = fields.Many2one("account.invoice.refund.reason", string="Selected Reason")
     port_code_id = fields.Many2one("gst.port.code", string="Port Code")
+    is_reverse_charge = fields.Boolean("Reverse Charge", help="Tick This if invoice is reverse charge")
 
     def _get_printed_report_name(self):
         self.ensure_one()

@@ -7,6 +7,7 @@
             <xpath expr="//page[@name='other_info']//field[@name='name']" position="after">
                 <field name="refund_reason_id" groups="base.group_user" attrs="{'invisible': [('type', 'not in', ('out_refund','in_refund'))], 'required' : [('type','in',('out_refund','in_refund'))]}" widget="selection"/>
                 <field name="port_code_id"/>
+                <field name="is_reverse_charge" groups="base.group_no_one"/>
             </xpath>
         </field>
     </record>
