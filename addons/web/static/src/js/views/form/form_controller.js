@@ -43,7 +43,8 @@ var FormController = BasicController.extend({
 
     _onFocusControlButton:function(e){
         e.stopPropagation();
-        this.$buttons.find('.btn-primary:visible:first()').focus();
+        this.$buttons.find('.btn-primary:visible').first().focus();
+        // this.$buttons.find('.btn-primary:visible:first()').focus();
     },
 
     /**
