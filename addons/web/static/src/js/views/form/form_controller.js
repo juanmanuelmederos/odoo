@@ -42,6 +42,7 @@ var FormController = BasicController.extend({
     //--------------------------------------------------------------------------
 
     _onFocusControlButton:function(e){
+        console.log('ONFOCUSCONTROLBUTTON');
         e.stopPropagation();
         this.$buttons.find('.btn-primary:visible').first().focus();
         // this.$buttons.find('.btn-primary:visible:first()').focus();
@@ -51,6 +52,7 @@ var FormController = BasicController.extend({
      * Calls autofocus on the renderer
      */
     autofocus: function () {
+        console.log('AUTOFOCUS');
         if (!this.disableAutofocus) {
             if (this.$buttons && this.mode === 'readonly') {
                 return this.$buttons.find('.o_form_button_edit').focus();

@@ -211,6 +211,7 @@ var FormRenderer = BasicRenderer.extend({
      * @override
      */
     _activateNextFieldWidget: function (record, currentIndex) {
+        console.log('ACTIVATENEXTFIELDWIDGET');
         //if we are the last widget, we should give the focus to the first Primary Button in the form
         //else do the default behavior
         if ( (currentIndex + 1) >= (this.allFieldWidgets[record.id] || []).length) {

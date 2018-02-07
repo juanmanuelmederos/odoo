@@ -175,6 +175,8 @@ var BasicRenderer = AbstractRenderer.extend({
      *   none was possible to activate
      */
     _activateFieldWidget: function (record, currentIndex, options) {
+        console.log('ACTIVATEFIELDWIDGET');
+
         options = options || {};
         _.defaults(options, {inc: 1, wrap: false});
 
