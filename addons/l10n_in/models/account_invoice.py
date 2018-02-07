@@ -71,10 +71,10 @@ class AccountInvoice(models.Model):
                 tax_rate = tax.amount
                 tag_ids = tax.tag_ids.ids
 
-                igst_amount += tax_line.get('amount') if gst_tag.get('cgst_tag_tax_id') in tag_ids else 0
+                igst_amount += tax_line.get('amount') if gst_tag.get('igst_tag_tax_id') in tag_ids else 0
                 cgst_amount += tax_line.get('amount') if gst_tag.get('cgst_tag_tax_id') in tag_ids else 0
-                sgst_amount += tax_line.get('amount') if gst_tag.get('cgst_tag_tax_id') in tag_ids else 0
-                cess_amount += tax_line.get('amount') if gst_tag.get('cgst_tag_tax_id') in tag_ids else 0
+                sgst_amount += tax_line.get('amount') if gst_tag.get('sgst_tag_tax_id') in tag_ids else 0
+                cess_amount += tax_line.get('amount') if gst_tag.get('cess_tag_tax_id') in tag_ids else 0
                 if invoice.currency_id != request.env.user.company_id.currency_id:
                     igst_amount = invoice.currency_id.with_context(date=invoice.date_invoice).compute(igst_amount, company_id.currency_id)
                     cgst_amount = invoice.currency_id.with_context(date=invoice.date_invoice).compute(cgst_amount, company_id.currency_id)

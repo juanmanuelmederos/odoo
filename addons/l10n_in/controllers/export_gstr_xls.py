@@ -176,7 +176,7 @@ class ExportXLS(http.Controller):
             first_row_data = ['', 'Total Nil Rated Supplies', 'Total Exempted Supplies', 'Total Non-GST Supplies']
             second_row_data = ['', self.column_total_value_sum(2), self.column_total_value_sum(3), self.column_total_value_sum(4)]
             third_row_data = ['Description', 'Nil Rated Supplies', 'Exempted (other than nil rated/non GST supply )', 'Non-GST supplies']
-            domain += [('journal_id.code','in',('RET','EXP','INV'))]
+            domain += [('journal_id.code', 'in', ('RET','EXP','INV'))]
             invoices = request.env['account.invoice'].search(domain)
             for invoice in invoices:
                 for invoice_line_id, line_taxs in invoice._invoice_line_tax_values().items():
