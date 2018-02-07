@@ -669,7 +669,7 @@ class MailThread(models.AbstractModel):
         return groups
 
     @api.multi
-    def _notify_classify_recipients(self, recipients, record=None):
+    def _notify_classify_recipients(self, recipient_data, record=None):
         access_link = self._notify_get_action_link('view')
 
         model = record._name if record else self._name
@@ -679,11 +679,11 @@ class MailThread(models.AbstractModel):
             view_title = _('View')
 
         default_groups = [
-            ('user', lambda partner: bool(partner.user_ids) and not any(user.share for user in partner.user_ids), {}),
-            ('portal', lambda partner: bool(partner.user_ids) and all(user.share for user in partner.user_ids), {
+            ('user', lambda pid, rdata: rdata[2] == 'user', {}),
+            ('portal', lambda pid, rdata: rdata[2] == 'portal', {
                 'has_button_access': False,
             }),
-            ('customer', lambda partner: True, {
+            ('customer', lambda pid, rdata: True, {
                 'has_button_access': False,
             })
         ]
@@ -699,12 +699,12 @@ class MailThread(models.AbstractModel):
                 'url': access_link,
                 'title': view_title})
             group_data.setdefault('actions', list())
-            group_data.setdefault('recipients', self.env['res.partner'])
+            group_data.setdefault('recipients', list())
 
-        for recipient in recipients:
+        for recipient in recipient_data:
             for group_name, group_func, group_data in groups:
-                if group_func(recipient):
-                    group_data['recipients'] |= recipient
+                if group_func(recipient[0], recipient):
+                    group_data['recipients'].append(recipient[0])
                     break
 
         return dict((group_name, group_data) for group_name, group_method, group_data in groups)
@@ -1896,6 +1896,7 @@ class MailThread(models.AbstractModel):
         using already-computed values instead of having to rebrowse things. """
         # Notify recipients of the newly-created message (Inbox / Email + channels)
         message._notify(
+            self if values.get('res_id') else False,
             layout=notif_layout,
             force_send=self.env.context.get('mail_notify_force_send', True),
             values=notif_values,
