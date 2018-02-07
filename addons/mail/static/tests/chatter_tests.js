@@ -391,6 +391,9 @@ QUnit.test('chatter: post, receive and star messages', function (assert) {
         model: 'partner',
         res_id: 2,
     }];
+
+    console.log('STARMAN0');
+
     var getSuggestionsDef = $.Deferred();
     var form = createView({
         View: FormView,
@@ -458,6 +461,7 @@ QUnit.test('chatter: post, receive and star messages', function (assert) {
         services: [ChatManager, BusService],
     });
 
+    console.log('STARMAN1');
     assert.ok(form.$('.o_chatter_topbar .o_chatter_button_log_note').length,
         "log note button should be available");
     assert.strictEqual(form.$('.o_thread_message').length, 1, "thread should contain one message");
@@ -467,6 +471,8 @@ QUnit.test('chatter: post, receive and star messages', function (assert) {
         "the message's body should be correct");
     assert.ok(form.$('.o_thread_message:first() .o_mail_info').text().indexOf('John Doe') >= 0,
         "the message's author should be correct");
+
+    console.log('STARMAN2');
 
     // send a message
     form.$('.o_chatter_button_new_message').click();
@@ -482,6 +488,8 @@ QUnit.test('chatter: post, receive and star messages', function (assert) {
     assert.ok(form.$('.o_thread_message:first() .o_mail_info').text().indexOf('Me') >= 0,
         "the message's author should be correct");
 
+    console.log('STARMAN3');
+
     // log a note
     form.$('.o_chatter_button_log_note').click();
     assert.ok(!$('.oe_chatter .o_chat_composer').hasClass('o_hidden'), "chatter should be opened");
@@ -496,6 +504,8 @@ QUnit.test('chatter: post, receive and star messages', function (assert) {
     assert.ok(form.$('.o_thread_message:first() .o_mail_info').text().indexOf('Me') >= 0,
         "the message's author should be correct");
 
+    console.log('STARMAN4');
+
     // star message 2
     assert.ok(form.$('.o_thread_message[data-message-id=2] .o_thread_message_star.fa-star-o').length,
         "message 2 should not be starred");
@@ -503,10 +513,14 @@ QUnit.test('chatter: post, receive and star messages', function (assert) {
     assert.ok(form.$('.o_thread_message[data-message-id=2] .o_thread_message_star.fa-star').length,
         "message 2 should be starred");
 
+    console.log('STARMAN5');
+
     // unstar message 2
     form.$('.o_thread_message[data-message-id=2] .o_thread_message_star').click();
     assert.ok(form.$('.o_thread_message[data-message-id=2] .o_thread_message_star.fa-star-o').length,
         "message 2 should not be starred");
+
+    console.log('STARMAN6');
 
     // very basic test of mention
     form.$('.o_chatter_button_new_message').click();
@@ -514,12 +528,16 @@ QUnit.test('chatter: post, receive and star messages', function (assert) {
     $input.text('@');
     $input.trigger('keyup');
 
+    console.log('STARMAN7');
+
     assert.strictEqual(getSuggestionsDef.state(), "pending",
         "the mention suggestion RPC should be throttled");
+
 
     getSuggestionsDef
         .then(concurrency.delay.bind(concurrency, 0))
         .then(function () {
+            console.log('STARMAN8');
             assert.strictEqual(form.$('.o_mention_proposition:visible').length, 1,
                 "there should be one mention suggestion");
             assert.strictEqual(form.$('.o_mention_proposition').data('id'), 1,
@@ -529,11 +547,17 @@ QUnit.test('chatter: post, receive and star messages', function (assert) {
             assert.strictEqual(form.$('.o_mention_proposition .o_mention_info').text(), '(test@odoo.com)',
                 "suggestion should be displayed correctly");
 
+            console.log('STARMAN9');
+
             $(".o_mention_proposition > a").trigger("click");
             assert.strictEqual($(".o_composer_input a").length, 1, "mention is 'green' in edit mode");
 
+            console.log('STARMAN10');
+
             BasicComposer.prototype.MENTION_THROTTLE = mentionThrottle;
             form.destroy();
+
+            console.log('STARMAN11');
             done();
         });
 });
