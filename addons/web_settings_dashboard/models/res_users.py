@@ -16,10 +16,12 @@ class ResUsers(models.Model):
             user.active = True
 
         new_emails = set(emails) - set(deactivated_users.mapped('email'))
+        return self.web_dashboard_create_new_users(list(new_emails))
 
+    @api.model
+    def web_dashboard_create_new_users(self, new_emails):
         # Process new email addresses : create new users
         for email in new_emails:
             default_values = {'login': email, 'name': email.split('@')[0], 'email': email, 'active': True}
-            user = self.with_context(signup_valid=True).create(default_values)
-
+            self.with_context(signup_valid=True).create(default_values)
         return True

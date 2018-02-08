@@ -139,6 +139,16 @@ class ResUsers(models.Model):
             _logger.info("Password reset email sent for user <%s> to <%s>", user.login, user.email)
 
     @api.model
+    def web_dashboard_create_new_users(self, emails):
+        users = self.search(['|', ('login', 'in', emails), ('email', 'in', emails)])
+        inactive_users = users.filtered(lambda user: user.state == 'new')
+        new_emails = set(emails) - set(inactive_users.mapped('email'))
+        res = super(ResUsers, self).web_dashboard_create_new_users(new_emails)
+        if inactive_users:
+            inactive_users.with_context(create_user=True).action_reset_password()
+        return res
+
+    @api.model
     def create(self, values):
         # overridden to automatically invite user to sign up
         user = super(ResUsers, self).create(values)
