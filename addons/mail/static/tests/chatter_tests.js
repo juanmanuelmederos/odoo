@@ -524,9 +524,13 @@ QUnit.test('chatter: post, receive and star messages', function (assert) {
 
     // very basic test of mention
     form.$('.o_chatter_button_new_message').click();
+    console.log('STARMAN7.1');
     var $input = form.$('.oe_chatter .o_composer_text_field:first()');
+    console.log('STARMAN7.2', $input[0].outerHTML);
     $input.text('@');
+    console.log('STARMAN7.3');
     $input.trigger('keyup');
+    console.log('STARMAN7.4');
 
     console.log('STARMAN8');
 
