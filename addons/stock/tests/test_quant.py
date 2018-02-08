@@ -629,7 +629,24 @@ class StockQuant(TransactionCase):
         })
         quantity, in_date = self.env['stock.quant']._update_available_quantity(product1, stock_location, 1.0)
         self.assertEqual(quantity, 1)
-        self.assertEqual(in_date, None)
+        self.assertNotEqual(in_date, None)
+
+
+    def test_in_date_1b(self):
+        stock_location = self.env.ref('stock.stock_location_stock')
+        product1 = self.env['product.product'].create({
+            'name': 'Product A',
+            'type': 'product',
+        })
+        self.env['stock.quant'].create({
+            'product_id': product1.id,
+            'location_id': stock_location.id,
+            'quantity': 1.0,
+        })
+        quantity, in_date = self.env['stock.quant']._update_available_quantity(product1, stock_location, 2.0)
+        self.assertEqual(quantity, 3)
+        self.assertNotEqual(in_date, None)
+
 
     def test_in_date_2(self):
         """ Check that an incoming date is correctly set when updating the quantity of a tracked
