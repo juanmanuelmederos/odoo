@@ -484,6 +484,15 @@ var ServicesMixin = {
         });
         return def;
     },
+    getCurrentMenu: function () {
+        var menu = '';
+        this.trigger_up('get_current_menu', {
+            callback: function (result) {
+                menu = result;
+            }
+        });
+        return menu;
+    },
     // Session stuff
     getSession: function () {
         var session;

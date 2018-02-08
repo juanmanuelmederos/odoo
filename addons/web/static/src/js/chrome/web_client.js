@@ -11,6 +11,18 @@ var SystrayMenu = require('web.SystrayMenu');
 var UserMenu = require('web.UserMenu');
 
 return AbstractWebClient.extend({
+    custom_events: _.extend({}, AbstractWebClient.prototype.custom_events, {
+        get_current_menu: function (event) {
+            var menu = this.menu.current_menu;
+            if (!menu) {
+                var state = $.bbq.getState(true);
+                menu = state.menu_id;
+            }
+            if (event.data.callback) {
+                event.data.callback(menu);
+            }
+        },
+    }),
     events: {
         'click .oe_logo_edit_admin': 'logo_edit',
         'click .oe_logo img': function(ev) {

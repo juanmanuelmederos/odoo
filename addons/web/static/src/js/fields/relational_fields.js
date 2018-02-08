@@ -301,7 +301,7 @@ var FieldMany2One = AbstractField.extend({
         var value = _.escape((this.m2o_value || "").trim()).split("\n").join("<br/>");
         this.$el.html(value);
         if (!this.nodeOptions.no_open && this.value) {
-            this.$el.attr('href', _.str.sprintf('#id=%s&model=%s', this.value.res_id, this.field.relation));
+            this.$el.attr('href', _.str.sprintf('#id=%s&model=%s&menu_id=%s', this.value.res_id, this.field.relation, this.getCurrentMenu()));
             this.$el.addClass('o_form_uri');
         }
     },
