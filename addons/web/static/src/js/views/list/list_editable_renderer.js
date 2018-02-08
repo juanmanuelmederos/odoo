@@ -743,6 +743,7 @@ ListRenderer.include({
      * @returns {Class} Widget returns first widget
      */
     _getFirstWidget: function () {
+        console.log('GETFIRSTWIDGET');
         var record = this.state.data[this.currentRow];
         var recordWidgets = this.allFieldWidgets[record.id];
         var firstWidget = _.find(recordWidgets, function (widget) {
@@ -752,6 +753,7 @@ ListRenderer.include({
                             !widget.$el.hasClass('o_readonly_modifier');
             return isFirst;
         });
+        console.log('GETFIRSTWIDGET2', firstWidget);
         return firstWidget;
     },
 
@@ -777,6 +779,7 @@ ListRenderer.include({
      * @param {OdooEvent} ev
      */
     _onNavigationMove: function (ev) {  
+        console.log('ONNAVIGATIONMOVE')
         ev.stopPropagation(); // stop the event, the action is done by this renderer
         switch (ev.data.direction) {
             case 'up':
@@ -810,6 +813,7 @@ ListRenderer.include({
             case 'next':
                 // When navigating with the keyboard, we want to get out of the list editable if the
                 // first field is left empty.
+                console.log('ONNAVITAGIONTMOEVE NEXT');
                 var column = this.columns[this.currentFieldIndex];
                 var firstWidget = this._getFirstWidget();
                 if (column.attrs.name === firstWidget.name && !firstWidget.$input.val()) {

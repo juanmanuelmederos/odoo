@@ -801,7 +801,8 @@ var FieldX2Many = AbstractField.extend({
      * @returns {jQuery}
      */
     getFocusableElement: function () {
-       return this.mode === 'edit' && this.$input || this.$el;
+        console.log('GETFOCUSELEM');
+        return this.mode === 'edit' && this.$input || this.$el;
     },
 
     /**
@@ -809,6 +810,7 @@ var FieldX2Many = AbstractField.extend({
      * @param {Object} [options]
      */
     activate: function (options) {
+        console.log('ACTIVATE', options);
         if (!this.activeActions.create || this.isReadonly || !this.$el.is(":visible")) {
             return false;
         }
@@ -1184,8 +1186,11 @@ var FieldX2Many = AbstractField.extend({
     * @private
     */
     _onActiveNextWidget: function () {
+        console.log('ONACTIVENEXTWIDGET1');
         this.renderer.unselectRow();
+        console.log('ONACTIVENEXTWIDGET2');
         this.trigger_up('navigation_move', {direction: 'next'});
+        console.log('ONACTIVENEXTWIDGET3');
     },
     // /*
     //     * Move to previous widget.
