@@ -1484,8 +1484,8 @@
                                     <field name="tax_ids" string="Taxes Applied" widget="many2many_tags"
                                            options="{'no_create': True}"/>
                                     <field name="date_maturity" required="0" invisible="context.get('view_no_maturity', False)"/>
-                                    <field name="tax_ids_touched" invisible="1" readonly="1"/>
-                                    <field name="old_tax_ids" invisible="1" readonly="1"/>
+                                    <field name="recompute_tax_line" invisible="1" readonly="1"/>
+                                    <field name="tax_line_grouping_key" invisible="1" readonly="1"/>
                                 </tree>
                             </field>
                             <field name="narration" colspan="4" placeholder="Add an internal note..." nolabel="1" height="50"/>

@@ -123,63 +123,141 @@ class AccountMove(models.Model):
         For example, add a line with 1000 debit and 15% tax, this onchange will add a new
         line with 150 debit.
         '''
+        def _str_to_list(string):
+            #remove heading and trailing brackets and return a list of int. This avoid calling safe_eval on untrusted field content
+            string = string[1:-1]
+            if string:
+                return [int(x) for x in string.split(',')]
+            return []
+
+        def _build_grouping_key(line):
+            #build a string containing all values used to create the tax line
+            return str(line.tax_ids.ids) + '-' + str(line.analytic_tag_ids.ids) + '-' + (line.analytic_account_id and str(line.analytic_account_id.id) or '')
+
+        def _parse_grouping_key(line):
+            if not line.tax_line_grouping_key:
+                return {'tax_ids': [], 'tag_ids': [], 'analytic_account_id': False}
+            tax_str, tags_str, analytic_account_str = line.tax_line_grouping_key.split('-')
+            return {
+                'tax_ids': _str_to_list(tax_str),
+                'tag_ids': _str_to_list(tags_str),
+                'analytic_account_id': analytic_account_str and int(analytic_account_str) or False,
+            }
+
+        def _find_existing_tax_line(line_ids, tax, tag_ids, analytic_account_id):
+            if tax.analytic:
+                return line_ids.filtered(lambda x: x.tax_line_id == tax and x.analytic_tag_ids.ids == tag_ids and x.analytic_account_id.id == analytic_account_id)
+            return line_ids.filtered(lambda x: x.tax_line_id == tax)
+
+        def _get_lines_to_sum(line_ids, tax, tag_ids, analytic_account_id):
+            if tax.analytic:
+                return line_ids.filtered(lambda x: tax in x.tax_ids and x.analytic_tag_ids.ids == tag_ids and x.analytic_account_id.id == analytic_account_id)
+            return line_ids.filtered(lambda x: tax in x.tax_ids)
+
         self.ensure_one()
-        for line in self.line_ids.filtered(lambda x: x.tax_ids_touched):
+        for line in self.line_ids.filtered(lambda x: x.recompute_tax_line):
+            parsed_key = _parse_grouping_key(line)
+
             #unmark the line
-            line.tax_ids_touched = False
+            line.recompute_tax_line = False
+
+            #drop/create/modify tax lines
+            #for tax in self.env['account.tax'].browse(parsed_key['tax_ids']) | line.tax_ids:
+            #    #there should be only one or zero tax_line
+            #    tax_line = _find_existing_tax_line(self.line_ids, tax, line)
+            #    balance = sum([l.balance for l in _get_lines_to_sum(self.line_ids, tax, parsed_key)])
+            #    taxes_vals = tax.compute_all(balance,
+            #        currency=line.company_currency_id, product=line.product_id, partner=line.partner_id)
+            #    if tax_line:
+            #        if tax_line.tax_line_id not in line.tax_ids:
+            #            #remove tax line
+            #            self.line_ids -= tax_line
+            #        else:
+            #            if taxes_vals.get('taxes'):
+            #                amount = taxes_vals['taxes'][0]['amount']
+            #                if amount > 0:
+            #                    tax_line.debit = amount
+            #                else:
+            #                    tax_line.credit = amount
+
+            #    elif tax in line.tax_ids:
+            #        #create new tax line
+            #        for tax_vals in taxes_vals['taxes']:
+            #            name = tax_vals['name']
+            #            tax_rec = self.env['account.tax'].browse([tax_vals['id']])
+            #            line_vals = {
+            #                'account_id': (tax_rec.tax_exigibility == 'on_payment' and tax_rec.cash_basis_account) and tax_rec.cash_basis_account.id or tax_rec.account_id.id,
+            #                'name': name,
+            #                'tax_line_id': tax_vals['id'],
+            #                'partner_id': line.partner_id.id,
+            #                'debit': tax_vals['amount'] > 0 and tax_vals['amount'] or 0.0,
+            #                'credit': tax_vals['amount'] < 0 and -tax_vals['amount'] or 0.0,
+            #                'analytic_account_id': line.analytic_account_id.id if tax_rec.analytic else False,
+            #                'analytic_tag_ids': line.analytic_tag_ids.ids if tax_rec.analytic else False,
+            #                'move_id': self.id,
+            #                'tax_exigible': tax_rec.tax_exigibility == 'on_invoice',
+            #                'company_id': self.company_id.id,
+            #            }
+            #            self.env['account.move.line'].new(line_vals)
+
+
             #drop/modify tax line(s)
-            for tax in (line.old_tax_ids or '').split(','):
-                line_to_modify = self.line_ids.filtered(lambda x: str(x.tax_line_id.id) == tax)
-                if line_to_modify:
+            for tax in self.env['account.tax'].browse(parsed_key['tax_ids']):
+                tax_line = _find_existing_tax_line(self.line_ids, tax, parsed_key['tag_ids'], parsed_key['analytic_account_id'])
+                if tax_line:
                     #there should be one and only one
-                    balance = sum([l.balance for l in self.line_ids.filtered(lambda x: tax in str(x.tax_ids.ids).replace('[','').replace(']','').split(','))])
+                    balance = sum([l.balance for l in _get_lines_to_sum(self.line_ids, tax, parsed_key['tag_ids'], parsed_key['analytic_account_id'])])
                     if balance:
-                        taxes_vals = line_to_modify.tax_line_id.compute_all(balance,
+                        taxes_vals = tax_line.tax_line_id.compute_all(balance,
                             currency=line.currency_id, product=line.product_id, partner=line.partner_id)
                         if taxes_vals.get('taxes'):
                             amount = taxes_vals['taxes'][0]['amount']
                             if amount > 0:
-                                line_to_modify.debit = amount
+                                tax_line.debit = amount
                             else:
-                                line_to_modify.credit = amount
+                                tax_line.credit = amount
                     else:
-                        self.line_ids -= line_to_modify
+                        self.line_ids -= tax_line
 
             #create new tax line(s)
             for tax in line.tax_ids:
-                if str(tax.id) in (line.old_tax_ids or ''):
-                    continue
-                balance = sum([l.balance for l in self.line_ids.filtered(lambda x: tax.id in x.tax_ids.ids)])
+                if tax.id in parsed_key['tax_ids']:
+                    if not tax.analytic:
+                        continue
+                    if line.analytic_tag_ids.ids == parsed_key['tag_ids'] and line.analytic_account_id.id == parsed_key['analytic_account_id']:
+                        continue
+
+                tax_line = _find_existing_tax_line(self.line_ids, tax, line.analytic_tag_ids.ids, line.analytic_account_id.id)
+                balance = sum([l.balance for l in _get_lines_to_sum(self.line_ids, tax, line.analytic_tag_ids.ids, line.analytic_account_id.id)])
                 taxes_vals = tax.compute_all(balance,
                     currency=line.currency_id, product=line.product_id, partner=line.partner_id)
-                line_to_modify = self.line_ids.filtered(lambda x: x.tax_line_id == tax)
-                if line_to_modify:
+                if tax_line:
                     if taxes_vals.get('taxes'):
                         amount = taxes_vals['taxes'][0]['amount']
                         if amount > 0:
-                            line_to_modify.debit = amount
+                            tax_line.debit = amount
                         else:
-                            line_to_modify.credit = amount
+                            tax_line.credit = amount
                 else:
                     for tax_vals in taxes_vals['taxes']:
                         name = tax_vals['name']
-                        tax = self.env['account.tax'].browse([tax_vals['id']])
+                        tax_rec = self.env['account.tax'].browse([tax_vals['id']])
                         line_vals = {
-                            'account_id': (tax.tax_exigibility == 'on_payment' and tax.cash_basis_account) and tax.cash_basis_account.id or tax.account_id.id,
+                            'account_id': (tax_rec.tax_exigibility == 'on_payment' and tax_rec.cash_basis_account) and tax_rec.cash_basis_account.id or tax_rec.account_id.id,
                             'name': name,
                             'tax_line_id': tax_vals['id'],
                             'partner_id': line.partner_id.id,
                             'debit': tax_vals['amount'] > 0 and tax_vals['amount'] or 0.0,
                             'credit': tax_vals['amount'] < 0 and -tax_vals['amount'] or 0.0,
-                            'analytic_account_id': line.analytic_account_id.id if tax.analytic else False,
-                            'analytic_tag_ids': line.analytic_tag_ids.ids if tax.analytic else False,
+                            'analytic_account_id': line.analytic_account_id.id if tax_rec.analytic else False,
+                            'analytic_tag_ids': line.analytic_tag_ids.ids if tax_rec.analytic else False,
                             'move_id': self.id,
-                            'tax_exigible': tax.tax_exigibility == 'on_invoice',
+                            'tax_exigible': tax_rec.tax_exigibility == 'on_invoice',
                             'company_id': self.company_id.id,
                         }
                         self.env['account.move.line'].new(line_vals)
             #keep record of the values used as taxes the last time we ran this method
-            line.old_tax_ids = str(line.tax_ids.ids).replace('[', '').replace(']', '')
+            line.tax_line_grouping_key = _build_grouping_key(line)
 
     @api.model
     def fields_view_get(self, view_id=None, view_type='form', toolbar=False, submenu=False):
@@ -369,10 +447,10 @@ class AccountMoveLine(models.Model):
     _description = "Journal Item"
     _order = "date desc, id desc"
 
-    @api.onchange('debit', 'credit', 'tax_ids')
+    @api.onchange('debit', 'credit', 'tax_ids', 'analytic_account_id', 'analytic_tag_ids')
     def onchange_tax_ids_create_aml(self):
         for line in self:
-            line.tax_ids_touched = True
+            line.recompute_tax_line = True
 
     @api.model_cr
     def init(self):
@@ -554,8 +632,8 @@ class AccountMoveLine(models.Model):
     #Needed for setup, as a decoration attribute needs to know that for a tree view in one of the popups, and there's no way to reference directly a xml id from there
     is_unaffected_earnings_line = fields.Boolean(string="Is Unaffected Earnings Line", compute="_compute_is_unaffected_earnings_line", help="Tells whether or not this line belongs to an unaffected earnings account")
 
-    tax_ids_touched = fields.Boolean(store=False, help="Technical field used to know if the tax_ids field has been modified in the UI.")
-    old_tax_ids = fields.Char(store=False, string='Old Taxes')
+    recompute_tax_line = fields.Boolean(store=False, help="Technical field used to know if the tax_ids field has been modified in the UI.")
+    tax_line_grouping_key = fields.Char(store=False, string='Old Taxes', help="Technical field used to store the old values of fields used to compute tax lines (in account.move form view) between the moment the user changed it and the moment the ORM reflects that change in its one2many")
 
     _sql_constraints = [
         ('credit_debit1', 'CHECK (credit*debit=0)', 'Wrong credit or debit value in accounting entry !'),
