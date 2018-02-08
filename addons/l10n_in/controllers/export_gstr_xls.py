@@ -173,10 +173,35 @@ class ExportXLS(http.Controller):
                 invoice_data.append((pos,'',sum(value),''))
 
         if gstr_type == 'exemp':
+            tax_datas = {}
+
             first_row_data = ['', 'Total Nil Rated Supplies', 'Total Exempted Supplies', 'Total Non-GST Supplies']
             second_row_data = ['', self.column_total_value_sum(2), self.column_total_value_sum(3), self.column_total_value_sum(4)]
-            third_row_data = ['Description', 'Nil Rated Supplies', 'Exempted (other than nil rated/non GST supply )', 'Non-GST supplies']
-            domain += [('journal_id.code', 'in', ('RET','EXP','INV'))]
+            third_row_data = ['Description', 'Nil Rated Supplies', 'Exempted', 'Non-GST supplies']
+            domain += [('journal_id.code', 'in', ('RET', 'EXP', 'INV'))]
+            invoices = request.env['account.invoice'].search(domain)
+
+            gst_tax_template = request.env.ref("l10n_in.%s_gst_sale_0" %(company_id.id))
+            gst_tax_id = gst_tax_template.id
+            igst_tax_template = request.env.ref("l10n_in.%s_igst_sale_0" %(company_id.id))
+            igst_tax_id = igst_tax_template.id
+
+            intrastate_lines = request.env['account.invoice.line'].search([('invoice_line_tax_ids', '=', gst_tax_id), ('invoice_id', 'in', invoices.ids)])
+            interstate_lines = request.env['account.invoice.line'].search([('invoice_line_tax_ids', '=', igst_tax_id), ('invoice_id', 'in', invoices.ids)])
+
+            nil_intrastate_register_amount = intrastate_lines.filtered(lambda l: l.invoice_id.partner_id.vat).mapped('price_subtotal')
+            nil_intrastate_unregister_amount = intrastate_lines.filtered(lambda l: not l.invoice_id.partner_id.vat).mapped('price_subtotal')
+            tax_datas['Intra-State supplies to registered persons'] = sum(nil_intrastate_register_amount)
+            tax_datas['Intra-State supplies to unregistered persons'] = sum(nil_intrastate_unregister_amount)
+
+            nil_interstate_register_amount = interstate_lines.filtered(lambda l: l.invoice_id.partner_id.vat).mapped('price_subtotal')
+            nil_interstate_unregister_amount = interstate_lines.filtered(lambda l: not l.invoice_id.partner_id.vat).mapped('price_subtotal')
+            tax_datas['Inter-State supplies to registered persons'] = sum(nil_interstate_register_amount)
+            tax_datas['Inter-State supplies to unregistered persons'] = sum(nil_interstate_unregister_amount)
+
+            for description, value in tax_datas.items():
+                invoice_data.append((description, value))
+
         
         if gstr_type == 'hsn':
             first_row_data = ['No. of HSN', '', '', '', 'Total Value', 'Total Taxable Value', 'Total Integrated Tax', 'Total Central Tax', 'Total State/UT Tax', 'Total Cess']
