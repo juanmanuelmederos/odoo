@@ -1,15 +1,318 @@
 :banner: banners/javascript.jpg
 
-.. highlight:: javascript
+=====================
+Javascript Reference
+=====================
 
-.. default-domain:: js
+This document presents the Odoo Javascript framework. The Odoo Javascript
+framework is not a large application in term of lines of code, but it is quite
+generic, because it is basically a machine to turn a declarative interface
+description into a live application, able to interact with every model and
+records in the database.  It is even possible to use the web client to modify
+the interface of the web client.
 
+
+Overview
+=========
+
+The javascript framework is designed to work with three main use cases:
+
+- the *web client*: this is the private web application, where one can view and
+  edit business data. This is a single page application (the page is never
+  reloaded, only the new data is fetched from the server whenever it is needed)
+- the *website*: this is the public part of Odoo.  It allows an unidentified
+  user to browse some content, to shop or to perform many actions, as a client.
+  This is a classical website: various routes with controllers and some
+  javascript to make it work.
+- the *point of sale*: this is the interface for the point of sale. It is a
+  specialized single page application.
+
+Some javascript code is common to these three use cases, and is bundled together
+(see below in the assets section).  This document will focus mostly on the web
+client design.
+
+Assets Management
+=================
+
+Managing assets in Odoo is not as straightforward as it is in some other apps.
+One of the reason is that we have a variety of situations where some, but not all
+the assets are required.  For example, the needs of the web client, the point of
+sale, the website or even the mobile application are different.  Also, some
+assets may be large, but are seldom needed.  In that case, we sometimes want them
+to be loaded lazily.
+
+The main idea is that we define a set of *bundles* in xml.  A bundle is here defined as
+a collection of files (javascript, css, less). In Odoo, the most important
+bundles are defined in the file *addons/web/views/webclient_templates.xml*. It looks
+like this:
+
+.. code-block:: xml
+
+    <template id="web.assets_common" name="Common Assets (used in backend interface and website)">
+        <link rel="stylesheet" type="text/css" href="/web/static/lib/jquery.ui/jquery-ui.css"/>
+        ...
+        <script type="text/javascript" src="/web/static/src/js/boot.js"></script>
+        ...
+    </template>
+
+
+The files in a bundle can then be inserted into a template by using the *t-call-assets
+directive:
+
+.. code-block:: xml
+
+    <t t-call-assets="web.assets_common" t-js="false"/>
+    <t t-call-assets="web.assets_common" t-css="false"/>
+
+Here is what happens when a template is rendered by the server with these directives:
+
+- all the *less* files described in the bundle are compiled into css files
+
+- if we are in *debug=assets* mode,
+    - the *t-call-assets* directive with the *t-js* attribute set to false will 
+      be replaced by a list of stylesheet tags pointing to the css files
+    - the *t-call-assets* directive with the *t-css* attribute set to false will
+      be replaced by a list of script tags pointing to the js files
+
+- if we are not in *debug=assets* mode,
+    - the css files will be concatenated and minified, then splits into files
+      with no more than 4096 rules (to get around an old limitation of IE9). Then,
+      we generate as many stylesheet tags as necessary
+    - the js files are concatenated and minified, then a script tag is generated
+
+Note that the assets files are cached, so in theory, a browser should only load
+them once.
+
+Main bundles
+------------
+
+Here are some important bundles that most developers will needs to know:
+
+- *web.assets_common*: this bundle contains most assets which are common to the
+  web client, the website, and also the point of sale. This is supposed to contain
+  lower level building blocks for the odoo framework.  Note that it contains the
+  *boot.js* file, which defines the odoo module system.
+
+- *web.assets_backend*: this bundle contains the code specific to the web client
+  (notably the web client/action manager/views)
+
+- *web.assets_frontend*: this bundle is about all that is specific to the public
+  website: ecommerce, forum, blog, event management, ...
+
+
+Adding files in an asset bundle
+-------------------------------
+
+The proper way to add a file located in *addons/web* to a bundle is really simple,
+it is just enough to add a *script* or a *stylesheet* tag to the bundle in the
+file *webclient_templates.xml*.  But when we work in a different addon, we need
+to add a file from that addon.  In that case, it should be done in three steps:
+
+1. add a *assets.xml* file in the *views/* folder
+2. add the string 'views/assets.xml' in the 'data' key in the manifest file
+3. add the file(s) in the desired bundle with an xpath expression. For example,
+
+    .. code-block:: xml
+
+        <template id="assets_backend" name="helpdesk assets" inherit_id="web.assets_backend">
+            <xpath expr="." position="inside">
+                <link rel="stylesheet" href="/helpdesk/static/src/less/helpdesk.less"/>
+                <script type="text/javascript" src="/helpdesk/static/src/js/helpdesk_dashboard.js"></script>
+            </xpath>
+        </template>
+
+
+- explain how to lazyload files (insert script/stylesheet tag) + give a link to
+    section where we explain lazy loading in widgets
+- explain different bundle types: common/frontend/backend
+- explain why css bundles are split
+- explain how files are added into the bundle, with xml xpath example
+- less files are compiled
+- bundles are cached
+
+TODO: explain when it is necessary to refresh web browser, and that with
+dev = all, it is not necessary to restart server
+
+Javascript Module System
+========================
+
+Once we are able to load our javascript files into the browser, we need to make
+sure they are loaded in the correct order.  In order to do that, Odoo has defined
+a small module system (located in the file *addons/web/static/src/js/boot.js*,
+which needs to be loaded first).
+
+The Odoo module system, inspired by AMD, works by defining the function *define*
+on the global odoo object. We then define each javascript module by calling that
+function.  As an example, it may look like this:
+
+
+.. code-block:: javascript
+
+    // in file a.js
+    odoo.define('module.A', function (require) {
+        "use strict";
+
+        var A = ...;
+
+        return A;
+    });
+
+    // in file b.js
+    odoo.define('module.A', function (require) {
+        "use strict";
+
+        var A = require('module.A');
+
+        var B = ...; // something that involves A
+
+        return B;
+    });
+
+
+The define method is given three arguments:
+
+- *moduleName*: the name of the   The first is the module name, it is
+a string and should be unique.  If 
+
+- explain module system
+- inspired by AMD
+- give example
+- module system is located in boot.js (so file need to be loaded first)
+- talk about way to define dependencies, about the fact that it parses the js
+  string of the function, that we can define an array of dependencies
+- module name convention: module.jsmodule
+- asynchronous modules
+- note: convention: uppercase for class, lowercase for rest
+- note: try to export just one thing
+
+
+Code Structure
+==============
+
+- generic folder structure for static files (/static, static/src, static/lib, static/tests, ...)
+- an overview of js files in web client
+
+Class System
+============
+
+- odoo class (located in class.js, web.class)
+- inheritance
+- extend/includes (when it should be used and when it should be avoided)
+- this._super
+- mixins
+
+Widgets
+=======
+
+- widget API lifecycle, appendTo, event binding, custom events, template, rendering, ...
+
+QWeb Template Engine
+====================
+
+Template engine: qweb
+xml based
+templates are loaded async
+
+loading a template in a widget: example
+
+
+Web client
 ==========
-Javascript
-==========
 
-.. automodule:: *
-    :members:
+dynamic state: create/destroy many sub components
+
+- overview
+- tree of components
+- Menu bar some explanations
+- Systray
+- action manager
+- view manager
+- home menu (enterprise version)
+- loading process (defined in webclient templates)
+
+Registries
+===========
+
+- view registry
+- field registry
+- action registry
+
+
+Communicating between widgets
+=============================
+
+- bus system: core.bus
+- trigger
+- trigger up
+- function call
+
+
+Some important JS modules
+=========================
+
+- web.session
+- web.config
+- web.core
+
+
+Services
+========
+
+Explanation on how services works
+
+Example with this._rpc
+
+Asynchronous programming with Deferred/Promises
+===============================================
+
+talk about deferred, promises, jquery2/3, ...
+
+Translation management
+======================
+
+- module _t
+- explain how translations are loaded (rpc, ...)
+- example on how to use them
+- explanation on _lt
+
+Views
+======
+
+Here we talk about js views, not xml/db
+
+Field Widgets
+=============
+
+document field widget API (+ link to docstring)
+
+for each widget, explain its widget options, if any. add any interesting
+extra info
+
+Basic fields
+------------
+
+Basic field widgets (defined in module `web.basic_Fields`, file `basic_fields.js`)
+are field widgets for all non relational field types.
+
+- FieldFloat (registered as *float*):
+    Options:
+
+    - digits: precision
+
+TODO
+========
+
+    - overview main modules?
+        - session (get_session_info, ...)
+        - web.config
+    - views design
+    - registries...
+    - talk about external libs: $, _, Moment (locale, <bold>utc to server</bold>, ...), ...
+    - communication between components (trigger_up, direct call)
+    - class/widget
+    - core.bus
+    - component tree
+    - services
 
 =======
 Widgets
@@ -1410,3 +1713,10 @@ the OpenERP Web test suite.
 .. [#terminal]
     with a small twist: :py:meth:`sqlalchemy.orm.query.Query.group_by` is not
     terminal, it returns a query which can still be altered.
+
+
+.. toctree::
+   :maxdepth: 2
+
+   javascript_api
+
