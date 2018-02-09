@@ -227,21 +227,28 @@ class AccountMove(models.Model):
                     if line.analytic_tag_ids.ids == parsed_key['tag_ids'] and line.analytic_account_id.id == parsed_key['analytic_account_id']:
                         continue
 
-                tax_line = _find_existing_tax_line(self.line_ids, tax, line.analytic_tag_ids.ids, line.analytic_account_id.id)
                 balance = sum([l.balance for l in _get_lines_to_sum(self.line_ids, tax, line.analytic_tag_ids.ids, line.analytic_account_id.id)])
                 taxes_vals = tax.compute_all(balance,
                     currency=line.currency_id, product=line.product_id, partner=line.partner_id)
-                if tax_line:
-                    if taxes_vals.get('taxes'):
-                        amount = taxes_vals['taxes'][0]['amount']
+                for tax_vals in taxes_vals['taxes']:
+                    tax_rec = self.env['account.tax'].browse([tax_vals['id']])
+                    amount = tax_vals['amount']
+                    if tax_rec not in line.tax_ids:
+                        #tax was a group of tax and the amount for tax_rec has to be recomputed alone
+                        #(in case of the child tax tax_rec was used on another tax)
+                        line.tax_ids = line.tax_ids + tax_rec
+                        balance = sum([l.balance for l in _get_lines_to_sum(self.line_ids, tax_rec, line.analytic_tag_ids.ids, line.analytic_account_id.id)])
+                        child_taxes_vals = tax_rec.compute_all(balance,
+                            currency=line.currency_id, product=line.product_id, partner=line.partner_id)
+                        amount = child_taxes_vals['total_included'] - child_taxes_vals['total_excluded']
+                    tax_line = _find_existing_tax_line(self.line_ids, tax_rec, line.analytic_tag_ids.ids, line.analytic_account_id.id)
+                    if tax_line:
                         if amount > 0:
                             tax_line.debit = amount
                         else:
                             tax_line.credit = amount
-                else:
-                    for tax_vals in taxes_vals['taxes']:
+                    else:
                         name = tax_vals['name']
-                        tax_rec = self.env['account.tax'].browse([tax_vals['id']])
                         account_id = (tax_rec.tax_exigibility == 'on_payment' and tax_rec.cash_basis_account) and tax_rec.cash_basis_account.id or tax_rec.account_id.id
                         account_id = account_id or line.account_id.id
                         line_vals = {
@@ -249,8 +256,8 @@ class AccountMove(models.Model):
                             'name': name,
                             'tax_line_id': tax_vals['id'],
                             'partner_id': line.partner_id.id,
-                            'debit': tax_vals['amount'] > 0 and tax_vals['amount'] or 0.0,
-                            'credit': tax_vals['amount'] < 0 and -tax_vals['amount'] or 0.0,
+                            'debit': amount > 0 and amount or 0.0,
+                            'credit': amount < 0 and -amount or 0.0,
                             'analytic_account_id': line.analytic_account_id.id if tax_rec.analytic else False,
                             'analytic_tag_ids': line.analytic_tag_ids.ids if tax_rec.analytic else False,
                             'move_id': self.id,
