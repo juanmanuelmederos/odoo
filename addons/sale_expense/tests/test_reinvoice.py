@@ -69,7 +69,7 @@ class TestReInvoice(TestExpenseCommon, TestCommonSaleNoChart):
         expense2._onchange_product_id()
 
         # approve and generate entries
-        self.expense_sheet.approve_expense_sheets()
+        self.expense_sheet.approve_sheet()
         self.expense_sheet.action_sheet_move_create()
 
         self.assertEquals(len(self.sale_order.order_line), 3, "There should be 3 lines on the SO")
@@ -112,7 +112,7 @@ class TestReInvoice(TestExpenseCommon, TestCommonSaleNoChart):
         expense1._onchange_product_id()
 
         # approve and generate entries
-        self.expense_sheet.approve_expense_sheets()
+        self.expense_sheet.approve_sheet()
         self.expense_sheet.action_sheet_move_create()
 
         self.assertTrue(self.sale_order.analytic_account_id, "Posting expense with an expense product should trigger the analytic account creation on SO")
@@ -159,7 +159,7 @@ class TestReInvoice(TestExpenseCommon, TestCommonSaleNoChart):
         expense1._onchange_product_id()
 
         # approve and generate entries
-        self.expense_sheet.approve_expense_sheets()
+        self.expense_sheet.approve_sheet()
         self.expense_sheet.action_sheet_move_create()
 
         self.assertEquals(len(self.sale_order.order_line), 2, "A new expense SOL should have been created.")
@@ -184,7 +184,7 @@ class TestReInvoice(TestExpenseCommon, TestCommonSaleNoChart):
         expense2._onchange_product_id()
 
         # approve and generate entries
-        self.expense_sheet2.approve_expense_sheets()
+        self.expense_sheet2.approve_sheet()
         self.expense_sheet2.action_sheet_move_create()
 
         self.assertEquals(len(self.sale_order.order_line), 2, "No new expense SOL should have been created.")
@@ -223,7 +223,7 @@ class TestReInvoice(TestExpenseCommon, TestCommonSaleNoChart):
         expense1._onchange_product_id()
 
         # approve and generate entries
-        self.expense_sheet.approve_expense_sheets()
+        self.expense_sheet.approve_sheet()
         self.expense_sheet.action_sheet_move_create()
 
         self.assertTrue(self.sale_order.analytic_account_id, "Posting expense with an expense product (even with no expense pilocy) should trigger the analytic account creation")

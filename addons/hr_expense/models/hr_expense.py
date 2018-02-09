@@ -29,9 +29,22 @@ class HrExpense(models.Model):
     def _default_account_id(self):
         return self.env['ir.property'].get('property_account_expense_categ_id', 'product.category')
 
+    @api.model
+    def _employee_filter(self):
+        res = []
+        if self.env.user.employee_ids:
+            employee = self.env.user.employee_ids[0]
+            res = [('id', '=', employee.id)]
+            if self.user_has_groups('hr_expense.group_hr_expense_user'):
+                res = ['|', '|', ('department_id.manager_id.id', '=', employee.id),
+                       ('parent_id.id', '=', employee.id), ('expense_manager_id.id', '=', employee.id)]
+            if self.user_has_groups('hr_expense.group_hr_expense_manager') or self.user_has_groups('account.group_account_user'):
+                res = [(1, '=', 1)]
+        return res
+
     name = fields.Char('Description', readonly=True, required=True, states={'draft': [('readonly', False)], 'reported': [('readonly', False)], 'refused': [('readonly', False)]})
     date = fields.Date(readonly=True, states={'draft': [('readonly', False)], 'reported': [('readonly', False)], 'refused': [('readonly', False)]}, default=fields.Date.context_today, string="Date")
-    employee_id = fields.Many2one('hr.employee', string="Employee", required=True, readonly=True, states={'draft': [('readonly', False)], 'reported': [('readonly', False)], 'refused': [('readonly', False)]}, default=_default_employee_id)
+    employee_id = fields.Many2one('hr.employee', string="Employee", required=True, readonly=True, states={'draft': [('readonly', False)], 'reported': [('readonly', False)], 'refused': [('readonly', False)]}, default=_default_employee_id, domain=_employee_filter)
     product_id = fields.Many2one('product.product', string='Product', readonly=True, states={'draft': [('readonly', False)], 'reported': [('readonly', False)], 'refused': [('readonly', False)]}, domain=[('can_be_expensed', '=', True)], required=True)
     product_uom_id = fields.Many2one('uom.uom', string='Unit of Measure', required=True, readonly=True, states={'draft': [('readonly', False)], 'refused': [('readonly', False)]}, default=_default_product_uom_id)
     unit_amount = fields.Float("Unit Price", readonly=True, required=True, states={'draft': [('readonly', False)], 'reported': [('readonly', False)], 'refused': [('readonly', False)]}, digits=dp.get_precision('Product Price'))
@@ -591,7 +604,7 @@ class HrExpenseSheet(models.Model):
         MailFollowers = self.env['mail.followers']
         for partner in users.mapped('partner_id'):
             values['message_follower_ids'] += MailFollowers._add_follower_command(self._name, [], {partner.id: None}, {})[0]
-        
+
         if values.get('user_id') and values.get('user_id') != employee.user_id.id:
             resp_partner = self.env['res.users'].browse(values['user_id'])
             values['message_follower_ids'] += MailFollowers._add_follower_command(self._name, [], {resp_partner.partner_id.id: None}, {})[0]
@@ -642,9 +655,16 @@ class HrExpenseSheet(models.Model):
         self.write({'state': 'done'})
 
     @api.multi
-    def approve_expense_sheets(self):
+    def approve_sheet(self):
         if not self.user_has_groups('hr_expense.group_hr_expense_user'):
             raise UserError(_("Only HR Officers can approve expenses"))
+        elif self.employee_id.user_id.id == self.env.user.id and not self.user_has_groups('hr_expense.group_hr_expense_manager'):
+            raise UserError(_("You cannot approve your own expenses"))
+
+        current_managers = [self.employee_id.parent_id.user_id.id, self.employee_id.department_id.manager_id.user_id.id]
+        if not self.user_has_groups('hr_expense.group_hr_expense_manager') and not self.env.user.id in current_managers:
+            raise UserError(_("You can only approve your department expenses"))
+
         responsible_id = self.user_id.id or self.env.user.id
         self.write({'state': 'approve', 'user_id': responsible_id})
 
@@ -656,6 +676,13 @@ class HrExpenseSheet(models.Model):
     def refuse_sheet(self, reason):
         if not self.user_has_groups('hr_expense.group_hr_expense_user'):
             raise UserError(_("Only HR Officers can refuse expenses"))
+        elif self.employee_id.user_id.id == self.env.user.id and not self.user_has_groups('hr_expense.group_hr_expense_manager'):
+            raise UserError(_("You cannot refuse your own expenses"))
+
+        current_managers = [self.employee_id.parent_id.user_id.id, self.employee_id.department_id.manager_id.user_id.id]
+        if not self.user_has_groups('hr_expense.group_hr_expense_manager') and not self.env.user.id in current_managers:
+            raise UserError(_("You can only refuse your department expenses"))
+
         self.write({'state': 'cancel'})
         for sheet in self:
             sheet.message_post_with_view('hr_expense.hr_expense_template_refuse_reason', values={'reason': reason, 'is_sheet': True, 'name': self.name})

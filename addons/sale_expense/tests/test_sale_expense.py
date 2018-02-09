@@ -48,7 +48,7 @@ class TestSaleExpense(TestSale):
             'sheet_id': sheet.id
         })
         # Approve
-        sheet.approve_expense_sheets()
+        sheet.approve_sheet()
         # Create Expense Entries
         sheet.action_sheet_move_create()
         # expense should now be in sales order
@@ -77,7 +77,7 @@ class TestSaleExpense(TestSale):
             'sheet_id': sheet.id
         })
         # Approve
-        sheet.approve_expense_sheets()
+        sheet.approve_sheet()
         # Create Expense Entries
         sheet.action_sheet_move_create()
         # expense should now be in sales order
