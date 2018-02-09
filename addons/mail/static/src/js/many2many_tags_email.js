@@ -21,7 +21,7 @@ BasicModel.include({
      * @param {Object} record - an element from the localData
      * @param {string} fieldName
      * @return {Deferred<Object>} the deferred is resolved with the
-     *                            invalidPartnerIds and partnerNames
+     *                            invalidPartnerIds
      */
     _fetchSpecialMany2ManyTagsEmail: function (record, fieldName) {
         var self = this;
@@ -43,20 +43,8 @@ BasicModel.include({
             def = this._applyX2ManyChange(record, fieldName, changes);
         }
         return $.when(def).then(function () {
-            list = self._applyX2ManyOperations(self.localData[localID]);
-            if (list.res_ids.length) {
-                def = self._rpc({
-                    model: list.model,
-                    method: 'name_get',
-                    args: [list.res_ids],
-                    context: record.getContext({fieldName: fieldName}),
-                });
-            }
-            return $.when(def).then(function (names) {
-                return $.when({
-                    invalidPartnerIds: _.pluck(invalidPartnerIds, 'res_id'),
-                    partnerNames: _.object(names),
-                });
+            return $.when({
+                invalidPartnerIds: _.pluck(invalidPartnerIds, 'res_id'),
             });
         });
     },
@@ -140,24 +128,6 @@ var FieldMany2ManyTagsEmail = M2MTags.extend({
             return _super.apply(self, arguments);
         });
     },
-
-    /**
-     * Override for res.partner
-     * name_get is dynamic (based on context) while display_name is static
-     * (stored)
-     *
-     * @override
-     * @private
-     */
-    _getRenderTagsContext: function () {
-        var result = this._super.apply(this, arguments);
-        var partnerNames = this.record.specialData[this.name].partnerNames;
-        _.each(result.elements, function (partner) {
-            partner.display_name = partnerNames[partner.id];
-        });
-        return result;
-    },
-
 });
 
 field_registry.add('many2many_tags_email', FieldMany2ManyTagsEmail);

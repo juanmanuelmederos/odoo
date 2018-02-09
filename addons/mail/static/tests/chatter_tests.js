@@ -1200,6 +1200,7 @@ QUnit.module('FieldMany2ManyTagsEmail', {
                 records: [
                     {id: 12, display_name: "gold", email: 'coucou@petite.perruche'},
                     {id: 14, display_name: "silver", email: ''},
+                    {id: 15, display_name: "bronze", email: 'bronze@mail.com'},
                 ]
             },
         };
@@ -1207,11 +1208,10 @@ QUnit.module('FieldMany2ManyTagsEmail', {
 });
 
 QUnit.test('fieldmany2many tags email', function (assert) {
-    assert.expect(13);
+    assert.expect(12);
     var done = assert.async();
-    var nameGottenIds = [[12], [12, 14]];
 
-    this.data.partner.records[0].timmy = [12, 14];
+    this.data.partner.records[0].timmy = [12, 14, 15];
 
     // the modals need to be closed before the form view rendering
     createAsyncView({
@@ -1229,11 +1229,7 @@ QUnit.test('fieldmany2many tags email', function (assert) {
             mode: 'edit',
         },
         mockRPC: function (route, args) {
-            if (route === "/web/dataset/call_kw/partner_type/name_get") {
-                assert.deepEqual(args.args[0], nameGottenIds.shift(),
-                    "partner with email should be name_get'ed");
-            }
-            else if (args.method ==='read' && args.model === 'partner_type') {
+            if (args.method ==='read' && args.model === 'partner_type') {
                 assert.step(args.args[0]);
                 assert.deepEqual(args.args[1] , ['display_name', 'email'], "should read the email");
             }
@@ -1244,10 +1240,11 @@ QUnit.test('fieldmany2many tags email', function (assert) {
         },
     }).then(function (form) {
         // should read it 3 times (1 with the form view, one with the form dialog and one after save)
-        assert.verifySteps([[12, 14], [14], [14]]);
-        assert.strictEqual(form.$('.o_field_many2manytags[name="timmy"] span.o_tag_color_0').length, 2,
+        assert.verifySteps([[12, 14, 15], [14], [14]]);
+        assert.strictEqual(form.$('.o_field_many2manytags[name="timmy"] span.o_tag_color_0').length, 3,
             "the second tag should be present");
-
+        assert.strictEqual(form.$('.o_field_many2manytags .o_badge_text[title="bronze@mail.com"]').length, 1,
+            "partner with email in tooltip");
         form.destroy();
         done();
     });
