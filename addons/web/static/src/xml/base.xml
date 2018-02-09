@@ -807,8 +807,24 @@
         </span>
     </t>
 </t>
+<t t-name="FieldMany2ManyTag.TagDropdown">
+    <div t-if="color_picker || !widget.no_options" class="o_tag_dropdown_menu dropdown-menu" role="menu">
+        <div t-if="!widget.no_options" class="o_tag_dropdown_options">
+            <ul>
+                <li t-if="!widget.no_edit">
+                    <a href="#" class="o_edit_record" t-att-data-id="tag_id">Edit</a>
+                </li>
+                <li t-if="!widget.no_delete">
+                    <a href="#" class="o_delete_record" t-att-data-id="tag_id">Delete</a>
+                </li>
+                <li class="divider"/>
+            </ul>
+        </div>
+        <t t-if="color_picker" t-call="FieldMany2ManyTag.colorpicker"/>
+    </div>
+</t>
 <t t-name="FieldMany2ManyTag.colorpicker">
-    <div class="o_colorpicker dropdown-menu tagcolor_dropdown_menu" role="menu">
+    <div class="o_colorpicker">
         <ul>
             <li t-foreach="11" t-as="color">
                 <a href="#"

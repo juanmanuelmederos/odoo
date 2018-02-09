@@ -1751,11 +1751,74 @@ var FieldMany2ManyTags = AbstractField.extend({
 
 var FormFieldMany2ManyTags = FieldMany2ManyTags.extend({
     events: _.extend({}, FieldMany2ManyTags.prototype.events, {
-        'click .badge': '_onOpenColorPicker',
+        'click .badge': '_onClickBadge',
         'mousedown .o_colorpicker a': '_onUpdateColor',
         'mousedown .o_colorpicker .o_hide_in_kanban': '_onUpdateColor',
-        'focusout .o_colorpicker': '_onCloseColorPicker',
+        'mousedown .o_edit_record': '_onEditRecord',
+        'mousedown .o_delete_record': '_onDeleteRecord',
+        'focusout .o_tag_dropdown_menu': '_onCloseTagDropdown',
     }),
+    /**
+     * @constructor
+     */
+    init: function () {
+        this._super.apply(this, arguments);
+
+        this.no_delete = this.nodeOptions.no_delete;
+        this.no_edit = this.nodeOptions.no_edit;
+        this.no_options = this.no_edit && this.no_delete;
+    },
+
+    //--------------------------------------------------------------------------
+    // Private
+    //--------------------------------------------------------------------------
+
+    /**
+     * @private
+     * @param {integer} id
+     */
+    _deleteRecord: function (id) {
+        var self = this;
+        var record = _.findWhere(this.value.data, { res_id: id });
+        this._rpc({
+            model: record.model,
+            method: 'unlink',
+            context: this.record.getContext(this.recordParams),
+            args: [record.res_id],
+        }).then(function (res) {
+            self._removeTag(record.res_id);
+        });
+    },
+    /**
+     * @private
+     * @param {integer} id
+     */
+    _editRecord: function (id) {
+        var self = this;
+        var record = _.findWhere(this.value.data, { res_id: id });
+        var context = this.record.getContext(this.recordParams);
+        this._rpc({
+            model: record.model,
+            method: 'get_formview_id',
+            context: context,
+            args: [[record.res_id]],
+        }).then(function (view_id) {
+            new dialogs.FormViewDialog(self, {
+                res_model: record.model,
+                res_id: record.res_id,
+                title: _t("Edit"),
+                context: context,
+                view_id: view_id,
+                readonly: false,
+                on_saved: function (record, changed) {
+                    if (changed) {
+                        self._setValue(self.value.data, { forceChange: true });
+                        self.trigger_up('reload', { db_id: self.value.id });
+                    }
+                },
+            }).open();
+        });
+    },
 
     //--------------------------------------------------------------------------
     // Handlers
@@ -1763,31 +1826,54 @@ var FormFieldMany2ManyTags = FieldMany2ManyTags.extend({
 
     /**
      * @private
+     * @param {MouseEvent} ev
      */
-    _onCloseColorPicker: function () {
-        this.$color_picker.remove();
+    _onClickBadge: function (ev) {
+        var tagID = $(ev.currentTarget).data('id');
+        var tagColor = $(ev.currentTarget).data('color');
+        var tag = _.findWhere(this.value.data, { res_id: tagID });
+        var hasColorField = tag && this.colorField in tag.data;
+
+        this.$tag_dropdown = $(qweb.render('FieldMany2ManyTag.TagDropdown', {
+            'color_picker': hasColorField,
+            'tag_id': tagID,
+            'widget': this,
+        }));
+
+        $(ev.currentTarget).append(this.$tag_dropdown);
+        this.$tag_dropdown.dropdown('toggle');
+        this.$tag_dropdown.attr("tabindex", 1).focus();
+
+        if (hasColorField && !tagColor) {
+            this.$('.o_checkbox input').prop('checked', true);
+        }
+    },
+    /**
+     * @private
+     */
+    _onCloseTagDropdown: function () {
+        this.$tag_dropdown.remove();
     },
     /**
      * @private
      * @param {MouseEvent} ev
      */
-    _onOpenColorPicker: function (ev) {
-        var tagID = $(ev.currentTarget).data('id');
-        var tagColor = $(ev.currentTarget).data('color');
-        var tag = _.findWhere(this.value.data, { res_id: tagID });
-        if (tag && this.colorField in tag.data) { // if there is a color field on the related model
-            this.$color_picker = $(qweb.render('FieldMany2ManyTag.colorpicker', {
-                'widget': this,
-                'tag_id': tagID,
-            }));
-
-            $(ev.currentTarget).append(this.$color_picker);
-            this.$color_picker.dropdown('toggle');
-            this.$color_picker.attr("tabindex", 1).focus();
-            if (!tagColor) {
-                this.$('.o_checkbox input').prop('checked', true);
-            }
-        }
+    _onEditRecord: function (ev) {
+        ev.preventDefault();
+        this._editRecord($(ev.currentTarget).data('id'));
+    },
+    /**
+     * @private
+     * @param {MouseEvent} ev
+     */
+    _onDeleteRecord: function (ev) {
+        var self = this;
+        ev.preventDefault();
+        Dialog.confirm(this, (_t("Are you sure you want to remove this item?")), {
+            confirm_callback: function () {
+                self._deleteRecord($(ev.currentTarget).data('id'));
+            },
+        });
     },
     /**
      * Update color based on target of ev
