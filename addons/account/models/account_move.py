@@ -242,8 +242,10 @@ class AccountMove(models.Model):
                     for tax_vals in taxes_vals['taxes']:
                         name = tax_vals['name']
                         tax_rec = self.env['account.tax'].browse([tax_vals['id']])
+                        account_id = (tax_rec.tax_exigibility == 'on_payment' and tax_rec.cash_basis_account) and tax_rec.cash_basis_account.id or tax_rec.account_id.id
+                        account_id = account_id or line.account_id.id
                         line_vals = {
-                            'account_id': (tax_rec.tax_exigibility == 'on_payment' and tax_rec.cash_basis_account) and tax_rec.cash_basis_account.id or tax_rec.account_id.id,
+                            'account_id': account_id,
                             'name': name,
                             'tax_line_id': tax_vals['id'],
                             'partner_id': line.partner_id.id,
@@ -254,6 +256,7 @@ class AccountMove(models.Model):
                             'move_id': self.id,
                             'tax_exigible': tax_rec.tax_exigibility == 'on_invoice',
                             'company_id': self.company_id.id,
+                            'company_currency_id': self.company_id.currency_id.id,
                         }
                         self.env['account.move.line'].new(line_vals)
             #keep record of the values used as taxes the last time we ran this method
