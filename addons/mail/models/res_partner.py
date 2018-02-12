@@ -207,11 +207,28 @@ class Partner(models.Model):
     @api.model
     def _notify_by_chat(self, message, recipient_data):
         """ Broadcast the message to all the partner since """
-        message_values = message.message_format()[0]
-        notifications = []
-        for partner_data in recipient_data:
-            notifications.append([(self._cr.dbname, 'ir.needaction', partner_data[0]), dict(message_values)])
-        self.env['bus.bus'].sendmany(notifications)
+        from odoo.addons.bus.models.bus_presence import DISCONNECTION_TIMER
+
+        notify_pids = list()
+
+        self.env.cr.execute("""
+            SELECT
+                U.partner_id as id,
+                CASE WHEN age(now() AT TIME ZONE 'UTC', B.last_poll) > interval %s THEN 'offline'
+                     ELSE 'online'
+                END as status
+            FROM bus_presence B
+                JOIN res_users U ON B.user_id = U.id
+            WHERE U.partner_id IN %s AND U.active = 't'
+        """, ("%s seconds" % DISCONNECTION_TIMER, tuple([r[0] for r in recipient_data])))
+        for status in self.env.cr.dictfetchall():
+            if status['status'] == 'online':
+                notify_pids.append(status['id'])
+
+        if notify_pids:
+            message_values = message.message_format()[0]
+            notifications = [([(self._cr.dbname, 'ir.needaction', pid), dict(message_values)]) for pid in notify_pids]
+            self.env['bus.bus'].sendmany(notifications)
 
     @api.model
     def get_needaction_count(self):
