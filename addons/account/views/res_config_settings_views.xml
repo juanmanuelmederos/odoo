@@ -281,64 +281,6 @@
                                     </div>
                                 </div>
                             </div>
-                            <h2>Bank &amp; Cash</h2>
-                            <div class="row mt16 o_settings_container" id="bank_cash">
-                                <div class="col-xs-12 col-md-6 o_setting_box" id="account_yodlee" title="Get your bank statements automatically imported every 4 hours, or in one-click, using Yodlee and Plaid services. Once installed, set “Bank Feeds” to “Bank Synchronization” in bank account settings. Then, click “Configure” on the online account to enter your bank credentials.">
-                                    <div class="o_setting_left_pane">
-                                        <field name="module_account_yodlee" widget="upgrade_boolean"/>
-                                    </div>
-                                    <div class="o_setting_right_pane">
-                                        <label string="Automatic Import"/>
-                                        <div class="text-muted">
-                                            Import your bank statements automatically
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-xs-12 col-md-6 o_setting_box" title="Once installed, set 'Bank Feeds' to 'File Import' in bank account settings.This adds a button to import from the Accounting dashboard.">
-                                    <div class="o_setting_left_pane">
-                                        <field name="module_account_bank_statement_import_csv" widget="upgrade_boolean"/>
-                                    </div>
-                                    <div class="o_setting_right_pane">
-                                        <label string="CSV Import"/>
-                                        <div class="text-muted">
-                                            Import your bank statements in CSV
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-xs-12 col-md-6 o_setting_box" title="Once installed, set 'Bank Feeds' to 'File Import' in bank account settings.This adds a button to import from the Accounting dashboard.">
-                                    <div class="o_setting_left_pane">
-                                        <field name="module_account_bank_statement_import_qif" widget="upgrade_boolean"/>
-                                    </div>
-                                    <div class="o_setting_right_pane">
-                                        <label string="QIF Import"/>
-                                        <div class="text-muted">
-                                            Import your bank statements in QIF
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-xs-12 col-md-6 o_setting_box" title="Once installed, set 'Bank Feeds' to 'File Import' in bank account settings.This adds a button to import from the Accounting dashboard.">
-                                    <div class="o_setting_left_pane">
-                                        <field name="module_account_bank_statement_import_ofx" widget="upgrade_boolean"/>
-                                    </div>
-                                    <div class="o_setting_right_pane">
-                                        <label string="OFX Import"/>
-                                        <div class="text-muted">
-                                            Import your bank statements in OFX
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-xs-12 col-md-6 o_setting_box" title="Once installed, set 'Bank Feeds' to 'File Import' in bank account settings.This adds a button to import from the Accounting dashboard.">
-                                    <div class="o_setting_left_pane">
-                                        <field name="module_account_bank_statement_import_camt" widget="upgrade_boolean"/>
-                                    </div>
-                                    <div class="o_setting_right_pane">
-                                        <label string="CAMT Import"/>
-                                        <div class="text-muted">
-                                            Import your bank statements in CAMT.053
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         </t>
                         <h2>Analytics</h2>
                         <div class="row mt16 o_settings_container" id="analytic">
