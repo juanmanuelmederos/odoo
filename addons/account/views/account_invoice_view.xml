@@ -233,10 +233,10 @@
                 <sheet string="Vendor Bill">
                     <div>
                         <label string="Draft Bill" attrs="{'invisible': ['|',('state','!=','draft'), ('type','!=','in_invoice')]}"/>
-                        <label string="- First Number:" attrs="{'invisible': [('sequence_number_next_prefix','=',False)]}"/>
                         <label string="Draft Credit Note" attrs="{'invisible': ['|',('state','!=','draft'), ('type','!=','in_refund')]}"/>
                         <label string="Bill " attrs="{'invisible': ['|',('state', '=', 'draft'), ('type','!=','in_invoice')]}"/>
                         <label string="Credit Note " attrs="{'invisible': ['|',('state', '=', 'draft'), ('type','!=','in_refund')]}"/>
+                        <label string="- First Number:" attrs="{'invisible': [('sequence_number_next_prefix','=',False)]}"/>
                         <h1 class="mt0">
                             <field name="number" class="oe_inline"  attrs="{'invisible': [('state', '=', 'draft')]}"/>
                             <div  attrs="{'invisible': [('sequence_number_next_prefix','=',False)]}">
@@ -245,12 +245,12 @@
                             </div>
                         </h1>
                     </div>
-                    <field name="type" invisible="1"/>
                     <group>
                         <group>
+                            <field name="type" widget="radio" visibility="in_invoice,in_refund" string="Create a New" attrs="{'invisible': [('state', '!=', 'draft')]}"/>
                             <field string="Vendor" name="partner_id"
                               context="{'default_customer': 0, 'search_default_supplier': 1, 'default_supplier': 1, 'default_company_type': 'company'}"
-                              domain="[('supplier', '=', True)]"/>
+                              domain="[('supplier', '=', True)]" attrs="{'required': [('state', '!=', 'draft')]}"/>
                             <field name="reference" string="Vendor Reference"/>
                         </group>
                         <group>
@@ -551,6 +551,10 @@
                     <field name="user_id" string="Salesperson" domain="[('share','=', False)]"/>
                     <field name="date" string="Period"/>
                     <separator/>
+                    <filter domain="[('type', '=', 'out_invoice')]" name="out_invoice_filter" string="Customer Invoices" invisible="context.get('type') != 'out_invoice'"/>
+                    <filter domain="[('type', '=', 'out_refund')]" name="out_refund_filter" string="Customer Credit Notes" invisible="context.get('type') != 'out_refund'"/>
+                    <filter domain="[('type', '=', 'in_invoice')]" name="in_invoice_filter" string="Vendor Bills" invisible="context.get('type') != 'in_invoice'"/>
+                    <filter domain="[('type', '=', 'in_refund')]" name="in_refund_filter" string="Vendor Credit Notes" invisible="context.get('type') != 'in_refund'"/>
                     <filter domain="[('user_id','=',uid)]" name="myinvoices" help="My Invoices"/>
                     <filter domain="[('is_recurrency_enabled','=',True)]" name="is_recurrency_enabled" help="Bills Generating Recurring Bills" groups="account.group_allow_recurring" invisible="context.get('type') != 'in_invoice'"/>
                     <filter domain="[('is_recurring_document','=',True)]" name="is_recurring_document" help="Bills Generated Automatically" groups="account.group_allow_recurring" invisible="context.get('type') != 'in_invoice'"/>
@@ -673,8 +677,8 @@
             <field name="view_type">form</field>
             <field name="view_mode">tree,kanban,form,calendar,pivot,graph</field>
             <field eval="False" name="view_id"/>
-            <field name="domain">[('type','=','out_invoice')]</field>
-            <field name="context">{'type':'out_invoice', 'journal_type': 'sale'}</field>
+            <field name="domain">[('type','in',['out_invoice','out_refund'])]</field>
+            <field name="context">{'search_default_out_invoice_filter':1, 'type': 'out_invoice', 'journal_type': 'sale'}</field>
             <field name="search_view_id" ref="view_account_invoice_filter_inherit_invoices"/>
             <field name="help" type="html">
               <p class="o_view_nocontent_smiling_face">
@@ -708,8 +712,8 @@
             <field name="view_type">form</field>
             <field name="view_mode">tree,kanban,form,calendar,pivot,graph</field>
             <field eval="False" name="view_id"/>
-            <field name="domain">[('type','=','out_refund')]</field>
-            <field name="context">{'default_type': 'out_refund', 'type': 'out_refund', 'journal_type': 'sale'}</field>
+            <field name="domain">[('type','in',['out_refund','out_invoice'])]</field>
+            <field name="context">{'search_default_out_refund_filter':1, 'default_type': 'out_refund', 'type': 'out_refund', 'journal_type': 'sale'}</field>
             <field name="search_view_id" ref="view_account_invoice_filter_inherit_credit_notes"/>
             <field name="help" type="html">
               <p class="o_view_nocontent_smiling_face">
@@ -746,15 +750,12 @@
             <field name="view_type">form</field>
             <field name="view_mode">tree,kanban,form,calendar,pivot,graph</field>
             <field eval="False" name="view_id"/>
-            <field name="domain">[('type','=','in_invoice')]</field>
-            <field name="context">{'default_type': 'in_invoice', 'type': 'in_invoice', 'journal_type': 'purchase'}</field>
+            <field name="domain">[('type','in',['in_invoice','in_refund'])]</field>
+            <field name="context">{'search_default_in_invoice_filter':1, 'default_type': 'in_invoice', 'type': 'in_invoice', 'journal_type': 'purchase'}</field>
             <field name="search_view_id" ref="view_account_invoice_filter_inherit_invoices"/>
             <field name="help" type="html">
               <p class="o_view_nocontent_smiling_face">
                 Record a new vendor bill
-              </p><p>
-                You can control the invoice from your vendor based on
-                what you purchased or received.
               </p>
             </field>
         </record>
@@ -782,8 +783,8 @@
             <field name="view_type">form</field>
             <field name="view_mode">tree,kanban,form,calendar,pivot,graph</field>
             <field eval="False" name="view_id"/>
-            <field name="domain">[('type','=','in_refund')]</field>
-            <field name="context">{'default_type': 'in_refund', 'type': 'in_refund', 'journal_type': 'purchase'}</field>
+            <field name="domain">[('type','in',['in_refund','in_invoice'])]</field>
+            <field name="context">{'search_default_in_refund_filter':1, 'default_type': 'in_refund', 'type': 'in_refund', 'journal_type': 'purchase'}</field>
             <field name="search_view_id" ref="view_account_invoice_filter_inherit_credit_notes"/>
             <field name="help" type="html">
               <p class="o_view_nocontent_smiling_face">
