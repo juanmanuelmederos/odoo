@@ -21,7 +21,7 @@
                 </xpath>
             </field>
         </record>
-        
+
         <!-- Purchase button on orderpoints -->
 
         <record id="view_warehouse_orderpoint_purchase_form" model="ir.ui.view">
@@ -30,11 +30,19 @@
             <field name="inherit_id" ref="stock.view_warehouse_orderpoint_form"/>
             <field name="arch" type="xml">
                 <div name="button_box" position="inside">
-                    <button name="%(purchase.purchase_order_action_generic)d" type="action" 
+                    <button name="%(purchase.purchase_order_action_generic)d" type="action"
                         string="Purchases" class="oe_stat_button" icon="fa-refresh"
                         domain="[('orderpoint_id','=',active_id)]"/>
                 </div>
             </field>
+        </record>
+
+        <record id="purchase_open_picking" model="ir.actions.act_window">
+            <field name="name">Receptions</field>
+            <field name="res_model">stock.picking</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+            <field name="domain">[('purchase_id', '=', active_id)]</field>
         </record>
 
 </odoo>
