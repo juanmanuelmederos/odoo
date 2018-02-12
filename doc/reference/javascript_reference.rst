@@ -66,7 +66,8 @@ directive:
 
 Here is what happens when a template is rendered by the server with these directives:
 
-- all the *less* files described in the bundle are compiled into css files
+- all the *less* files described in the bundle are compiled into css files. A file
+  named *file.less* will be compiled in a file named *file.less.css*.
 
 - if we are in *debug=assets* mode,
     - the *t-call-assets* directive with the *t-js* attribute set to false will 
@@ -122,16 +123,36 @@ to add a file from that addon.  In that case, it should be done in three steps:
         </template>
 
 
-- explain how to lazyload files (insert script/stylesheet tag) + give a link to
-    section where we explain lazy loading in widgets
-- explain different bundle types: common/frontend/backend
-- explain why css bundles are split
-- explain how files are added into the bundle, with xml xpath example
-- less files are compiled
-- bundles are cached
+Note that files in a bundle are all loaded immediately when the user load the
+odoo web client.  This means that the files are transferred through the network
+everytime (except when the browser cache is active).  In some cases, it may be
+better to lazyload some assets.  For example, if a widget requires a large
+library, and that widget is not a core part of the experience, then it may be
+a good idea to only load the library when the widget is actually created. The
+widget class has actually builtin support just for this use case.
+INSERT HERE LINK ON LAZYLOADING SUPPORT.
 
-TODO: explain when it is necessary to refresh web browser, and that with
-dev = all, it is not necessary to restart server
+Bundles generation
+------------------
+
+When the Odoo server is started, it checks the timestamp of each file in a bundle,
+and if necessary, will create/recreate the corresponding bundles. From then, the
+server does not know if an asset file has beeen modified.  In that case, there
+are a few solutions:
+
+- restart the server.  This will regenerate the asset bundles
+- in the user interface, in debug mode (INSERT LINK HERE TO DEBUG MODE), there
+  is an option to force the server to update its assets files.
+- use the *debug=assets* mode.  This will actually bypass the asset bundles (be
+  aware that the server still uses outdated bundles)
+- finally, the most convenient way to do it, for a developer, is to start the
+  server with the *--dev=all* option. This activates the file watcher options,
+  which will automatically invalidate assets when necessary.  Note that it does
+  not work very well if the OS is Windows.
+
+Once an asset file has been recreated, you need to refresh the page, to reload
+the proper files (if that does not work, the files may be cached).
+
 
 Javascript Module System
 ========================
@@ -143,7 +164,13 @@ which needs to be loaded first).
 
 The Odoo module system, inspired by AMD, works by defining the function *define*
 on the global odoo object. We then define each javascript module by calling that
-function.  As an example, it may look like this:
+function.  In Odoo framework, a module is a piece of code that will be executed
+as soon as possible.  It has a name and potentially some dependencies.  When its
+dependencies are loaded, a module will then be loaded as well.  The value of the
+module is then the return value of the function defining the module.
+
+
+As an example, it may look like this:
 
 
 .. code-block:: javascript
@@ -158,7 +185,7 @@ function.  As an example, it may look like this:
     });
 
     // in file b.js
-    odoo.define('module.A', function (require) {
+    odoo.define('module.B', function (require) {
         "use strict";
 
         var A = require('module.A');
@@ -168,43 +195,363 @@ function.  As an example, it may look like this:
         return B;
     });
 
+An alternative way to define a module is to give explicitely a list of dependencies
+in the second argument.
 
-The define method is given three arguments:
+.. code-block:: javascript
 
-- *moduleName*: the name of the   The first is the module name, it is
-a string and should be unique.  If 
+    odoo.define('module.Something', ['module.A', 'module.B'], function (require) {
+        "use strict";
 
-- explain module system
-- inspired by AMD
-- give example
-- module system is located in boot.js (so file need to be loaded first)
-- talk about way to define dependencies, about the fact that it parses the js
-  string of the function, that we can define an array of dependencies
-- module name convention: module.jsmodule
-- asynchronous modules
-- note: convention: uppercase for class, lowercase for rest
-- note: try to export just one thing
+        var A = require('module.A');
+        var B = require('module.B');
 
+        // some code
+    });
+
+
+If some dependencies are missing/non ready, then the module will simply not be
+loaded.  There will be a warning in the console after a few seconds.
+
+Defining a module
+-----------------
+
+The *odoo.define* method is given three arguments:
+
+- *moduleName*: the name of the javascript module.  It should be a unique string.
+  The convention is to have the name of the odoo addon followed by a specific
+  description. For example, 'web.Widget' describes a module defined in the *web*
+  addon, which exports a *Widget* class (because the first letter is capitalized)
+
+  If the name is not unique, an exception will be thrown and displayed in the
+  console.
+
+- *dependencies*: the second argument is optional. If given, it should be a list
+  of strings, each corresponding to a javascript module.  This describes the
+  dependencies that are required to be loaded before the module is executed. If
+  the dependencies are not explicitely given here, then the module system will
+  extract them from the function by calling toString on it, then using a regexp
+  to find all *require* statements.
+
+- finally, the last argument is a function which defines the module. Its return
+  value is the value of the module, which may be passed to other modules requiring
+  it.  Note that there is a small exception for asynchronous modules, see the
+  next section.
+
+Asynchronous modules
+---------------------
+
+It can happen that a module needs to perform some work before it is ready.  For
+example, it could do a rpc to load some data.  In that case, the module can
+simply return a deferred (promise).  In that case, the module system will simply
+wait for the deferred to complete before registering the module.
+
+.. code-block:: javascript
+
+    odoo.define('module.Something', ['web.ajax'], function (require) {
+        "use strict";
+
+        var ajax = require('web.ajax');
+
+        return ajax.rpc(...).then(function (result) {
+            // some code here
+            return something;
+        });
+    });
+
+
+Notes on modules
+----------------
+
+- remember the convention for a module name: *addon name* suffixed with *module
+  name*.
+- try to avoid exporting too much things from one module.  It is usually better
+  to simply export one thing in one (small/smallish) module.
+- asynchronous modules can be used to simplify some use cases.  For example,
+  the *web.dom_ready* module returns a deferred which will be resolved when the
+  dom is actually ready.  So, another module that needs the DOM could simply have
+  a *require('web.dom_ready')* statement somewhere, and the code will only be
+  executed when the DOM is ready.
 
 Code Structure
 ==============
 
-- generic folder structure for static files (/static, static/src, static/lib, static/tests, ...)
-- an overview of js files in web client
+Odoo addons have some conventions on how to structure various files (see ODOO GUIDELINES).
+We will here explain in more details how web assets are supposed to be organized.
+
+The first thing to know is that the Odoo server will serve (statically) all files
+located in a *static/* folder, but prefixed with the addon name.  So, for example,
+if a file is located in *addons/web/static/src/js/some_file.js*, then it will be
+statically available at the url *your-odoo-server.com/web/static/src/js/some_file.js*
+
+The convention is to organize the code according to the following structure:
+
+- *static*: all static files in general
+- *static/lib*: this is the place where js libs should be located, in a sub folder.
+  So, for example, all files from the *jquery* library are in *addons/web/static/lib/jquery*
+- *static/src*: the generic static source code folder
+- *static/src/css*: all css files
+- *static/src/fonts*
+- *static/src/img*
+- *static/src/js*
+- *static/src/less*: less files
+- *static/src/xml*: all qweb templates that will be rendered in JS
+- *static/tests* this is where we put all test related files.
+
+
+An overview of the web client JS code
+-------------------------------------
+
+
+This subsection contains a very quick overview on the web client code, in
+the *web/static/src/js* addon.  It is deliberately not exhaustive.  We only
+cover the most important files/folders.
+
+- *boot.js*: this is the file that defines the module system.  It needs to be
+  loaded first.
+- *core/*: this is a collection of lower level building blocks. Notably, it
+  contains the class system, the widget system, concurrency utilities, and many
+  other class/functions.
+- *chrome/*: in this folder, we have most large widgets which make up most of
+  the user interface.
+- *chrome/abstract_web_client.js* and *chrome/web_client.js*: together, these
+  files define the WebClient widget, which is the root widget for the web client.
+- *chrome/action_manager.js*: this is the code that will convert an action in
+  a widget (for example a kanban or a form view)
+- *chrome/search_X.js* all these files define the search view (it is not a view
+  in the point of view of the web client, only from the server point of view)
+- *fields*: all main view field widgets are defined here
+- *views*: this is where the views are located
 
 Class System
 ============
 
-- odoo class (located in class.js, web.class)
-- inheritance
-- extend/includes (when it should be used and when it should be avoided)
-- this._super
-- mixins
+Odoo was developped before ECMAScript 6 classes were available.  In Ecmascript 5,
+the standard way to define a class is to define a function and to add methods
+on its prototype object.  This is fine, but it is slightly complex when we want
+to use inheritance, mixins.
+
+For these reasons, Odoo decided to use its own class system, inspired by John
+Resig. The base Class is located in *web.Class*, in the file *class.js*.
+
+Creating a subclass
+-------------------
+
+Let us discuss how classes are created.  The main mechanism is to use the
+*extend* method (this is more or less the equivalent of *extend* in ES6 classes).
+
+.. code-block:: javascript
+
+    var Class = require('web.Class');
+
+    var Animal = Class.extend({
+        init: function () {
+            this.x = 0;
+            this.hunger = 0;
+        },
+        move: function () {
+            this.x = this.x + 1;
+            this.hunger = this.hunger + 1;
+        },
+        eat: function () {
+            this.hunger = 0;
+        },
+    });
+
+
+In this example, the *init* function is the constructor.  It will be called when
+an instance is created.  Making an instance is done by using the *new* keyword.
+
+Inheritance
+-----------
+
+It is convenient to be able to inherit an existing class.  This is simply done
+by using the *extend* method on the superclass.  When a method is called, the
+framework will secretly rebind a special method: *_super* to the currently
+called method.  This allows us to use *this._super* whenever we need to call a
+parent method.
+
+
+.. code-block:: javascript
+
+    var Animal = require('web.Animal');
+
+    var Dog = Animal.extend({
+        move: function () {
+            this.bark();
+            this._super();
+        },
+        bark: function () {
+            console.log('woof');
+        },
+    });
+
+    var dog = new Dog();
+    dog.move()
+
+Mixins
+------
+
+The odoo Class system does not have multiple inheritance, but for those cases
+when we need to share some behaviour, we have a mixin system: the *extend*
+method can actually take an arbitrary number of arguments, and will combine all
+of them in the new class.
+
+.. code-block:: javascript
+
+    var Animal = require('web.Animal');
+    var DanceMixin = {
+        dance: function () {
+            console.log('dancing...');
+        },
+    };
+
+    var Hamster = Hamster.extend(DanceMixin, {
+        sleep: function () {
+            console.log('sleeping');
+        },
+    });
+
+In this example, the *Hamster* class is a subclass of Animal, but it also mix
+the DanceMixin in.
+
+
+Patching an existing class
+--------------------------
+
+It is not common, but we sometimes need to modify another class *in place*. The
+goal is to have a mechanism to change a class and all future/present instances.
+This is done by using the *include* method:
+
+.. code-block:: javascript
+
+    var Hamster = require('web.Hamster');
+
+    Hamster.include({
+        sleep: function () {
+            this._super();
+            console.log('zzzz');
+        },
+    });
+
+
+This is obviously a dangerous operation and should be done with care.  But with
+the way Odoo is structured, it is sometimes necessary in one addon to modify
+the behavior of a widget/class defined in another addon.
+
 
 Widgets
 =======
 
-- widget API lifecycle, appendTo, event binding, custom events, template, rendering, ...
+The *Widget* class is really an important building block of the user interface.
+Pretty much everything in the user interface is under the control of a widget.
+The Widget class is defined in the module *web.Widget*, in *widget.js*.
+
+It is a subclass of *Class*, defined with two mixins:
+
+- the *PropertiesMixin*: this mixin adds the parent/children relationship management,
+  the event management and the notion of a property (now obsolete).
+- the *ServicesMixin*: this mixin give the basic support for using interacting
+  with the services.  In particular, it defines the *_rpc* method.
+
+Here is an example of a basic counter widget:
+
+.. code-block:: javascript
+
+    var Widget = require('web.Widget');
+
+    var Counter = Widget.extend({
+        template: 'some.template',
+        events: {
+            'click button': '_onClick',
+        },
+        init: function (parent, value) {
+            this._super(parent);
+            this.count = value;
+        },
+        _onClick: function () {
+            this.count++;
+            this.$('.val').text(this.count);
+        },
+    });
+
+For this example, assume that the template *some.template* is given by:
+
+.. code-block:: xml
+
+    <div t-name="some.template">
+        <span class="val"><t t-esc="widget.count"/></span>
+        <button>Increment</button>
+    </div>
+
+This example illustrates a few of the features of the *Widget* class, including
+the event system, the template system, the constructor with the initial *parent* argument.
+
+Widget Lifecycle
+----------------
+
+Like many component systems, the widget class has a well defined lifecycle. The
+usual lifecycle is the following: *init* is called, then *willStart*, then the
+rendering takes place, then *start* and finally *destroy*.
+
+- *init*: this is the constructor.  The init method is supposed to initialize the
+  base state of the widget.
+- *willStart*: this method will be called by the framework when a widget is created
+  and in the process of being appended to the DOM.  The *willStart* method is a
+  hook that should return a deferred.  The JS framework will wait for this deferred
+  to complete before moving on to the rendering step.  Note that at this point,
+  the widget does not have a DOM root element.  The *willStart* hook is mostly
+  useful to perfom some asynchronous work, such as fetching data from the server
+- [Rendering] This step is automatically done by the framework.  What happens is
+  that the framework check if a template key is defined on the widget.  If that is
+  the case, then it will render that template with the *widget* key bound to the
+  widget in the rendering context (see the example above: we use *widget.count*
+  in the QWeb template to read the value from the widget). If no template is
+  defined, we read the *tagName* key and create a corresponding DOM element.
+  When the rendering is done, we set the result as the $el property of the widget.
+  After this, we automatically bind all events in the events and custom_events
+  keys.
+- *start*: when the rendering is complete, the framework will automaticallly call
+  the *start* method.  This is useful to perform some specialized post-rendering
+  work.  For example, setting up a library.
+- *destroy*: this is always the final step in the life of a widget.  When a
+  widget is destroyed, we basically perform all necessary cleanup operations:
+  removing the widget from the component tree, unbinding all events, ...
+
+Note that the willStart and start method are not necessarily called.  A widget
+can be created (the *init* method will be called) and then destroyed (*destroy*
+method) without ever having been appended to the DOM.  If that is the case, the
+willStart and start will not even be called.
+
+Widget API
+----------
+
+- *tagName*: if no template is defined, this will be the default root element.
+  It is set by default to 'div''
+- *id*: if set, this will be added as an ID to the root element.  Note that this
+  is rarely needed, and is probably not a good idea if a widget can be used more
+  than once.
+- *className*: this is a string that will be added as a class attribute on the root
+  element.
+- *attributes*: every key in this dictionary will be added as attribute to the root
+  element.
+- *events*: this is a dictionary. Each key is a string which looks like this:
+  '[eventName] [selector (with possibly several words)]'. The values are either
+  (inline) functions or name of methods.  When the framework need to bind events,
+  it will split the event name from the key, and bind on the root element the
+  proper callback.
+  For more details, see the EventDispatcherMixin, defined in mixins.js.
+- *custom_events*: this is almost the sams as the *events* attribute, but the keys
+  are arbitrary strings.  They represent business events triggered by
+  some sub widgets.  When an event is triggered, it will 'bubble up' the widget
+  tree (see the section on component communication for more details)
+- *template*: The name of the QWeb template that will be used for rendering. Must
+  be redefined in subclasses or the default render() method can not be used.
+- *xmlDependencies*: List of paths to xml files that need to be loaded before the
+  widget can be rendered. This will not induce loading anything that has already
+  been loaded.
+
+
 
 QWeb Template Engine
 ====================
@@ -233,8 +580,17 @@ dynamic state: create/destroy many sub components
 Registries
 ===========
 
+A common need in the Odoo ecosystem is to extend/change the behaviour of the
+base system from the outside (by installing an application, i.e. a different
+module).  For example, one may need to add a new widget type in some views.  In
+that case, and many others, the usual process is to create the desired component,
+then add it to a registry (registering step), to make the rest of the web client
+aware of its existence.
+
+There are a few registries available in the system:
+
+- field registry (exported by 'web.field_registry')
 - view registry
-- field registry
 - action registry
 
 
