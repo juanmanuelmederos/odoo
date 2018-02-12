@@ -2,8 +2,9 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 import pytz
 import datetime
-import logging
 import hmac
+import json
+import logging
 
 from collections import defaultdict
 from itertools import chain, repeat
@@ -377,7 +378,7 @@ class Users(models.Model):
             db = self._cr.dbname
             for id in self.ids:
                 self.__uid_cache[db].pop(id, None)
-        if any(key in values for key in self._get_session_token_fields()):
+        if set(values).intersection(self._get_session_token_fields()):
             self._invalidate_session_cache()
 
         return res
@@ -522,7 +523,7 @@ class Users(models.Model):
     def _compute_session_token(self, sid):
         """ Compute a session token given a session id and a user id """
         # retrieve the fields used to generate the session token
-        session_fields = ', '.join(sorted(self._get_session_token_fields()))
+        session_fields = ','.join(sorted(self._get_session_token_fields()))
         self.env.cr.execute("""SELECT %s, (SELECT value FROM ir_config_parameter WHERE key='database.secret')
                                 FROM res_users
                                 WHERE id=%%s""" % (session_fields), (self.id,))
@@ -530,10 +531,10 @@ class Users(models.Model):
             self._invalidate_session_cache()
             return False
         data_fields = self.env.cr.fetchone()
-        # generate hmac key
-        key = (u'%s' % (data_fields,)).encode('utf-8')
-        # hmac the session id
-        data = sid.encode('utf-8')
+        # generate hmac key - Python 2/3-independent ascii bytes representation
+        key = json.dumps(data_fields, ensure_ascii=True).encode()
+        # hmac the ascii bytes of session id
+        data = sid.encode()
         h = hmac.new(key, data, sha256)
         # keep in the cache the token
         return h.hexdigest()
