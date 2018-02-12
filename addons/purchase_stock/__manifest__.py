@@ -14,6 +14,7 @@
         'data/purchase_stock_data.xml',
         'views/stock_views.xml',
         'report/purchase_report_views.xml',
+        'report/purchase_report_templates.xml',
     ],
     'demo': [
         'data/purchase_stock_demo.xml',
