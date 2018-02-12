@@ -11,6 +11,8 @@
     'website': 'https://www.odoo.com/page/purchase',
     'depends': ['stock_account', 'purchase'],
     'data': [
+        'security/ir.model.access.csv',
+        'security/purchase_stock_security.xml',
         'data/purchase_stock_data.xml',
         'views/stock_views.xml',
         'report/purchase_report_views.xml',
