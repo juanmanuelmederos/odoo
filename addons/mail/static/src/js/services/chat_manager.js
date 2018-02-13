@@ -43,7 +43,6 @@ var ChatManager =  AbstractService.extend({
         this.channelDefs = {};
         this.unreadConversationCounter = 0;
         this.emojis = [];
-        this.emojiSubstitutions = {};
         this.emojiUnicodes = {};
         this.needactionCounter = 0;
         this.starredCounter = 0;
@@ -1115,20 +1114,93 @@ var ChatManager =  AbstractService.extend({
             self.mentionPartnerSuggestions = result.mention_partner_suggestions;
             self.discussMenuID = result.menu_id;
 
-            // Shortcodes: canned responses and emojis
+            // Shortcodes: canned responses            
             _.each(result.shortcodes, function (s) {
-                if (s.shortcode_type === 'text') {
-                    self.cannedResponses.push(_.pick(s, ['id', 'source', 'substitution']));
-                } else {
-                    self.emojis.push(
-                        _.pick(s, ['id', 'source', 'unicode_source', 'substitution', 'description'])
-                    );
-                    self.emojiSubstitutions[_.escape(s.source)] = s.substitution;
-                    if (s.unicode_source) {
-                        self.emojiSubstitutions[_.escape(s.unicode_source)] = s.substitution;
-                        self.emojiUnicodes[_.escape(s.source)] = s.unicode_source;
-                    }
-                }
+                self.cannedResponses.push(_.pick(s, ['id', 'source', 'substitution']));
+            });
+            // emojis
+            self.emojiUnicodes={
+                ":)":"😊",
+                ":D":"😃",
+                "xD":"😆",
+                ":-)":"😂",
+                ";)":"😉",
+                "B)":"😎",
+                ";p":"😜",
+                ":p":"😋",
+                "xp":"😝",
+                "o_o":"😳",
+                ":|":"😐",
+                ":/":"😕",
+                ":(":"😞",
+                ":@":"😱",
+                ":O":"😲",
+                ":'o":"😨",  
+                "3:":"😠",
+                "3:)":"😈",
+                ":*":"😘",
+                "o:)":"😇",
+                ":'(":"😢",
+                ":'-(":"😭",
+                "&lt;3":"❤️",
+                ":heart_eyes":"😍",
+                ":turban":"👳",
+                ":+1":"👍",
+                ":-1":"👎",
+                ":ok":"👌",
+                ":poop":"💩",
+                ":no_see":"🙈",
+                ":no_hear":"🙉",
+                ":no_speak":"🙊",
+                ":bug":"🐞",
+                ":kitten":"😺",
+                ":bear":"🐻",
+                ":snail":"🐌",
+                ":boar":"🐗",
+                ":clover":"🍀",
+                ":sunflower":"🌹",
+                ":fire":"🔥",
+                ":sun":"☀️",
+                ":partly_sunny:":"⛅️",
+                ":rainbow":"🌈",
+                ":cloud":"☁️",
+                ":zap":"⚡️",
+                ":star":"⭐️",
+                ":cookie":"🍪",
+                ":pizza":"🍕",  
+                ":hamburger":"🍔", 
+                ":fries":"🍟",
+                ":cake":"🎂",
+                ":cake_part":"🍰",
+                ":coffee":"☕️",
+                ":banana":"🍌",
+                ":sushi":"🍣",
+                ":rice_ball":"🍙",
+                ":beer":"🍺",
+                ":wine":"🍷",
+                ":coktail":"🍸",
+                ":tropical":"🍹",
+                ":beers":"🍻",
+                ":ghost":"👻",
+                ":skull":"💀",
+                ":et":"👽",
+                ":party":"🎉",
+                ":trophy":"🏆",
+                ":key":"🔑",
+                ":pin":"📌",
+                ":postal_horn":"📯",
+                ":music":"🎵",
+                ":trumpet":"🎺",
+                ":guitar":"🎸",
+                ":soccer":"⚽️",
+                ":football":"🏈",
+                ":8ball":"🎱",
+                ":clapper":"🎬",
+                ":microphone":"🎤"
+                };
+
+            _.each(_.keys(self.emojiUnicodes), function (key) {
+                self.emojis.push({source:key, unicode_source:self.emojiUnicodes[key], description:key});
             });
 
             self.busBus.start_polling();
@@ -1276,12 +1348,13 @@ var ChatManager =  AbstractService.extend({
             module_icon:data.module_icon,
         };
 
-        _.each(_.keys(this.emojiSubstitutions), function (key) {
-            var escapedKey = String(key).replace(/([.*+?=^!:${}()|[\]/\\])/g, '\\$1');
-            var regexp = new RegExp("(?:^|\\s|<[a-z]*>)(" + escapedKey + ")(?=\\s|$|</[a-z]*>)", "g");
-            msg.body = msg.body.replace(regexp, ' <span class="o_mail_emoji">'+self.emojiSubstitutions[key]+'</span> ');
+        _.each(_.keys(self.emojiUnicodes), function (key) {
+            //add o_mail_emoji class on each unicode to manage size and font
+            var unicode = String(self.emojiUnicodes[key]);
+            var regexp = new RegExp("(?:^|\\s|<[a-z]*>)(" + unicode + ")(?=\\s|$|</[a-z]*>)", "g");
+            msg.body = msg.body.replace(regexp, ' <span class="o_mail_emoji">'+unicode+'</span> ');
         });
-
+        
         function propertyDescr(channel) {
             return {
                 enumerable: true,

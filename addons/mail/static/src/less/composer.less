@@ -1,3 +1,15 @@
+@font-face {
+    font-family: 'emojifont';
+    src: local('Segoe UI'), 
+         local('Apple Color Emoji'), 
+         local('Android Emoji'),
+         local('Noto Color Emoji'),
+         local(EmojiSymbols),
+         local(Symbola),
+         url('../fonts/emojisubset.ttf') format('truetype');
+}
+
+
 .o_chat_composer {
     position: relative;
     .o-flex(0, 0, auto);
@@ -219,13 +231,9 @@
 // Emoji
 .o_mail_emoji {
     display: inline-block;
-    height: 20px;
-    width: 20px;
     padding: 0;
-
-    > img {
-        width: 100%;
-    }
+    font-size:150%;
+    font-family: emojifont;
 }
 
 // Attachment Icons (common for chat thread and chat composer)
