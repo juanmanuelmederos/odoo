@@ -739,6 +739,7 @@ class Environment(Mapping):
         # otherwise create environment, and add it in the set
         self = object.__new__(cls)
         self.cr, self.uid, self.context = self.args = (cr, uid, frozendict(context))
+        self.cr_uid = (cr, uid)                     # for cache keys (singleton)
         self.registry = Registry(cr.dbname)
         self.cache = envs.cache
         self._protected = StackMap()                # {field: ids, ...}
