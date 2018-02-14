@@ -177,7 +177,7 @@ class MaintenanceEquipment(models.Model):
                         next_date = fields.Date.to_string(fields.Date.from_string(last_maintenance_done.close_date) + timedelta(days=equipment.period))
             elif next_maintenance_todo:
                 next_date = next_maintenance_todo.request_date
-                date_gap = fields.Date.from_string(next_maintenance_todo.request_date) - fields.Date.from_string(date_now)
+                date_gap = fields.Date.from_string(next_maintenance_todo.request_date) - fields.Date.from_string(self.effective_date)
                 # If next maintenance to do is in the future, and in more than 2 times the period, we insert an new request
                 # We use 2 times the period to avoid creation too closed request from a manually one created
                 if date_gap > timedelta(0) and date_gap > timedelta(days=equipment.period) * 2:
