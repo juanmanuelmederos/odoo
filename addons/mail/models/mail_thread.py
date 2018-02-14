@@ -26,7 +26,7 @@ from werkzeug import url_encode
 from werkzeug import urls
 
 from odoo import _, api, exceptions, fields, models, tools
-from odoo.tools import pycompat, ustr
+from odoo.tools import ormcache, pycompat, ustr
 from odoo.tools.safe_eval import safe_eval
 
 
@@ -301,7 +301,7 @@ class MailThread(models.AbstractModel):
         that adds alias information. """
         model = self._context.get('empty_list_help_model')
         res_id = self._context.get('empty_list_help_id')
-        catchall_domain = self.env['ir.config_parameter'].sudo().get_param("mail.catchall.domain")
+        catchall_domain = self._get_mail_config_parameter("mail.catchall.domain")
         document_name = self._context.get('empty_list_help_document_name', _('document'))
         nothing_here = not help
         alias = None
@@ -391,7 +391,7 @@ class MailThread(models.AbstractModel):
             # compute here to do it only if really necessary + cache will ensure it is done only once
             # if not base_url
             if not _sub_relative2absolute.base_url:
-                _sub_relative2absolute.base_url = self.env["ir.config_parameter"].sudo().get_param("web.base.url")
+                _sub_relative2absolute.base_url = self._get_mail_config_parameter("web.base.url")
             return match.group(1) + urls.url_join(_sub_relative2absolute.base_url, match.group(2))
 
         _sub_relative2absolute.base_url = base_url
@@ -419,6 +419,17 @@ class MailThread(models.AbstractModel):
             ('write_date', '<', limit_date_str)]
         ).unlink()
         return True
+
+    def _get_mail_config_parameter(self, key):
+        params = self.env['mail.thread'].sudo()._get_mail_config_parameters()
+        res = params.get(key, None)
+        return res
+
+    @ormcache('self.env.uid')
+    def _get_mail_config_parameters(self):
+        params = self.env['ir.config_parameter'].search_read([
+            ('key', 'in', ('mail.catchall.alias', 'mail.catchall.domain', 'mail.bounce.alias', 'web.base.url'))], fields=['key', 'value'])
+        return dict((param['key'], param['value']) for param in params)
 
     @api.model
     def check_mail_message_access(self, res_ids, operation, model_name=None):
@@ -728,7 +739,7 @@ class MailThread(models.AbstractModel):
         alias of the document, if it exists. Override this method to implement
         a custom behavior about reply-to for generated emails. """
         model_name = self.env.context.get('thread_model') or self._name
-        alias_domain = self.env['ir.config_parameter'].sudo().get_param("mail.catchall.domain")
+        alias_domain = self._get_mail_config_parameter("mail.catchall.domain")
         res = dict.fromkeys(res_ids, False)
 
         # alias domain: check for aliases and catchall
@@ -751,7 +762,7 @@ class MailThread(models.AbstractModel):
             # left ids: use catchall
             left_ids = set(res_ids).difference(set(aliases))
             if left_ids:
-                catchall_alias = self.env['ir.config_parameter'].sudo().get_param("mail.catchall.alias")
+                catchall_alias = self._get_mail_config_parameter("mail.catchall.alias")
                 if catchall_alias:
                     aliases.update(dict((res_id, '%s@%s' % (catchall_alias, alias_domain)) for res_id in left_ids))
             # compute name of reply-to
@@ -993,8 +1004,8 @@ class MailThread(models.AbstractModel):
             raise TypeError('message must be an email.message.Message at this point')
         MailMessage = self.env['mail.message']
         Alias, dest_aliases = self.env['mail.alias'], self.env['mail.alias']
-        catchall_alias = self.env['ir.config_parameter'].sudo().get_param("mail.catchall.alias")
-        bounce_alias = self.env['ir.config_parameter'].sudo().get_param("mail.bounce.alias")
+        catchall_alias = self._get_mail_config_parameter("mail.catchall.alias")
+        bounce_alias = self._get_mail_config_parameter("mail.bounce.alias")
         fallback_model = model
 
         # get email.message.Message variables for future processing
