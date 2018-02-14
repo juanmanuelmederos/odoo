@@ -345,6 +345,9 @@ class AssetsBundle(object):
                 cmd = assets[0].get_command()
                 source = '\n'.join([asset.get_source() for asset in assets])
                 compiled = self.compile_css(cmd, source)
+                # print ("\n\ncompiled before ::: ", compiled)
+                compiled = self.run_rtlcss(compiled);
+                print ("\n\ncompiled after ::: ", compiled)
                 if not self.css_errors and old_attachments:
                     old_attachments.unlink()
 
@@ -357,6 +360,7 @@ class AssetsBundle(object):
                     asset_id = fragments.pop(0)
                     asset = next(asset for asset in self.stylesheets if asset.id == asset_id)
                     asset._content = fragments.pop(0)
+                    # print ("\n\nasset_id and asset._content ::: ", asset_id, asset._content)
 
                     if debug:
                         try:
@@ -416,6 +420,29 @@ class AssetsBundle(object):
         compiled = result[0].strip().decode('utf8')
         return compiled
 
+    def run_rtlcss(self, source):
+        rtlcss = 'rtlcss'
+        cmd = [rtlcss, '-']
+
+        try:
+            rtlcss = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        except Exception:
+            msg = "Could not execute command %r" % cmd[0]
+            _logger.error(msg)
+            self.css_errors.append(msg)
+            return ''
+        result = rtlcss.communicate(input=source.encode('utf-8'))
+        if rtlcss.returncode:
+            cmd_output = ''.join(misc.ustr(result))
+            if not cmd_output:
+                cmd_output = "Process exited with return code %d\n" % rtlcss.returncode
+            error = self.get_rtlcss_error(cmd_output, source=source)
+            _logger.warning(error)
+            self.css_errors.append(error)
+            return ''
+        rtlcss_result = result[0].strip().decode('utf8')
+        return rtlcss_result
+
     def get_preprocessor_error(self, stderr, source=None):
         """Improve and remove sensitive information from sass/less compilator error messages"""
         error = misc.ustr(stderr).split('Load paths')[0].replace('  Use --trace for backtrace.', '')
@@ -428,6 +455,10 @@ class AssetsBundle(object):
                 error += '\n    - %s' % (asset.url if asset.url else '<inline sass>')
         return error
 
+    def get_rtlcss_error(self, stderr, source=None):
+        """Improve and remove sensitive information from sass/less compilator error messages"""
+        error = misc.ustr(stderr).split('Load paths')[0].replace('  Use --trace for backtrace.', '')
+        return error
 
 class WebAsset(object):
     html_url_format = '%s'
