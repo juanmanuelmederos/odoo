@@ -15,6 +15,9 @@
             <xpath expr="//field[@name='state_id']" position="attributes">
                 <attribute name="attrs">{'required':['|',('country_code','=', 'IN'),('country_code','=', False)]}</attribute>
             </xpath>
+            <xpath expr="//page[@name='sales_purchases']//field[@name='customer']" position="after">
+                <field name="is_e_commerce"/>
+            </xpath>
         </field>
     </record>
 </odoo>

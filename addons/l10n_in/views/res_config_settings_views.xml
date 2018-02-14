@@ -19,6 +19,17 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-xs-12 col-md-6 o_setting_box" title="Active GSTR and Fill GST Retrun Drirect From Odoo gst Server or Download JSON file." groups="base.group_no_one">
+                    <div class="o_setting_left_pane">
+                        <field name="register_gst_service" widget="upgrade_boolean"/>
+                    </div>
+                    <div class="o_setting_right_pane">
+                        <label for="register_gst_service"/>
+                        <div class="text-muted">
+                            Acctive GSTR Service
+                        </div>
+                    </div>
+                </div>
             </div>
         </field>
 	</record>

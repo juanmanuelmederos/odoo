@@ -10,6 +10,7 @@ class ResPartner(models.Model):
     __check_vat_in_re = re.compile('\d{2}[A-Z]{5}\d{4}[A-Z]{1}[A-Z\d]{1}[A-Z]{1}[A-Z\d]{1}')
 
     country_code = fields.Char(related="country_id.code",string="Country code")
+    is_e_commerce = fields.Boolean("E-Commerce", help="Tick this to define E-Commerce partner")
 
     #validation for gstn number
     @api.constrains('vat')
