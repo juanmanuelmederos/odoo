@@ -723,46 +723,58 @@ class MailThread(models.AbstractModel):
         return result
 
     @api.model
-    def _notify_get_reply_to(self, res_ids, default=None):
-        """ Returns the preferred reply-to email address that is basically the
-        alias of the document, if it exists. Override this method to implement
-        a custom behavior about reply-to for generated emails. """
-        model_name = self.env.context.get('thread_model') or self._name
+    def _notify_get_reply_to(self, res_ids, model=None, default=None, company=None, doc_names=None):
+        """ Returns the preferred reply-to email address. It searches for available
+        aliases if any. Otherwise it falls back on a default given as parameter.
+        Returned result is a dictionary. Keys are record IDs and value is formatted
+        like an email "Company_name Document_name <reply_to@email>"/
+
+        This method is semi-generic. It is available for all odoo models using
+        res_ids + model combination. However it is also possible to inherit it
+        to implement a specific behavior for a given model. An example would be
+        tasks taking their reply-to alias from their project. """
+        # Perform redirection allowing generic call as well as inheritance
+        if model and hasattr(self.env[model], '_notify_get_reply_to'):
+            return self.env[model]._notify_get_reply_to(res_ids, model=None, default=default, company=company, doc_names=doc_names)
+
+        model = model if model else self._name
+        res_ids = res_ids if res_ids else self.ids or [None]
+
         alias_domain = self.env['ir.config_parameter'].sudo().get_param("mail.catchall.domain")
         res = dict.fromkeys(res_ids, False)
+        rid_repto = dict()
+        doc_names = doc_names if doc_names else dict()
 
-        # alias domain: check for aliases and catchall
-        aliases = {}
-        doc_names = {}
         if alias_domain:
-            if model_name and model_name != 'mail.thread' and res_ids:
+            if model and model != 'mail.thread' and res_ids:
                 mail_aliases = self.env['mail.alias'].sudo().search([
-                    ('alias_parent_model_id.model', '=', model_name),
+                    ('alias_parent_model_id.model', '=', model),
                     ('alias_parent_thread_id', 'in', res_ids),
                     ('alias_name', '!=', False)])
-                # take only first found alias for each thread_id, to match
-                # order (1 found -> limit=1 for each res_id)
+                # take only first found alias for each thread_id, to match order (1 found -> limit=1 for each res_id)
                 for alias in mail_aliases:
-                    if alias.alias_parent_thread_id not in aliases:
-                        aliases[alias.alias_parent_thread_id] = '%s@%s' % (alias.alias_name, alias_domain)
-                doc_names.update(
-                    dict((ng_res[0], ng_res[1])
-                         for ng_res in self.env[model_name].sudo().browse(aliases).name_get()))
+                    rid_repto.setdefault(alias.alias_parent_thread_id, '%s@%s' % (alias.alias_name, alias_domain))
+                if not doc_names:
+                    doc_names = dict((ng_res[0], ng_res[1])
+                                     for ng_res in self.env[model].sudo().browse(rid_repto.keys()).name_get())
+
             # left ids: use catchall
-            left_ids = set(res_ids).difference(set(aliases))
+            left_ids = set(res_ids) - set(rid_repto.keys())
             if left_ids:
                 catchall_alias = self.env['ir.config_parameter'].sudo().get_param("mail.catchall.alias")
                 if catchall_alias:
-                    aliases.update(dict((res_id, '%s@%s' % (catchall_alias, alias_domain)) for res_id in left_ids))
+                    rid_repto.update(dict((res_id, '%s@%s' % (catchall_alias, alias_domain)) for res_id in left_ids))
+
             # compute name of reply-to
-            company_name = self.env.user.company_id.name
-            for res_id in aliases:
+            # TDE TODO: check company and call as sudo !
+            company_name = company.name if company else self.env.user.company_id.name
+            for res_id in rid_repto.keys():
                 email_name = '%s%s' % (company_name, doc_names.get(res_id) and (' ' + doc_names[res_id]) or '')
-                email_addr = aliases[res_id]
-                res[res_id] = formataddr((email_name, email_addr))
-        left_ids = set(res_ids).difference(set(aliases))
+                res[res_id] = formataddr((email_name, rid_repto[res_id]))
+
+        left_ids = set(res_ids) - set(rid_repto.keys())
         if left_ids:
-            res.update(dict((res_id, default) for res_id in res_ids))
+            res.update(dict((res_id, default) for res_id in left_ids))
         return res
 
     @api.multi
@@ -1996,7 +2008,7 @@ class MailThread(models.AbstractModel):
             'model': False,
             'subtype_id': self.env['ir.model.data'].sudo().xmlid_to_res_id('mail.mt_note'),
             'record_name': False,
-            'reply_to': self.env['mail.thread'].sudo()._notify_get_reply_to([0])[0],
+            'reply_to': self.env['mail.thread']._notify_get_reply_to([0], model=None, default=email_from)[0],
             'message_id': tools.generate_tracking_message_id('message-notify'),
         }
         msg_values.update(kwargs)
@@ -2030,7 +2042,7 @@ class MailThread(models.AbstractModel):
             'res_id': self.ids[0] if self.ids else False,
             'subtype_id': self.env.ref('mail.mt_note').id,
             'record_name': False,
-            'reply_to': self.env['mail.thread'].sudo()._notify_get_reply_to([0])[0],
+            'reply_to': self.env['mail.thread']._notify_get_reply_to([0], model=None, default=email_from)[0],
             'message_id': tools.generate_tracking_message_id('message-notify'),
         }
         message_values.update(kwargs)
