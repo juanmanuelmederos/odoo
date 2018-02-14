@@ -590,15 +590,14 @@ class Website(models.Model):
         size = '' if size is None else '/%s' % size
         return '/web/image/%s/%s/%s%s?unique=%s' % (record._name, record.id, field, size, sha)
 
-    @api.model
     def get_cdn_url(self, uri):
+        self.ensure_one()
         # Currently only usable in a website_enable request context
-        if request and request.website and not request.debug and request.website.user_id.id == request.uid:
-            cdn_url = request.website.cdn_url
-            cdn_filters = (request.website.cdn_filters or '').splitlines()
-            for flt in cdn_filters:
-                if flt and re.match(flt, uri):
-                    return urlparse.urljoin(cdn_url, uri)
+        cdn_url = self.cdn_url
+        cdn_filters = (self.cdn_filters or '').splitlines()
+        for flt in cdn_filters:
+            if flt and re.match(flt, uri):
+                return urlparse.urljoin(cdn_url, uri)
         return uri
 
     @api.model
