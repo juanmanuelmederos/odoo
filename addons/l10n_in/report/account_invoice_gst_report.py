@@ -91,18 +91,18 @@ class AccountInvoiceGstReport(models.Model):
                     ai.state AS state,
                     SUM ((invoice_type.sign * ail.quantity) / u.factor * u2.factor) AS product_qty,
                     SUM(ail.price_subtotal_signed * invoice_type.sign) AS price_total,
-                    partner.name AS partner_name,
-                    partner_state.code AS partner_pos,
-                    partner.vat AS partner_gstn,
-                    taxs_rate.rate AS tax_rate,
+                    p.name AS partner_name,
+                    p.vat AS partner_gstn,
+                    ps.code AS partner_pos,
+                    ailt.rate AS tax_rate,
                     ai.number AS invoice_number,
                     ai.is_reverse_charge AS is_reverse_charge,
                     ai.gst_invoice_type AS gst_invoice_type,
-                    pc.code AS port_code,
-                    e_partner.vat AS e_commerce_gstn,
-                    e_partner.is_e_commerce AS is_e_commerce,
+                    gpc.code AS port_code,
+                    ecp.vat AS e_commerce_gstn,
+                    ecp.is_e_commerce AS is_e_commerce,
                     airr.name AS refund_reason,
-                    partner_country.code AS country_code
+                    pc.code AS country_code
         """
         return select_str
 
@@ -113,13 +113,13 @@ class AccountInvoiceGstReport(models.Model):
                 JOIN res_currency cr ON cr.id = ai.currency_id
                 JOIN res_company comp ON comp.id = ai.company_id
                 JOIN res_partner comp_pr ON comp_pr.id = comp.partner_id
-                JOIN res_partner partner ON partner.id = ai.commercial_partner_id
-                LEFT JOIN res_country_state partner_state ON partner_state.id = partner.state_id
-                LEFT JOIN res_country partner_country ON partner_country.id = partner.country_id
-                LEFT JOIN res_partner e_partner ON e_partner.id = ai.e_commerce_partner_id
+                JOIN res_partner p ON p.id = ai.commercial_partner_id
+                LEFT JOIN res_country_state ps ON ps.id = p.state_id
+                LEFT JOIN res_country pc ON pc.id = p.country_id
+                LEFT JOIN res_partner ecp ON ecp.id = ai.e_commerce_partner_id
                 LEFT JOIN account_invoice_refund_reason airr ON airr.id = ai.refund_reason_id
-                LEFT JOIN gst_port_code pc ON pc.id = ai.port_code_id
-                LEFT JOIN account_invoice_line_tax invoice_line_tax ON invoice_line_tax.invoice_line_id = ail.id
+                LEFT JOIN gst_port_code gpc ON gpc.id = ai.port_code_id
+                LEFT JOIN account_invoice_line_tax ailts ON ailts.invoice_line_id = ail.id
                 LEFT JOIN product_product pr ON pr.id = ail.product_id
                 LEFT JOIN product_template pt ON pt.id = pr.product_tmpl_id
                 LEFT JOIN product_uom u ON u.id = ail.uom_id
@@ -136,19 +136,19 @@ class AccountInvoiceGstReport(models.Model):
                 LEFT JOIN (
 
                     --Temporary table to decide gst rate
-                    select account_tax.id,(
-                    CASE when account_tax.name::text ilike ANY (ARRAY['%GST%'::character varying::text,'%IGST%'::character varying::text])
-                        THEN CASE when account_tax.amount_type::text = 'group'
-                            THEN sum(child_tax_tax.amount)::character varying::text
-                            ELSE sum(account_tax.amount)::character varying::text
+                    select at.id,(
+                    CASE when at.name::text ilike ANY (ARRAY['%GST%'::character varying::text,'%IGST%'::character varying::text])
+                        THEN CASE when at.amount_type::text = 'group'
+                            THEN sum(ctx.amount)::character varying::text
+                            ELSE sum(at.amount)::character varying::text
                             END
-                        ELSE account_tax.name::character varying::text
-                    END) as rate  from account_tax
-                    LEFT JOIN account_tax_filiation_rel child_tax ON account_tax.id = child_tax.parent_tax
-                    LEFT JOIN account_tax child_tax_tax ON  child_tax = child_tax_tax.id
-                    group by account_tax.id, account_tax.name
+                        ELSE at.name::character varying::text
+                    END) as rate  from account_tax at
+                    LEFT JOIN account_tax_filiation_rel ctxr ON ctxr.parent_tax = at.id
+                    LEFT JOIN account_tax ctx ON ctx.id = ctxr.child_tax
+                    group by at.id, at.name
 
-                ) taxs_rate ON invoice_line_tax.tax_id = taxs_rate.id
+                ) ailt ON ailt.id = ailts.tax_id
                 where ai.state = ANY (ARRAY['open','paid','cancel']) and comp.register_gst_service = True
         """
         return from_str
@@ -164,18 +164,18 @@ class AccountInvoiceGstReport(models.Model):
                         comp_pr.vat,
                         ai.type,
                         ai.state,
-                        partner.name,
-                        partner_state.code,
-                        partner.vat,
-                        taxs_rate.rate,
+                        p.name,
+                        p.vat,
+                        ps.code,
+                        ailt.rate,
                         ai.number,
                         ai.is_reverse_charge,
                         ai.gst_invoice_type,
-                        e_partner.vat,
-                        e_partner.is_e_commerce,
-                        pc.code,
+                        ecp.vat,
+                        ecp.is_e_commerce,
+                        gpc.code,
                         airr.name,
-                        partner_country.code
+                        pc.code
         """
         return group_by_str
 
@@ -194,6 +194,8 @@ class AccountInvoiceGstReport(models.Model):
 
     @api.model
     def send_gstr_data_to_server(self, inv_domain = [], payment_domain = []):
+        self.env.cr.execute("select * from account_payment_report where internal_type = 'receivable'")
+        print("____________",self.env.cr.fetchall())
         ir_params = self.env['ir.config_parameter'].sudo()
         user_token = self.env['iap.account'].get('gst_retrun_sandbox')
         params = {
