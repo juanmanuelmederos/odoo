@@ -97,7 +97,7 @@ class View(models.Model):
         return super(View, self).get_view_id(xml_id)
 
     @api.multi
-    def render(self, values=None, engine='ir.qweb'):
+    def render(self, values=None, engine='ir.qweb', skip_full_ctx=False):
         """ Render the template. If website is enabled on request, then extend rendering context with website values. """
         new_context = dict(self._context)
         if request and getattr(request, 'is_frontend', False):
@@ -115,7 +115,7 @@ class View(models.Model):
 
         if self._context != new_context:
             self = self.with_context(new_context)
-        return super(View, self).render(values, engine=engine)
+        return super(View, self).render(values, engine=engine, skip_full_ctx=skip_full_ctx)
 
     @api.model
     def _prepare_qcontext(self):

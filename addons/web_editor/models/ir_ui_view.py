@@ -16,7 +16,7 @@ class IrUiView(models.Model):
     _inherit = 'ir.ui.view'
 
     @api.multi
-    def render(self, values=None, engine='ir.qweb'):
+    def render(self, values=None, engine='ir.qweb', skip_full_ctx=False):
         if values and values.get('editable'):
             try:
                 self.check_access_rights('write')
@@ -24,7 +24,7 @@ class IrUiView(models.Model):
             except AccessError:
                 values['editable'] = False
 
-        return super(IrUiView, self).render(values=values, engine=engine)
+        return super(IrUiView, self).render(values=values, engine=engine, skip_full_ctx=skip_full_ctx)
 
     #------------------------------------------------------
     # Save from html
