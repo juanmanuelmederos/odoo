@@ -56,7 +56,28 @@ class Project(models.Model):
 class ProjectTask(models.Model):
     _inherit = "project.task"
 
-    sale_line_id = fields.Many2one('sale.order.line', 'Sales Order Item', domain="[('is_service', '=', True), ('order_partner_id', '=', partner_id), ('is_expense', '=', False)]")
+    def _get_default_partner(self):
+        partner = super(ProjectTask, self)._get_default_partner()
+        if 'default_project_id' in self.env.context:  # partner from SO line is prior on one from project
+            project = self.env['project.project'].browse(self.env.context['default_project_id'])
+            partner = project.sale_line_id.order_partner_id
+        return partner
+
+    def _default_sale_line_id(self):
+        if 'default_project_id' in self.env.context:
+            project = self.env['project.project'].browse(self.env.context['default_project_id'])
+            return project.sale_line_id
+
+    sale_line_id = fields.Many2one('sale.order.line', 'Sales Order Item', default=_default_sale_line_id, domain="[('is_service', '=', True), ('order_partner_id', '=', partner_id), ('is_expense', '=', False)]")
+
+    @api.onchange('project_id')
+    def _onchange_project(self):
+        result = super(ProjectTask, self)._onchange_project()
+        if self.project_id:
+            self.sale_line_id = self.project_id.sale_line_id
+            if not self.partner_id:
+                self.partner_id = self.sale_line_id.order_partner_id
+        return result
 
     @api.multi
     @api.constrains('sale_line_id')
@@ -69,14 +90,14 @@ class ProjectTask(models.Model):
     @api.model
     def create(self, values):
         # sub task has the same so line than their parent
-        if 'parent_id' in values:
-            values['sale_line_id'] = self.env['project.task'].browse(values['parent_id']).sudo().sale_line_id.id
+        if 'parent_id' in values and values['parent_id']:
+                values['sale_line_id'] = self.env['project.task'].browse(values['parent_id']).sudo().sale_line_id.id
         return super(ProjectTask, self).create(values)
 
     @api.multi
     def write(self, values):
         # sub task has the same so line than their parent
-        if 'parent_id' in values:
+        if 'parent_id' in values and values['parent_id']:
             values['sale_line_id'] = self.env['project.task'].browse(values['parent_id']).sudo().sale_line_id.id
 
         result = super(ProjectTask, self).write(values)
