@@ -28,4 +28,6 @@ var DashboardView = AbstractView.extend({
 
 viewRegistry.add('dashboard', DashboardView);
 
+return DashboardView;
+
 });
