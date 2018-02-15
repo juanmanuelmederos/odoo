@@ -337,9 +337,9 @@ class test_m2o(CreatorCase):
         record = self.env['export.integer'].create({'value': 42})
         # Expecting the m2o target model name in the external id,
         # not this model's name
-        external_id = u'__export__.export_integer_%d' % record.id
+        xid_prefix = u'__export__.export_integer_%d_' % record.id
         [[val]] = self.export(record.id, fields=['value/id'])
-        self.assertTrue(val.startswith(external_id))
+        self.assertTrue(val.startswith(xid_prefix))
 
 
 class test_o2m(CreatorCase):
