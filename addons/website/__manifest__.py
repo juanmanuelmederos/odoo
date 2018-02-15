@@ -11,6 +11,7 @@
     'description': "",
     'depends': [
         'web',
+        'web_dashboard',
         'web_editor',
         'http_routing',
         'portal',
@@ -21,6 +22,7 @@
         'data/website_data.xml',
         'security/website_security.xml',
         'security/ir.model.access.csv',
+        'views/default_dashboard_view.xml',
         'views/website_templates.xml',
         'views/website_navbar_templates.xml',
         'views/snippets.xml',

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record model="ir.ui.view" id="default_dashboard_view">
+        <field name="name">Default Dashboard View</field>
+        <field name="model">website</field>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <dashboard>
+            </dashboard>
+        </field>
+    </record>
+</odoo>

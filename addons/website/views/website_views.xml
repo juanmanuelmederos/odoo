@@ -278,9 +278,10 @@
         </record>
 
         <!-- Dashboard -->
-        <record id="backend_dashboard" model="ir.actions.client">
+        <record id="backend_dashboard" model="ir.actions.act_window">
             <field name="name">Dashboard</field>
-            <field name="tag">backend_dashboard</field>
+            <field name="res_model">website</field>
+            <field name="view_mode">dashboard</field>
         </record>
 
         <record id="ir_actions_server_website_dashboard" model="ir.actions.server">
