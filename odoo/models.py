@@ -618,6 +618,9 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
         return tools.table_kind(self.env.cr, self._table) == 'r'
 
     def __ensure_xml_id(self, skip=False):
+        """ Create missing external ids for records in ``self``, and return an
+            iterator of pairs ``(record, xmlid)`` for the records in ``self``.
+        """
         if skip:
             return ((record, None) for record in self)
 
@@ -630,6 +633,7 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
                 "table %s is not an ordinary table."
                 % (self._name, self._table))
 
+        # retrieve already existing xml ids
         cr = self.env.cr
         cr.execute("""
             SELECT res_id, module, name
@@ -641,6 +645,7 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
             for res_id, module, name in cr.fetchall()
         }
 
+        # create missing xml ids
         missing = self.filtered(lambda r: r.id not in xids)
         xids.update(
             (r.id, ('__export__', '%s_%s_%s' % (r._table, r.id, uuid.uuid4())))
@@ -659,12 +664,11 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
             columns=['module', 'model', 'name', 'res_id'],
         )
 
-        self.env['ir.model.data'].invalidate_cache()
-
-        items = ((r, xids[r.id]) for r in self)
+        self.invalidate_cache()
+        
         return (
-            (record, '%s.%s' % (module, name) if module else name)
-            for record, (module, name) in items
+            (record, '%s.%s' % xids[record.id])
+            for record in self
         )
 
     @api.multi
