@@ -158,13 +158,13 @@
                     t-att-data-message-id="message.id" title="Mark as Todo"/>
             </div>
             <div t-att-class="'o_thread_message_core' + (message.is_note ? ' o_mail_note' : '')">
-                <p t-if="message.display_author" class="o_mail_info">
+                <p t-if="message.display_author" class="o_mail_info text-muted">
                     <t t-if="message.is_note">
                         Note by
                     </t>
 
                     <strong t-if="message.mailto">
-                        <a class="o_mail_mailto" t-attf-href="mailto:#{message.mailto}?subject=Re: #{message.subject}">
+                        <a class="text-muted" t-attf-href="mailto:#{message.mailto}?subject=Re: #{message.subject}">
                             <t t-esc="message.mailto"/>
                         </a>
                     </strong>
