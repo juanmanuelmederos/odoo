@@ -23,8 +23,8 @@
 
     # always loaded
     'data': [
-        "views/menus.xml",
         "views/product.xml",
+        "views/sales_report.xml",
     ],
     # only loaded in demonstration mode
     'demo': [],
