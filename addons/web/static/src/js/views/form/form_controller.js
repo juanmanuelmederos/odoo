@@ -137,7 +137,6 @@ var FormController = BasicController.extend({
             this.$buttons.on('click', '.o_form_button_create', this._onCreate.bind(this));
             this.$buttons.on('click', '.o_form_button_save', this._onSave.bind(this));
             this.$buttons.on('click', '.o_form_button_cancel', this._onDiscard.bind(this));
-            
             this._updateButtons();
         }
         this.$buttons.appendTo($node);
@@ -230,7 +229,6 @@ var FormController = BasicController.extend({
     //--------------------------------------------------------------------------
     // Private
     //--------------------------------------------------------------------------
-
     /**
      * When a save operation has been confirmed from the model, this method is
      * called.
@@ -421,6 +419,19 @@ var FormController = BasicController.extend({
         }
 
         def.always(this._enableButtons.bind(this));
+    },
+    /**
+     * Activate a button when tab is pressed. This event function is hooked directly on the button keydown event
+     * @param e an DOM Event
+     */
+    _onButtonPrimaryActivatesOnTab:function(e) {
+        if (e.which === $.ui.keyCode.TAB) {
+            e.preventDefault();
+            $(e.target).trigger('click');
+        } else if (e.which == $.ui.keyCode.ESCAPE) {
+            console.info("escape was pressed on", e.target.innerText)
+            //e.preventDefault();           
+        }
     },
     /**
      * Called when the user wants to create a new record -> @see createRecord

@@ -222,10 +222,15 @@ var FormRenderer = BasicRenderer.extend({
         //else do the default behavior
         if ( (currentIndex + 1) >= (this.allFieldWidgets[record.id] || []).length) {
             this.trigger_up('focus_control_button');
+            return -1;
         } else {
             var activatedIndex =  this._super.apply(this, arguments);
-            if (activatedIndex == -1 ) { // no widget have been activated, we should go to the edit/save buttons
-                this.trigger_up('focus_control_button');                
+            if (activatedIndex === -1 ) { // no widget have been activated, we should go to the edit/save buttons
+                this.trigger_up('focus_control_button');
+                return -1;
+            }
+            else {
+                return activatedIndex;
             }
         }
     },
