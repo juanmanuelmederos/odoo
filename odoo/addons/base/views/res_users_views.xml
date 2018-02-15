@@ -166,6 +166,14 @@
                             <button name="toggle_active" type="object" class="oe_stat_button" icon="fa-check">
                                 <field name="active" widget="boolean_button" options='{"terminology": "active"}'/>
                             </button>
+                            <div class="alert alert-success text-center o_form_header" attrs="{'invisible': [('active', '=', True)]}">
+                                <a class="close" data-dismiss="alert" href="#" aria-hidden="true">x</a>
+                                <div>
+                                    <strong>The partner link to this user will remain active</strong>
+                                </div>
+                                <div>If you really want to archive the partner:
+                                  <field name="partner_id" required="0"/></div>
+                             </div>
                         </div>
                         <field name="image" widget='image' class="oe_avatar" options='{"preview_image": "image_medium"}'/>
                         <div class="oe_title">
