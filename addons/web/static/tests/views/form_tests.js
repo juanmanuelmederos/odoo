@@ -102,6 +102,21 @@ QUnit.module('Views', {
 
     QUnit.module('FormView');
 
+    QUnit.test('empty form rendering', function (assert) {
+        assert.expect(1);
+
+        var form = createView({
+            View: FormView,
+            model: 'partner',
+            data: this.data,
+            arch: '<form></form>',
+        });
+
+        assert.strictEqual(form.$('.o_form_view').length, 1,
+                        "root node should have a child with 'o_form_view' class");
+        form.destroy();
+    });
+
     QUnit.test('simple form rendering', function (assert) {
         assert.expect(12);
 
