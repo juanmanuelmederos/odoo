@@ -414,6 +414,38 @@ class account_journal(models.Model):
         })
         return action
 
+    @api.multi
+    def create_customer_payment(self):
+        """return action to create a customer payment"""
+        action = self.env.ref('account.action_account_payments').read()[0]
+        action.update({
+            'views': [[False, 'form']],
+            'context': {'default_payment_type': 'inbound', 'default_partner_type': 'customer', 'default_journal_id': self.id},
+        })
+        return action
+
+    @api.multi
+    def create_supplier_payment(self):
+        """return action to create a supplier payment"""
+        action = self.env.ref('account.action_account_payments_payable').read()[0]
+        action.update({
+            'views': [[False, 'form']],
+            'context': {'default_payment_type': 'outbound', 'default_partner_type': 'supplier', 'default_journal_id': self.id},
+        })
+        return action
+
+    @api.multi
+    def create_internal_transfer(self):
+        ctx = self._context.copy()
+        ctx.update({'default_journal_id': self.id, 'default_payment_type': 'transfer'})
+        return {
+            'name': _('Internal transfer'),
+            'type': 'ir.actions.act_window',
+            'res_model': 'account.payment',
+            'views': [[False, 'form']],
+            'context': ctx,
+        }
+
     #####################
     # Setup Steps Stuff #
     #####################
