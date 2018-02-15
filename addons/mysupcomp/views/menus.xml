@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!-- Top menu item -->
+        <menuitem name="MySuperComputer Inc" id="menu_root"/>
+        <!-- menu categories -->
+
+        <menuitem name="Products" id="menu_book_top" parent="menu_root"/>
+
+    </data>
+</odoo>
