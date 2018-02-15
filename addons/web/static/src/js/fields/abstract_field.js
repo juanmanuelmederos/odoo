@@ -299,11 +299,29 @@ var AbstractField = Widget.extend({
         return this._render() || $.when();
     },
 
+    /**
+     * add the invalid class on a field
+     */
     setInvalidClass: function () {
         this.$el.toggleClass('o_field_invalid',true);
     },
+
+    /**
+     * Remove the invalid class on a field
+     */
     removeInvalidClass: function () {
         this.$el.toggleClass('o_field_invalid',false);
+    },
+
+    /**
+     * Update the modifiers with the newest value. 
+     * Now this.attrs.modifiersValue can be used consistantly even with conditional modifiers
+     * 
+     * @param {Object} modifiers  the updated modifiers
+     * @override
+     */
+    updateModifiersValue: function(modifiers) {
+        this.attrs.modifiersValue = modifiers || {};
     },
 
 

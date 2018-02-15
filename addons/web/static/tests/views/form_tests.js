@@ -70,6 +70,12 @@ QUnit.module('Views', {
                     id: 4,
                     display_name: "aaa",
                     state: "ef",
+                }, {
+                    id: 5,
+                    display_name: "aaa",
+                    foo:'',
+                    bar:false,
+                    state: "ef",
                 }],
                 onchanges: {},
             },
@@ -6857,6 +6863,62 @@ QUnit.module('Views', {
         form.destroy();
     });
     
+    QUnit.test('In Edition mode, when an attribute is dynamically required (and not required), TAB should navigate to the next field', function (assert) {
+        assert.expect(1);
+
+        var form = createView({
+            View: FormView,
+            model: 'partner',
+            data: this.data,
+            arch: '<form string="Partners">' +
+                    '<sheet>' +
+                        '<group>' +
+                            '<field name="foo" attrs="{\'required\': [[\'bar\', \'=\', True]]}"/>' +
+                            '<field name="bar"/>' +
+                        '</group>' +
+                    '</sheet>' +
+                '</form>',
+            res_id: 5,
+            viewOptions: {
+                mode: 'edit',
+            },
+        });
+
+        form.$('input[name="foo"]').focus();
+        $(document.activeElement).trigger($.Event('keydown', {which: $.ui.keyCode.TAB}));
+
+        assert.strictEqual(form.$('div[name="bar"]>input')[0], document.activeElement, "foo is not required, so hitting TAB on foo should have moved the focus to BAR");
+        form.destroy();
+    });
+
+    QUnit.test('In Edition mode, when an attribute is dynamically required, TAB should stop on the field if it is required', function (assert) {
+        assert.expect(1);
+
+        var form = createView({
+            View: FormView,
+            model: 'partner',
+            data: this.data,
+            arch: '<form string="Partners">' +
+                    '<sheet>' +
+                        '<group>' +
+                            '<field name="foo" attrs="{\'required\': [[\'bar\', \'=\', True]]}"/>' +
+                            '<field name="bar"/>' +
+                        '</group>' +
+                    '</sheet>' +
+                '</form>',
+            res_id: 5,
+            viewOptions: {
+                mode: 'edit',
+            },
+        });
+
+        form.$('div[name="bar"]>input').click();
+        form.$('input[name="foo"]').focus();
+        $(document.activeElement).trigger($.Event('keydown', {which: $.ui.keyCode.TAB}));
+
+        assert.strictEqual(form.$('input[name="foo"]')[0], document.activeElement, "foo is required, so hitting TAB on foo should keep the focus on foo");
+        form.destroy();
+    });
 });
 
 });
