@@ -1098,6 +1098,16 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
         return not has_groups
 
     @api.model
+    def _get_default_dashboard_view(self):
+        """ Generates a default single-line dashboard view using no fields
+        of the current model.
+
+        :returns: a dashboard view as an lxml document
+        :rtype: etree._Element
+        """
+        return E.dashboard()
+
+    @api.model
     def _get_default_form_view(self):
         """ Generates a default single-line form view using all fields
         of the current model.
