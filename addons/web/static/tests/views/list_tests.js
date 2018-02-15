@@ -2478,9 +2478,8 @@ QUnit.module('Views', {
         });
 
         // click on first td and press TAB
-        list.$('td:contains(yop)').click();        
+        list.$('td:contains(yop)').click();
         list.$('tr.o_selected_row input[name="foo"]').val('new value').trigger('input');
-
         list.$('tr.o_selected_row input[name="foo"]').trigger({type: 'keydown', which: $.ui.keyCode.TAB});
 
         assert.strictEqual(list.$('tbody tr:first td:contains(new value)').length, 1,

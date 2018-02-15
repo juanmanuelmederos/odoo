@@ -448,7 +448,7 @@ var AbstractField = Widget.extend({
             return $.Deferred().reject();
         }
         if (!(options && options.forceChange) && this._isSameValue(value)) {
-            return $.when(); 
+            return $.when();
         }
         var def = $.Deferred();
         var changes = {};

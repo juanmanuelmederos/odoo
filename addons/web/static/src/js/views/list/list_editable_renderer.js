@@ -781,7 +781,7 @@ ListRenderer.include({
      * @private
      * @param {OdooEvent} ev
      */
-    _onNavigationMove: function (ev) {  
+    _onNavigationMove: function (ev) {
         ev.stopPropagation(); // stop the event, the action is done by this renderer
         switch (ev.data.direction) {
             case 'up':
