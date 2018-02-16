@@ -59,10 +59,10 @@ class TestTheoreticalAmount(TestAccountBudgetCommon):
         self.assertAlmostEqual(self.line.theoritical_amount, -1)
 
     def test_03(self):
-        """After 36 hours"""
+        """After 36 hours, we do no take the hours into account"""
         date = Datetime.to_string(Datetime.from_string('2014-01-02 12:00:00'))
         self.mock_datetime.now.return_value = date
-        self.assertAlmostEqual(self.line.theoritical_amount, -1.5)
+        self.assertAlmostEqual(self.line.theoritical_amount, -1.0)
 
     def test_04(self):
         """After 48 hours"""
@@ -89,10 +89,10 @@ class TestTheoreticalAmount(TestAccountBudgetCommon):
         self.assertAlmostEqual(self.line.theoritical_amount, -182)
 
     def test_08(self):
-        """After 308 days at noon"""
+        """After 308 days at noon, we do not take the hours into account"""
         date = Datetime.to_string(Datetime.from_string('2014-11-05 12:00:00'))  # remember, remember
         self.mock_datetime.now.return_value = date
-        self.assertAlmostEqual(self.line.theoritical_amount, -308.5)
+        self.assertAlmostEqual(self.line.theoritical_amount, -308.0)
 
     def test_09(self):
         """One day before"""
