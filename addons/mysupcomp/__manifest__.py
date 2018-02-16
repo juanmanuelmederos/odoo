@@ -24,7 +24,7 @@
     # always loaded
     'data': [
         "views/product.xml",
-        "views/sales_report.xml",
+        "views/sale_order.xml",
     ],
     # only loaded in demonstration mode
     'demo': [],

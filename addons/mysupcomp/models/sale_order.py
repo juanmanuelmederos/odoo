@@ -18,7 +18,7 @@ class SaleOrderLine(models.Model):
 
     _inherit = 'sale.order.line'
 
-    commission = fields.Monetary(string='Commission', compute='_compute_commission')
+    commission = fields.Monetary(string='Commission', compute='_compute_commission',store=True)
 
     def _compute_commission(self):
         for order_line in self:

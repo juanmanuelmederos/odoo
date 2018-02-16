@@ -2,4 +2,4 @@
 # from . import filename_python_file_within_folder_or_subfolder
 
 from . import product
-from . import sales_order
+from . import sale_order
