@@ -1362,6 +1362,8 @@ var BasicModel = AbstractModel.extend({
             } else if (field.type === 'one2many' || field.type === 'many2many') {
                 var listId = record._changes[name] || record.data[name];
                 var list;
+                // indian fix
+                // if (!_.isArray(listId) && listId) {
                 if (listId) {
                     list = self.localData[listId];
                 } else {
@@ -2408,6 +2410,7 @@ var BasicModel = AbstractModel.extend({
 
         // step 1: collect ids
         var ids = [];
+        // _.each(list._cache, function (dataPoint) {
         _.each(list.data, function (dataPoint) {
             var record = self.localData[dataPoint];
             if (typeof record.data[fieldName] === 'string') {

@@ -7799,6 +7799,52 @@ QUnit.module('relational_fields', {
         form.destroy();
     });
 
+    QUnit.only('one2many with multiple pages and sequence field, part3', function (assert) {
+        assert.expect(1);
+
+        this.data.partner.records[0].turtles = [1, 3, 2];
+        this.data.partner.onchanges.turtles = function () {};
+
+        var form = createView({
+            View: FormView,
+            model: 'partner',
+            data: this.data,
+            arch:'<form string="Partners">' +
+                    '<field name="turtles">' +
+                        '<tree limit="2" editable="top">' +
+                            '<field name="turtle_int" widget="handle"/>' +
+                            '<field name="turtle_foo"/>' +
+                            '<field name="partner_ids" invisible="1"/>' +
+                        '</tree>' +
+                    '</field>' +
+                '</form>',
+            res_id: 1,
+            mockRPC: function (route, args) {
+                if (args.method === 'onchange') {
+                    // the onchange returns a different order that the supposed sequence
+                    // ([1, 2, 3] instead of [1, 3, 2])
+                    return $.when({value: { turtles: [
+                        [5],
+                        [1, 1, {turtle_foo: "from onchange id1", partner_ids: [[5]]}],
+                        [1, 2, {turtle_foo: "from onchange id2", partner_ids: [[5]]}],
+                        [1, 3, {turtle_foo: "from onchange id3", partner_ids: [[5]]}],
+                    ]}});
+                }
+                return this._super(route, args);
+            },
+        });
+        // trigger the onchange
+        form.$buttons.find('.o_form_button_edit').click();
+        form.$('.o_list_view tbody tr:first td:eq(1)').click();
+        form.$('.o_list_view input:first()').val('new name').trigger('input');
+
+        form.$buttons.find('.o_form_button_save').click();
+
+        assert.strictEqual(form.$('.o_data_row').text(), 'from onchange id1from onchange id2',
+            'onchange has been properly applied');
+        form.destroy();
+    });
+
     QUnit.test('new record, with one2many with more default values than limit', function (assert) {
         assert.expect(2);
 
