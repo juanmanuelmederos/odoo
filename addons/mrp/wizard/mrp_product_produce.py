@@ -37,7 +37,7 @@ class MrpProductProduce(models.TransientModel):
                 res['product_qty'] = todo_quantity
             if 'produce_line_ids' in fields:
                 lines = []
-                for move in production.move_raw_ids.filtered(lambda x: (x.product_id.tracking != 'none') and x.state not in ('done', 'cancel') and x.bom_line_id):
+                for move in production.move_raw_ids.filtered(lambda x: x.state not in ('done', 'cancel') and x.bom_line_id):
                     qty_to_consume = todo_quantity / move.bom_line_id.bom_id.product_qty * move.bom_line_id.product_qty
                     for move_line in move.move_line_ids:
                         if float_compare(qty_to_consume, 0.0, precision_rounding=move.product_uom.rounding) <= 0:
@@ -48,7 +48,7 @@ class MrpProductProduce(models.TransientModel):
                         lines.append({
                             'move_id': move.id,
                             'qty_to_consume': to_consume_in_line,
-                            'qty_done': 0.0,
+                            'qty_done': to_consume_in_line,
                             'lot_id': move_line.lot_id.id,
                             'product_uom_id': move.product_uom.id,
                             'product_id': move.product_id.id,
@@ -69,7 +69,7 @@ class MrpProductProduce(models.TransientModel):
                             lines.append({
                                 'move_id': move.id,
                                 'qty_to_consume': qty_to_consume,
-                                'qty_done': 0.0,
+                                'qty_done': qty_to_consume,
                                 'product_uom_id': move.product_uom.id,
                                 'product_id': move.product_id.id,
                             })
@@ -92,15 +92,6 @@ class MrpProductProduce(models.TransientModel):
         quantity = self.product_qty
         if float_compare(quantity, 0, precision_rounding=self.product_uom_id.rounding) <= 0:
             raise UserError(_("The production order for '%s' has no quantity specified") % self.product_id.display_name)
-        for move in self.production_id.move_raw_ids:
-            # TODO currently not possible to guess if the user updated quantity by hand or automatically by the produce wizard.
-            if move.product_id.tracking == 'none' and move.state not in ('done', 'cancel') and move.unit_factor:
-                rounding = move.product_uom.rounding
-                if self.product_id.tracking != 'none':
-                    qty_to_add = float_round(quantity * move.unit_factor, precision_rounding=rounding)
-                    move._generate_consumed_move_line(qty_to_add, self.lot_id)
-                else:
-                    move.quantity_done += float_round(quantity * move.unit_factor, precision_rounding=rounding)
         for move in self.production_id.move_finished_ids:
             if move.product_id.tracking == 'none' and move.state not in ('done', 'cancel'):
                 rounding = move.product_uom.rounding
@@ -145,7 +136,7 @@ class MrpProductProduce(models.TransientModel):
 
         for pl in self.produce_line_ids:
             if pl.qty_done:
-                if not pl.lot_id:
+                if pl.product_id.tracking != 'none' and not pl.lot_id:
                     raise UserError(_('Please enter a lot or serial number for %s !' % pl.product_id.name))
                 if not pl.move_id:
                     # Find move_id that would match
