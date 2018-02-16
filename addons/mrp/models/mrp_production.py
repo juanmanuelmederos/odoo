@@ -288,9 +288,11 @@ class MrpProduction(models.Model):
             bom = self.env['mrp.bom']._bom_find(product=self.product_id, picking_type=self.picking_type_id, company_id=self.company_id.id)
             if bom.type == 'normal':
                 self.bom_id = bom.id
+                self.product_qty = self.bom_id.product_qty
+                self.product_uom_id = self.bom_id.product_uom_id.id
             else:
                 self.bom_id = False
-            self.product_uom_id = self.product_id.uom_id.id
+                self.product_uom_id = self.product_id.uom_id.id
             return {'domain': {'product_uom_id': [('category_id', '=', self.product_id.uom_id.category_id.id)]}}
 
     @api.onchange('picking_type_id')
