@@ -30,8 +30,7 @@ var ProtalShareDoc = Widget.extend({
             this._controller = widget;
             this.shareAction = descriptor.context.share_action ? descriptor.context.share_action : 'portal.mail_invite_share_action';
             if (this._controller.viewType === 'form') {
-                var view = _.findWhere(this._controller.actionViews, {type: this._controller.viewType});
-                if (view && view.fieldsView && view.fieldsView.share_icon) {
+                if (widget.activeActions && widget.activeActions.share) {
                     this.$el.removeClass('o_hidden');
                 } else {
                     this.$el.addClass('o_hidden');

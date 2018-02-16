@@ -84,11 +84,3 @@ class PortalMixin(models.AbstractModel):
         else:
             new_group = []
         return super(PortalMixin, self)._notification_recipients(message, new_group + groups)
-
-    @api.model
-    def fields_view_get(self, view_id=None, view_type='form', toolbar=False, submenu=False):
-        """ Share icon visible only on form view when portal.mixin is inherited by passing the share_icon parameter value is true """
-        res = super(PortalMixin, self).fields_view_get(view_id=view_id, view_type=view_type, toolbar=toolbar, submenu=submenu)
-        if view_type == 'form':
-            res["share_icon"] = True
-        return res
