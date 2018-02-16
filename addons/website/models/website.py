@@ -87,6 +87,11 @@ class Website(models.Model):
         self._get_languages.clear_cache(self)
         return super(Website, self).write(values)
 
+    @api.multi
+    def switch(self):
+        for website in self:
+            website.cdn_activated = not website.cdn_activated
+
     #----------------------------------------------------------
     # Page Management
     #----------------------------------------------------------

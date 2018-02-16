@@ -526,6 +526,7 @@ var BasicRenderer = AbstractRenderer.extend({
         var fieldName = node.attrs.name;
         // Register the node-associated modifiers
         var mode = options.mode || this.mode;
+        debugger
         var modifiers = this._registerModifiers(node, record, null, options);
         // Initialize and register the widget
         // Readonly status is known as the modifiers have just been registered

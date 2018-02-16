@@ -33,6 +33,22 @@ QUnit.module('Views', {
         dashboard.destroy();
     });
 
+
+    QUnit.only('dashboard with single group', function (assert) {
+        assert.expect(1);
+
+        var dashboard = createView({
+            View: DashboardView,
+            model: 'website',
+            data: this.data,
+            debug: 1,
+            arch: '<dashboard><group></group></dashboard>',
+        });
+        assert.strictEqual(dashboard.$('.o_group').length, 1, "there should be a div");
+
+
+    });
+
 });
 
 });

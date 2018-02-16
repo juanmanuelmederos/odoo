@@ -184,8 +184,9 @@ var AbstractView = Class.extend({
         // check if a model already exists, as if not, one will be created and
         // we'll have to set the controller as its parent
         var alreadyHasModel = !!this.model;
-        return $.when(this._loadData(parent), ajax.loadLibs(this)).then(function () {
-            var state = self.model.get(arguments[0]);
+        return $.when(this._loadData(parent), ajax.loadLibs(this)).then(function (resId) {
+            
+            var state = self.model.get(resId);
             var renderer = self.getRenderer(parent, state);
             var Controller = self.Controller || self.config.Controller;
             var controllerParams = _.extend({

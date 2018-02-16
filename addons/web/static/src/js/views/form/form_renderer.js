@@ -234,6 +234,7 @@ var FormRenderer = BasicRenderer.extend({
      * @param {Object} node
      */
     _addOnClickAction: function ($el, node) {
+        debugger
         var self = this;
         $el.click(function () {
             self.trigger_up('button_clicked', {
@@ -508,6 +509,7 @@ var FormRenderer = BasicRenderer.extend({
      * @returns {jQueryElement}
      */
     _renderStatButton: function (node) {
+        debugger
         var $button = $('<button>').addClass('btn btn-sm oe_stat_button');
         if (node.attrs.icon) {
             $('<div>')

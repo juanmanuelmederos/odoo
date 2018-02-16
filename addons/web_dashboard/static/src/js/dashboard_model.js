@@ -1,28 +1,10 @@
 odoo.define('web_dashboard.DashboardModel', function (require) {
 "use strict";
 
-var AbstractModel = require('web.AbstractModel');
+var BasicModel = require('web.BasicModel');
 
-var DashboardModel = AbstractModel.extend({
-    /**
-     * @override
-     */
-    init: function () {
-        this._super.apply(this, arguments);
-        this.data = null;
-    },
+var DashboardModel = BasicModel.extend({
 
-    //--------------------------------------------------------------------------
-    // Public
-    //--------------------------------------------------------------------------
-
-    /**
-     * @override
-     * @returns {Object}
-     */
-    get: function () {
-        return this.data;
-    },
 });
 
 return DashboardModel;
