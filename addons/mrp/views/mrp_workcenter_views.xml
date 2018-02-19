@@ -508,7 +508,7 @@
 
 
     <record model="ir.actions.act_window" id="mrp_workcenter_productivity_loss_action">
-        <field name="name">Productivity Losses</field>
+        <field name="name">Workcenter Blocking Reasons</field>
         <field name="type">ir.actions.act_window</field>
         <field name="res_model">mrp.workcenter.productivity.loss</field>
         <field name="view_type">form</field>
@@ -524,8 +524,8 @@
     <menuitem id="menu_mrp_workcenter_productivity_loss"
             action="mrp_workcenter_productivity_loss_action"
             groups="group_mrp_routings"
-            sequence="20"
-            parent="menu_mrp_configuration"/>
+            sequence="99"
+            parent="menu_mrp_bom"/>
 
 
     <record id="oee_search_view" model="ir.ui.view">
