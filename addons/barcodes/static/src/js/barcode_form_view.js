@@ -26,13 +26,13 @@ FormController.include({
         this.activeBarcode = {
             form_view: {
                 commands: {
-                    'O-CMD.EDIT': this._barcodeEdit.bind(this),
-                    'O-CMD.DISCARD': this._barcodeDiscard.bind(this),
-                    'O-CMD.SAVE': this._barcodeSave.bind(this),
-                    'O-CMD.PREV': this._barcodePagerPrevious.bind(this),
-                    'O-CMD.NEXT': this._barcodePagerNext.bind(this),
-                    'O-CMD.PAGER-FIRST': this._barcodePagerFirst.bind(this),
-                    'O-CMD.PAGER-LAST': this._barcodePagerLast.bind(this),
+                    'o-cmd-edit': this._barcodeEdit.bind(this),
+                    'o-cmd-discard': this._barcodeDiscard.bind(this),
+                    'o-cmd-save': this._barcodeSave.bind(this),
+                    'o-cmd-prev': this._barcodePagerPrevious.bind(this),
+                    'o-cmd-next': this._barcodePagerNext.bind(this),
+                    'o-cmd-pager-first': this._barcodePagerFirst.bind(this),
+                    'o-cmd-pager-last': this._barcodePagerLast.bind(this),
                 },
             },
         };
@@ -391,7 +391,7 @@ FormRenderer.include({
     _barcodeButtonHandler: function ($button, node) {
         var commands = {};
         commands.barcode = function () {return $.when();};
-        commands['O-BTN.' + node.attrs.barcode_trigger] = function () {
+        commands['o-btn-' + node.attrs.barcode_trigger] = function () {
             if (!$button.hasClass('o_invisible_modifier')) {
                 $button.click();
             }
@@ -449,6 +449,6 @@ FormRenderer.include({
     }
 });
 
-BarcodeEvents.ReservedBarcodePrefixes.push('O-BTN');
+BarcodeEvents.ReservedBarcodePrefixes.push('o-btn');
 
 });

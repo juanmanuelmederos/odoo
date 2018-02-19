@@ -75,10 +75,10 @@ QUnit.test('Button with barcode_trigger', function (assert) {
         },
     });
 
-    // O-BTN.doit
-    _.each(['O','-','B','T','N','.','d','o','i','t','Enter'], triggerKeypressEvent);
-    // O-BTN.dothat (should not call execute_action as the button isn't visible)
-    _.each(['O','-','B','T','N','.','d','o','t','h','a','t','Enter'], triggerKeypressEvent);
+    // o-btn-doit
+    _.each(['o','-','b','t','n','-','d','o','i','t','Enter'], triggerKeypressEvent);
+    // o-btn-dothat (should not call execute_action as the button isn't visible)
+    _.each(['o','-','b','t','n','-','d','o','t','h','a','t','Enter'], triggerKeypressEvent);
 
     assert.verifySteps([], "no warning should be displayed");
 
@@ -102,24 +102,24 @@ QUnit.test('edit, save and cancel buttons', function (assert) {
         res_id: 1,
     });
 
-    // O-CMD.EDIT
-    _.each(["O","-","C","M","D",".","E","D","I","T","Enter"], triggerKeypressEvent);
+    // o-cmd-edit
+    _.each(["o","-","c","m","d","-","e","d","i","t","Enter"], triggerKeypressEvent);
     assert.strictEqual(form.$(".o_form_editable").length, 1,
         "should have switched to 'edit' mode");
     // dummy change to check that it actually saves
     form.$('.o_field_widget').val('test').trigger('input');
-    // O-CMD.SAVE
-    _.each(["O","-","C","M","D",".","S","A","V","E","Enter"], triggerKeypressEvent);
+    // o-cmd-save
+    _.each(["o","-","c","m","d","-","s","a","v","e","Enter"], triggerKeypressEvent);
     assert.strictEqual(form.$(".o_form_readonly").length, 1,
         "should have switched to 'readonly' mode");
     assert.verifySteps(['save'], 'should have saved');
 
-    // O-CMD.EDIT
-    _.each(["O","-","C","M","D",".","E","D","I","T","Enter"], triggerKeypressEvent);
+    // o-cmd-edit
+    _.each(["o","-","c","m","d","-","e","d","i","t","Enter"], triggerKeypressEvent);
     // dummy change to check that it correctly discards
     form.$('.o_field_widget').val('test').trigger('input');
-    // O-CMD.CANCEL
-    _.each(["O","-","C","M","D",".","D","I","S","C","A","R","D","Enter"], triggerKeypressEvent);
+    // o-cmd-cancel
+    _.each(["o","-","c","m","d","-","d","i","s","c","a","r","d","Enter"], triggerKeypressEvent);
     assert.strictEqual(form.$(".o_form_readonly").length, 1,
         "should have switched to 'readonly' mode");
     assert.verifySteps(['save'], 'should not have saved');
@@ -143,17 +143,17 @@ QUnit.test('pager buttons', function (assert) {
     });
 
     assert.strictEqual(form.$('.o_field_widget').text(), 'iPad Mini');
-    // O-CMD.PAGER-NEXT
-    _.each(["O","-","C","M","D",".","N","E","X","T","Enter"], triggerKeypressEvent);
+    // o-cmd-pager-next
+    _.each(["o","-","c","m","d","-","n","e","x","t","Enter"], triggerKeypressEvent);
     assert.strictEqual(form.$('.o_field_widget').text(), 'Mouse, Optical');
-    // O-CMD.PAGER-PREV
-    _.each(["O","-","C","M","D",".","P","R","E","V","Enter"], triggerKeypressEvent);
+    // o-cmd-pager-prev
+    _.each(["o","-","c","m","d","-","p","r","e","v","Enter"], triggerKeypressEvent);
     assert.strictEqual(form.$('.o_field_widget').text(), 'iPad Mini');
-    // O-CMD.PAGER-LAST
-    _.each(["O","-","C","M","D",".","P","A","G","E","R","-","L","A","S","T","Enter"], triggerKeypressEvent);
+    // o-cmd-pager-last
+    _.each(["o","-","c","m","d","-","p","a","g","e","r","-","l","a","s","t","Enter"], triggerKeypressEvent);
     assert.strictEqual(form.$('.o_field_widget').text(), 'Mouse, Optical');
-    // O-CMD.PAGER-FIRST
-    _.each(["O","-","C","M","D",".","P","A","G","E","R","-","F","I","R","S","T","Enter"], triggerKeypressEvent);
+    // o-cmd-pager-first
+    _.each(["o","-","c","m","d","-","p","a","g","e","r","-","f","i","r","s","t","Enter"], triggerKeypressEvent);
     assert.strictEqual(form.$('.o_field_widget').text(), 'iPad Mini');
 
     form.destroy();
@@ -195,7 +195,7 @@ QUnit.test('do no update form twice after a command barcode scanned', function (
     assert.verifySteps(['read'], "update should not have been called yet");
 
     // switch to next record
-    _.each(["O","-","C","M","D",".","N","E","X","T","Enter"], triggerKeypressEvent);
+    _.each(["o","-","c","m","d","-","n","e","x","t","Enter"], triggerKeypressEvent);
     // a first update is done to reload the data (thus followed by a read), but
     // update shouldn't be called afterwards
     assert.verifySteps(['read', 'update', 'read']);

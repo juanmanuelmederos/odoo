@@ -189,7 +189,7 @@ return {
      * List of barcode prefixes that are reserved for internal purposes
      * @type Array
      */
-    ReservedBarcodePrefixes: ['O-CMD'],
+    ReservedBarcodePrefixes: ['o-cmd'],
 };
 
 });
