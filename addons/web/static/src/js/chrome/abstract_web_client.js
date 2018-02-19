@@ -97,6 +97,7 @@ var AbstractWebClient = Widget.extend(ServiceProviderMixin, {
         this.menu_dm = new concurrency.DropMisordered();
         this.action_mutex = new concurrency.Mutex();
         this.set('title_part', {"zopenerp": "Odoo"});
+        this.areAccessKeyVisible = false;
     },
     start: function () {
         var self = this;
@@ -131,6 +132,15 @@ var AbstractWebClient = Widget.extend(ServiceProviderMixin, {
                 core.bus.trigger('web_client_ready');
             });
     },
+    
+    hide_accesskey_overlay:function(){
+        var accesskeyElements = $(document).find('[accesskey]').filter(':visible');
+        var overlays = accesskeyElements.find('.o_web_accesskey_overlay');
+        if (overlays.length) {
+            return overlays.remove();
+        }
+        this.areAccessKeyVisible = false;
+    },
     bind_events: function () {
         var self = this;
         $('.oe_systray').show();
@@ -157,6 +167,23 @@ var AbstractWebClient = Widget.extend(ServiceProviderMixin, {
                     }
                 }
             }, 0);
+        });
+        this.$el.on('click',function(ev) {
+            self.hide_accesskey_overlay.apply(self);
+        });
+        
+        this.$el.on('keydown', function (e) {
+            if (!self.areAccessKeyVisible && e.altKey && e.shiftKey ) {
+                self.areAccessKeyVisible = true;
+                var accesskeyElements = $(document).find('[accesskey]').filter(':visible');
+                _.each(accesskeyElements, function (elem) {
+                    $(_.str.sprintf("<div class='o_web_accesskey_overlay'>%s</div>", $(elem).attr('accesskey').toUpperCase()))
+                    .appendTo($(elem).css('position', 'relative'));
+                });
+            } 
+        });
+        this.$el.on('keyup',function(){
+            self.hide_accesskey_overlay.apply(self);
         });
         core.bus.on('click', this, function (ev) {
             $('.tooltip').remove();
