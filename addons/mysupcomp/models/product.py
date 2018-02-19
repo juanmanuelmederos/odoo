@@ -5,6 +5,7 @@ class Category(models.Model):
     _inherit = 'product.category'
 
     commission_percentage = fields.Integer('Commission %')
+    margin_percentage = fields.Integer('Margin %')
 
 class Product(models.Model):
     _inherit = 'product.product'

@@ -7,10 +7,14 @@
         <field name="inherit_id" ref="product.product_category_form_view"/>
         <field name="arch" type="xml">
           <xpath expr="//field[@name='parent_id']" position="after">
-            <label for="commission_percentage" string="Commission"/>
-            <div>
-		          <field name="commission_percentage"/>%
-            </div>
+              <label for="commission_percentage" string="Commission"/>
+              <div>
+                <field name="commission_percentage"/>%
+              </div>
+              <label for="margin_percentage" string="Margin"/>
+              <div>
+                <field name="margin_percentage"/>%
+              </div>
 		      </xpath>
         </field>
       </record>

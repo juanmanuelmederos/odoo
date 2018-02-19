@@ -6,8 +6,19 @@
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
+          <xpath expr="//field[@name='name']" position="after">
+            <field name="is_below_margin" attrs="{'invisible' : True }"/>
+            <div class='oe_right alert alert-danger' groups='sales_team.group_sale_manager' attrs="{'invisible': [('is_below_margin', '=', False)]}">
+              <h4>WARNING : This Sale's price is below de margin price !</h4>
+            </div>
+		      </xpath>
           <xpath expr="//field[@name='user_id']" position="after">
 		          <field name="commission"/>
+              <field name="margin_price_total"/>
+		      </xpath>
+          <xpath expr="//field[@name='order_line']//tree//field[@name='price_unit']" position="after">
+		          <field name="margin_price"/>
+              <field name="margin_percentage"/>
 		      </xpath>
         </field>
       </record>
