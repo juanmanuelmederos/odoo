@@ -458,11 +458,11 @@
         <field name="name">mrp.workcenter.productivity.loss.tree</field>
         <field name="model">mrp.workcenter.productivity.loss</field>
         <field name="arch" type="xml">
-            <tree string="Workcenter Productivity Loss">
+            <tree string="Workcenter Blocking Reasons">
                 <field name="sequence" widget="handle"/>
-                <field name="name"/>
-                <field name="loss_type"/>
-                <field name="manual"/>
+                <field name="name" string="Blocking Reasons"/>
+                <field name="loss_type" string="Category"/>
+                <field name="manual" invisible="1"/>
             </tree>
         </field>
     </record>
