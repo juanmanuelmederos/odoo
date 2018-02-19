@@ -56,7 +56,7 @@ class TestMrpOrder(TestMrpCommon):
                 'location_id': self.warehouse_1.lot_stock_id.id
             })]
         })
-        inventory.action_done()
+        inventory._action_done()
 
         test_date_planned = datetime.now() - timedelta(days=1)
         test_quantity = 2.0
@@ -240,7 +240,7 @@ class TestMrpOrder(TestMrpCommon):
             })]
         })
         inventory.action_start()
-        inventory.action_done()
+        inventory._action_done()
 
         # re-assign consume material
         man_order.action_assign()
@@ -398,7 +398,7 @@ class TestMrpOrder(TestMrpCommon):
                 'location_id': source_location_id
             })]
         })
-        inventory.action_done()
+        inventory._action_done()
 
         # create a mo for this bom
         mo_custom_laptop = self.env['mrp.production'].create({

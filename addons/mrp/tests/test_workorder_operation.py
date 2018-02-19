@@ -69,7 +69,7 @@ class TestWorkOrderProcess(common.TransactionCase):
                 'location_id': self.source_location_id
             })]
         })
-        inventory.action_done()
+        inventory._action_done()
 
         # Create work order
         production_table.button_plan()
@@ -169,7 +169,7 @@ class TestWorkOrderProcess(common.TransactionCase):
                 'location_id': self.source_location_id
             })]
         })
-        inventory.action_done()
+        inventory._action_done()
 
         # Create work order
         production_table.button_plan()
@@ -312,7 +312,7 @@ class TestWorkOrderProcess(common.TransactionCase):
             })]
         })
         # inventory.action_start()
-        inventory.action_done()
+        inventory._action_done()
 
         # Check consumed move status
         mo_custom_laptop.action_assign()
@@ -482,7 +482,7 @@ class TestWorkOrderProcess(common.TransactionCase):
             })]
         })
         # inventory.action_start()
-        inventory.action_done()
+        inventory._action_done()
 
         # Start Production ...
         # --------------------
