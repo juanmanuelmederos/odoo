@@ -37,6 +37,7 @@ var ListRenderer = BasicRenderer.extend({
         'click thead th.o_column_sortable': '_onSortColumn',
         'click .o_group_header': '_onToggleGroup',
         'click thead .o_list_record_selector input': '_onToggleSelection',
+        'keypress tr td' : '_onKeyPress',
     },
     /**
      * @constructor
@@ -715,6 +716,23 @@ var ListRenderer = BasicRenderer.extend({
     //--------------------------------------------------------------------------
     // Handlers
     //--------------------------------------------------------------------------
+
+    /**
+     * Manages the keyboard events on the list. If the list is not editable, when the user navigates to 
+     * a cell using the keyboard, if he presses enter, enter the model represented by the line
+     * 
+     * @private
+     * @param {KeyboardEvent} e
+     */
+    _onKeyPress : function(e){
+        if ((!this.editable) && e.which ===  $.ui.keyCode.ENTER) {
+            e.preventDefault();
+            var id = $(e.currentTarget).parent().data('id');
+            if (id) {
+                this.trigger_up('open_record', {id:id, target: e.target});
+            }
+        }
+    },
 
     /**
      * @private
