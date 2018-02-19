@@ -251,7 +251,7 @@ class TestSaleMrpFlow(common.TransactionCase):
             'product_uom_id': self.uom_kg.id,
             'product_qty': 20,
             'location_id': self.stock_location.id})
-        inventory.action_done()
+        inventory._action_done()
 
         # --------------------------------------------------
         # Assign product c to manufacturing order of product D.
@@ -301,7 +301,7 @@ class TestSaleMrpFlow(common.TransactionCase):
             'product_uom_id': self.uom_kg.id,
             'product_qty': 27.5025,
             'location_id': self.stock_location.id})
-        inventory.action_done()
+        inventory._action_done()
 
         # Assign product to manufacturing order of product A.
         # ---------------------------------------------------
