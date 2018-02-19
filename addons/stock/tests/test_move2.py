@@ -1056,7 +1056,7 @@ class TestSinglePicking(TestStockCommon):
         })
         inventory.action_start()
         inventory.line_ids.product_qty = 2
-        inventory.action_done()
+        inventory._action_done()
         delivery_order.action_assign()
         self.assertEqual(delivery_order.state, 'assigned')
         self.assertEqual(move1.state, 'assigned')
@@ -1114,7 +1114,7 @@ class TestSinglePicking(TestStockCommon):
         inventory.action_start()
         inventory.line_ids.prod_lot_id = lot1
         inventory.line_ids.product_qty = 2
-        inventory.action_done()
+        inventory._action_done()
         delivery_order.action_assign()
         self.assertEqual(delivery_order.state, 'assigned')
         self.assertEqual(move1.state, 'assigned')
@@ -1180,7 +1180,7 @@ class TestSinglePicking(TestStockCommon):
             'product_id': self.productA.id,
             'product_qty': 1,
         })
-        inventory.action_done()
+        inventory._action_done()
         delivery_order.action_assign()
         self.assertEqual(delivery_order.state, 'assigned')
         self.assertEqual(move1.state, 'assigned')
@@ -1247,7 +1247,7 @@ class TestSinglePicking(TestStockCommon):
             'product_id': self.productA.id,
             'product_qty': 1,
         })
-        inventory.action_done()
+        inventory._action_done()
         delivery_order.action_assign()
         self.assertEqual(delivery_order.state, 'assigned')
         self.assertEqual(move1.state, 'assigned')

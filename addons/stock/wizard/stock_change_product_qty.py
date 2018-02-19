@@ -101,5 +101,5 @@ class ProductChangeQuantity(models.TransientModel):
                 'lot_id': wizard.lot_id.id,
                 'line_ids': [(0, 0, line_data)],
             })
-            inventory.action_done()
+            inventory._action_done()
         return {'type': 'ir.actions.act_window_close'}

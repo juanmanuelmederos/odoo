@@ -21,7 +21,7 @@ class StockTrackConfirmation(models.TransientModel):
 
     @api.one
     def action_confirm(self):
-        return self.inventory_id.action_done()
+        return self.inventory_id._action_done()
 
 class StockTrackingLines(models.TransientModel):
     _name = 'stock.track.line'

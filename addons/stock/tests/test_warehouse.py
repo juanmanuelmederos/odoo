@@ -28,7 +28,7 @@ class TestWarehouse(TestStockCommon):
 
         # Update the line, set to 35
         inventory.line_ids.write({'product_qty': 35.0})
-        inventory.action_done()
+        inventory._action_done()
 
         # Check related move and quants
         self.assertIn(inventory.name, inventory.move_ids.name)
@@ -211,7 +211,7 @@ class TestWarehouse(TestStockCommon):
         self.assertEqual(len(inventory.line_ids), 1, "Wrong inventory lines generated.")
         self.assertEqual(inventory.line_ids.theoretical_qty, -1, "Theoretical quantity should be -1.")
         inventory.line_ids.product_qty = 0  # Put the quantity back to 0
-        inventory.action_done()
+        inventory._action_done()
 
         # The inventory adjustment should have created one
         self.assertEqual(len(inventory.move_ids), 1)
