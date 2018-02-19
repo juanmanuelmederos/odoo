@@ -531,11 +531,6 @@ class Picking(models.Model):
         self.move_line_ids.write({'owner_id': self.owner_id.id})
 
     @api.multi
-    def do_print_picking(self):
-        self.write({'printed': True})
-        return self.env.ref('stock.action_report_picking').report_action(self)
-
-    @api.multi
     def action_confirm(self):
         # call `_action_confirm` on every draft move
         self.mapped('move_lines')\
