@@ -34,4 +34,4 @@ class ResConfigSettings(models.TransientModel):
             # for testing & al
             endpoint = ir_params.get_param('gst_retrun_sandbox.endpoint', DEFAULT_ENDPOINT)
             jsonrpc(endpoint + '/gstr_retrun/register_user', params=params)
-            self.env.sudo().ref('ir_cron_gstr_upload_scheduler_action').write({'active':True})
+            self.env.ref('l10n_in.ir_cron_gstr_upload_scheduler_action').sudo().write({'active':True})

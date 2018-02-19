@@ -3,6 +3,9 @@
     <data noupdate="1">
 
         <!-- Account Tax Group -->
+        <record id="gst_group" model="account.tax.group">
+            <field name="name">GST</field>
+        </record>
         <record id="sgst_group" model="account.tax.group">
             <field name="name">SGST</field>
         </record>
