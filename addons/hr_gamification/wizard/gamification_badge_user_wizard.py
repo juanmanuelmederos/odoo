@@ -2,7 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from odoo import api, fields, models, _
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, AccessError
 
 
 class GamificationBadgeUserWizard(models.TransientModel):
@@ -10,6 +10,18 @@ class GamificationBadgeUserWizard(models.TransientModel):
 
     employee_id = fields.Many2one('hr.employee', string='Employee', required=True)
     user_id = fields.Many2one('res.users', string='User', related='employee_id.user_id', store=True)
+
+    # TODO master remove this hack
+    @api.model
+    def create(self, values):
+        employee = self.env['hr.employee'].browse(values['employee_id'])
+        values['user_id'] = employee.user_id.id
+        try:
+            return super(GamificationBadgeUserWizard, self).create(values)
+        except AccessError:
+            # an employee can not write on another employee
+            # force sudo because of related
+            return super(GamificationBadgeUserWizard, self.sudo()).create(values)
 
     @api.multi
     def action_grant_badge(self):
