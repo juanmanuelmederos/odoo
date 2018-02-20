@@ -392,7 +392,7 @@ FormRenderer.include({
         var commands = {};
         commands.barcode = function () {return $.when();};
         commands['o-btn-' + node.attrs.barcode_trigger] = function () {
-            if (!$button.hasClass('o_invisible_modifier')) {
+            if (!$button.hasClass('o_invisible_modifier') || $button.hasClass('o_always_scannable')) {
                 $button.click();
             }
             return $.when();
