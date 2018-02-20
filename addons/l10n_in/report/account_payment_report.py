@@ -24,7 +24,7 @@ class AccountPaymentReport(models.Model):
     #    help="This field is used for payable and receivable journal entries. You can put the limit date for the payment of this line.")
     amount_residual = fields.Float()
     internal_type = fields.Selection([('payable', 'Payable'), ('receivable', 'Receivable')], string="Internal Type")
-    unreconcile = fields.Boolean()
+    unreconcile = fields.Boolean("Unreconcile")
     company_id = fields.Integer("Company")
 
     _depends = {
@@ -83,7 +83,7 @@ class AccountPaymentReport(models.Model):
                             ai_aml.id = apr.credit_move_id
                         END
                 LEFT JOIN account_invoice ai ON ai.id = ai_aml.invoice_id
-                where ap.state = ANY (ARRAY['posted','sent','reconciled']) and apc.register_gst_service = True
+                where ap.state = ANY (ARRAY['posted','sent','reconciled']) and apc.register_gstn_service = True
         """
         return from_str
 

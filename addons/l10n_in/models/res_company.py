@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
+# Part of Odoo. See LICENSE file for full copyright and licensing details
 
-from odoo import fields, models, api, _
-from odoo.tools.float_utils import float_round, float_is_zero
-
+from odoo import fields, models
 
 class ResCompany(models.Model):
     _inherit = "res.company"
 
-    register_gst_service = fields.Boolean(string="Register GSTN Service")
+    register_gstn_service = fields.Boolean(string="Register GSTN Service")

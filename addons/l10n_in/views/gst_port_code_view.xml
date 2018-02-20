@@ -1,28 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="view_gst_port_code_form" model="ir.ui.view">
-        <field name="name">gst.port.code.form</field>
+    <record id="gst_port_code_view_form" model="ir.ui.view">
+        <field name="name">gst.port.code.view.form</field>
         <field name="model">gst.port.code</field>
         <field name="arch" type="xml">
-        <form string=" GST Port Code">
-            <sheet>
-                <group>
+            <form string="GST Port Code">
+                <sheet>
                     <group>
-                        <field name="sequence" invisible="1"/>
-                        <field name="code"/>
-                        <field name="name"/>
+                        <group>
+                            <field name="sequence" invisible="1"/>
+                            <field name="code"/>
+                            <field name="name"/>
+                        </group>
+                        <group>
+                            <field name="state_id"/>
+                        </group>
                     </group>
-                    <group>
-                        <field name="state_id"/>
-                    </group>
-                </group>
-                <notebook>
-                    <page string="Port Code Details">
-                        <field name="detail"/>
-                    </page>
-                </notebook>
-            </sheet>
-        </form>
+                    <notebook>
+                        <page string="Port Code Details">
+                            <field name="description"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="gst_port_code_view_tree" model="ir.ui.view">
+        <field name="name">gst.port.code.view.tree</field>
+        <field name="model">gst.port.code</field>
+        <field name="arch" type="xml">
+            <tree string=" GST Port Code">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="state_id"/>
+            </tree>
         </field>
     </record>
 </odoo>

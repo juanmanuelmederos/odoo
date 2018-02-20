@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
+
 import odoo
 from odoo import tools
 from odoo import models, fields, api
 from odoo.addons.iap import jsonrpc
 import json
+
+import logging
+
+_logger = logging.getLogger(__name__)
 
 DEFAULT_ENDPOINT = 'http://localhost:8070'
 
@@ -12,19 +17,6 @@ class AccountInvoiceGstReport(models.Model):
     _name = "account.invoice.gst.report"
     _description = "Invoices Statistics"
     _auto = False
-
-    @api.multi
-    def _get_cess_amount(self):
-        for record in self:
-            account_invoice_line = self.env['account.invoice.line'].browse([record.invoice_line_id])
-            price_unit = account_invoice_line.price_unit * (1 - (account_invoice_line.discount or 0.0) / 100.0)
-            tax_lines = account_invoice_line.invoice_line_tax_ids.compute_all(price_unit, account_invoice_line.invoice_id.currency_id, account_invoice_line.quantity, account_invoice_line.product_id, account_invoice_line.invoice_id.partner_id)['taxes']
-            cess_amount_count = 0
-            for tax_line in tax_lines:
-                tax = self.env['account.tax'].browse(tax_line['id'])
-                if self.env.ref('l10n_in.cess_tag_tax').id in tax.tag_ids.ids:
-                    cess_amount_count += tax_line.get('amount')
-            record.cess_amount = cess_amount_count
 
     invoice_line_id = fields.Integer("Invoice Line Id")
     date = fields.Date("Date")
@@ -53,11 +45,10 @@ class AccountInvoiceGstReport(models.Model):
         ], string='Invoice Status', readonly=True)
     country_code = fields.Char("Country Code")
     tax_rate = fields.Char("Rate")
-    cess_amount = fields.Float(compute="_get_cess_amount" ,string="Cess Amount", digits=0)
     is_reverse_charge = fields.Boolean("Reverse Charge")
     port_code = fields.Char("Port Code")
-    e_commerce_gstn = fields.Char("E-commerce GSTIN")
-    is_e_commerce = fields.Boolean("Is E-commerce")
+    ecommerce_gstn = fields.Char("E-commerce GSTIN")
+    is_ecommerce = fields.Boolean("Is E-commerce")
     gst_invoice_type = fields.Selection([('R', 'Regular'), ('DE', 'Deemed Exports'),
                                          ('SEWP', 'SEZ Exports with payment'),
                                          ('SEWOP', 'SEZ exports without payment')], string="GST Invoice Type")
@@ -66,6 +57,7 @@ class AccountInvoiceGstReport(models.Model):
     refund_invoice_data = fields.Char("Refund Invoice_number")
     invoice_total = fields.Float("Invoice Total")
     company_id = fields.Integer("Company")
+    is_gst_tax = fields.Boolean("Is Gst Tax")
 
 
     _order = 'date desc'
@@ -110,11 +102,12 @@ class AccountInvoiceGstReport(models.Model):
                     ai.is_reverse_charge AS is_reverse_charge,
                     ai.gst_invoice_type AS gst_invoice_type,
                     gpc.code AS port_code,
-                    ecp.vat AS e_commerce_gstn,
-                    ecp.is_e_commerce AS is_e_commerce,
+                    ecp.vat AS ecommerce_gstn,
+                    ecp.is_e_commerce AS is_ecommerce,
                     airr.name AS refund_reason,
+                    CASE when ailt.tax_group_id = ANY (ARRAY%s) THEN True ELSE False END AS is_gst_tax,
                     pc.code AS country_code
-        """
+        """%(self.get_all_gst_groups())
         return select_str
 
     def _from(self):
@@ -139,7 +132,7 @@ class AccountInvoiceGstReport(models.Model):
                 LEFT JOIN (
 
                     --Temporary table to decide gst rate
-                    select at.id,(
+                    select at.id, at.tax_group_id,(
                     CASE when at.tax_group_id = ANY (ARRAY%s)
                         THEN CASE when at.amount_type::text = 'group'
                             THEN sum(ctx.amount)::character varying::text
@@ -149,10 +142,10 @@ class AccountInvoiceGstReport(models.Model):
                     END) as rate  from account_tax at
                     LEFT JOIN account_tax_filiation_rel ctxr ON ctxr.parent_tax = at.id
                     LEFT JOIN account_tax ctx ON ctx.id = ctxr.child_tax
-                    group by at.id, at.name
+                    group by at.id, at.name, at.tax_group_id
 
                 ) ailt ON ailt.id = ailts.tax_id
-                where ai.state = ANY (ARRAY['open','paid','cancel']) and comp.register_gst_service = True
+                where ai.state = ANY (ARRAY['open','paid','cancel']) and comp.register_gstn_service = True
         """%(self.get_all_gst_groups())
         return from_str
 
@@ -174,6 +167,7 @@ class AccountInvoiceGstReport(models.Model):
                         p.vat,
                         ps.code,
                         ailt.rate,
+                        ailt.tax_group_id,
                         ai.number,
                         ai.is_reverse_charge,
                         ai.gst_invoice_type,
@@ -201,22 +195,24 @@ class AccountInvoiceGstReport(models.Model):
     def get_all_gst_groups(self):
         gst_group = self.env.ref('l10n_in.gst_group', False)
         igst_group = self.env.ref('l10n_in.igst_group', False)
-        return [gst_group and gst_group.id or False, igst_group and igst_group.id or False]
+        return [gst_group and gst_group.id or 0, igst_group and igst_group.id or 0]
 
     @api.model
-    def send_gstr_data_to_server(self, company_id = False ,inv_domain = [], payment_domain = []):
+    def send_gstr_data_to_server(self, company_id = False , inv_domain = [], payment_domain = []):
         ir_params = self.env['ir.config_parameter'].sudo()
-        user_token = self.env['iap.account'].get('gst_retrun_sandbox')
-        for company in self.env['res.company'].search([('register_gst_service','=',True)]):
+        user_token = self.env['iap.account'].get('gst_return_sandbox')
+        for company in self.env['res.company'].search([('register_gstn_service', '=', True)]):
             params = {
                 'account_token': user_token.account_token,
-                'company_gstn':company.vat,
-                'dbuuid':ir_params.sudo().get_param('database.uuid'),
-                'invoice_datas':self.sudo().search_read([('company_id','=',company.id)] + inv_domain),
-                'payment_datas':self.env['account.payment.report'].sudo().search_read([('company_id','=',company.id)] + payment_domain),
+                'company_gstn': company.vat,
+                'dbuuid': ir_params.sudo().get_param('database.uuid'),
+                'invoice_datas': self.sudo().search_read([('company_id', '=', company.id)] + inv_domain),
+                'payment_datas': self.env['account.payment.report'].sudo().search_read([('company_id', '=', company.id)] + payment_domain),
                 'force_update': payment_domain or inv_domain if  True else False,
             }
-            # ir.config_parameter allows locally overriding the endpoint
-            # for testing & al
-            endpoint = ir_params.get_param('gst_retrun_sandbox.endpoint', DEFAULT_ENDPOINT)
-            jsonrpc(endpoint + '/gstr_retrun/upload', params=params)
+            if not params.get('company_gstn', False):
+                _logger.warning("Company GSTN is not set. First set Company GSTN to access gstn service")
+            else:
+                # ir.config_parameter allows locally overriding the endpoint
+                endpoint = ir_params.get_param('gst_return_sandbox.endpoint', DEFAULT_ENDPOINT)
+                jsonrpc(endpoint + '/gstr_return/upload', params=params)

@@ -8,5 +8,5 @@ from . import product_template
 from . import res_country_state
 from . import res_partner
 from . import res_config_settings
-from . import account_refund_reason
+from . import account_invoice_refund_reason
 from . import gst_port_code
