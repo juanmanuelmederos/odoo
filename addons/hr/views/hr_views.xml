@@ -271,38 +271,6 @@
             parent="menu_hr_root"
             sequence="3"/>
 
-        <!-- Employee tree by manager -->
-        <record id="view_partner_tree2" model="ir.ui.view">
-            <field name="name">hr.employee.tree</field>
-            <field name="model">hr.employee</field>
-            <field name="field_parent">child_ids</field>
-            <field name="priority" eval="20"/>
-            <field name="arch" type="xml">
-                <tree string="Employees">
-                    <field name="name"/>
-                    <field name="work_phone"/>
-                    <field name="work_email"/>
-                    <field name="company_id" groups="base.group_multi_company"/>
-                    <field name="department_id"/>
-                    <field name="job_id"/>
-                    <field name="coach_id" invisible="1"/>
-                    <field name="parent_id" invisible="1"/>
-                </tree>
-            </field>
-        </record>
-
-        <!-- TODO remove me in master -->
-        <record id="hr_employee_action_subordinate_hierachy" model="ir.actions.act_window">
-            <field name="name">Subordinate Hierarchy</field>
-            <field name="type">ir.actions.act_window</field>
-            <field name="res_model">hr.employee</field>
-            <field name="domain">['|', ('id','in',active_ids), ('parent_id', 'in', active_ids)]</field>
-            <field name="view_type">form</field>
-            <field name="view_mode">tree,form</field>
-            <field name="view_id" ref="view_partner_tree2"/>
-            <field name="binding_model_id" ref="hr.model_hr_employee"/>
-        </record>
-
         <!-- Employee Category -->
        <record id="view_employee_category_form" model="ir.ui.view">
             <field name="name">hr.employee.category.form</field>
