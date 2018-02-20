@@ -9,6 +9,7 @@ from collections import namedtuple
 from datetime import timedelta
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
+from itertools import chain
 from operator import itemgetter
 
 from odoo import api, fields, models, _
@@ -41,6 +42,81 @@ def to_naive_utc(datetime, record):
 def to_tz(datetime, tz_name):
     tz = pytz.timezone(tz_name) if tz_name else pytz.UTC
     return pytz.UTC.localize(datetime.replace(tzinfo=None), is_dst=False).astimezone(tz).replace(tzinfo=None)
+
+
+def events(intervals, opening, closing):
+    """ Return an iterator that contains one pair for each interval boundary. """
+    for start, stop in intervals:
+        yield (start, opening)
+        yield (stop, closing)
+
+
+def union(intervals):
+    """ Sort and merge the intervals; return a list of disjoint intervals. """
+    result = []
+    starts = []
+    for value, flag in sorted(events(intervals, 'start', 'stop')):
+        if flag == 'start':
+            starts.append(value)
+        elif flag == 'stop':
+            start = starts.pop()
+            if not starts:
+                result.append((start, value))
+    return result
+
+
+def inter(intervals1, intervals2):
+    """ Compute the intersection of two sets of disjoint intervals. """
+    events1 = events(intervals1, 'start', 'stop')
+    events2 = events(intervals2, 'enable', 'disable')
+
+    result = []
+    start = None                        # set by start/stop
+    enabled = False                     # set by enable/disable
+    for value, flag in sorted(chain(events1, events2)):
+        if flag == 'start':
+            start = value
+        elif flag == 'stop':
+            if enabled and start < value:
+                result.append((start, value))
+            start = None
+        elif flag == 'enable':
+            if start:
+                start = value
+            enabled = True
+        elif flag == 'disable':
+            if start and start < value:
+                result.append((start, value))
+            enabled = False
+
+    return result
+
+
+def difference(intervals1, intervals2):
+    """ Return the difference between two sets of disjoint intervals. """
+    events1 = events(intervals1, 'start', 'stop')
+    events2 = events(intervals2, 'disable', 'enable')
+
+    result = []
+    start = None                        # set by start/stop
+    enabled = True                      # set by enable/disable
+    for value, flag in sorted(chain(events1, events2)):
+        if flag == 'start':
+            start = value
+        elif flag == 'stop':
+            if enabled and start < value:
+                result.append((start, value))
+            start = None
+        elif flag == 'enable':
+            if start:
+                start = value
+            enabled = True
+        elif flag == 'disable':
+            if start and start < value:
+                result.append((start, value))
+            enabled = False
+
+    return result
 
 
 class ResourceCalendar(models.Model):
@@ -535,6 +611,85 @@ class ResourceCalendar(models.Model):
             for interval in intervals:
                 res += interval[1] - interval[0]
         return res.total_seconds() / 3600.0
+
+    # --------------------------------------------------
+    # Alternative computation API
+    # --------------------------------------------------
+
+    def _attendance_intervals(self, start_dt, end_dt):
+        """ Return the attendance intervals in the given datetime range.
+            The returned intervals are expressed in the user's timezone.
+        """
+        assert start_dt.tzinfo and end_dt.tzinfo
+        combine = datetime.datetime.combine
+
+        # express all dates and times in the user's timezone
+        tz = pytz.timezone(self.env.user.tz)
+        start_dt = start_dt.astimezone(tz)
+        end_dt = end_dt.astimezone(tz)
+        result = []
+
+        # for each attendance spec, generate the intervals in the date range
+        for attendance in self.attendance_ids:
+            start = start_dt.date()
+            if attendance.date_from:
+                start = max(start, fields.Date.from_string(attendance.date_from))
+            until = end_dt.date()
+            if attendance.date_to:
+                until = min(until, fields.Date.from_string(attendance.date_to))
+            weekday = int(attendance.dayofweek)
+
+            for day in rrule.rrule(rrule.DAILY, start, until=until, byweekday=weekday):
+                # attendance hours are interpreted in the user's timezone
+                dt0 = combine(day, float_to_time(attendance.hour_from).replace(tzinfo=tz))
+                dt1 = combine(day, float_to_time(attendance.hour_to).replace(tzinfo=tz))
+                interval = (max(start_dt, dt0), min(end_dt, dt1))
+                if interval[0] < interval[1]:
+                    result.append(interval)
+
+        return union(result)
+
+    def _leave_intervals(self, start_dt, end_dt, resource=None, domain=None):
+        """ Return the leave intervals in the given datetime range.
+            The returned intervals are expressed in the user's timezone.
+        """
+        assert start_dt.tzinfo and end_dt.tzinfo
+        self.ensure_one()
+        tz = pytz.timezone(self.env.user.tz)
+
+        def from_string(dt):
+            return fields.Datetime.from_string(dt).replace(tzinfo=pytz.UTC)
+
+        # for the computation, express all datetimes in UTC
+        resource_ids = [resource.id, False] if resource else [False]
+        start_dt = start_dt.astimezone(pytz.UTC)
+        end_dt = end_dt.astimezone(pytz.UTC)
+        if domain is None:
+            domain = [('time_type', '=', 'leave')]
+        domain = domain + [
+            ('calendar_id', '=', self.id),
+            ('resource_id', 'in', resource_ids),
+            ('date_from', '<=', fields.Datetime.to_string(end_dt)),
+            ('date_to', '>=', fields.Datetime.to_string(start_dt)),
+        ]
+
+        # retrieve leave intervals in (start_dt, end_dt)
+        result = []
+        for leave in self.env['resource.calendar.leaves'].search(domain):
+            leave_from = from_string(leave.date_from).astimezone(tz)
+            leave_to = from_string(leave.date_to).astimezone(tz)
+            interval = (max(start_dt, leave_from), min(end_dt, leave_to))
+            if interval[0] < interval[1]:
+                result.append(interval)
+
+        return union(result)
+
+    def _work_intervals(self, start_dt, end_dt, resource=None, domain=None):
+        """ Return the effective work intervals between the given datetimes. """
+        return difference(
+            self._attendance_intervals(start_dt, end_dt),
+            self._leave_intervals(start_dt, end_dt, resource, domain),
+        )
 
     # --------------------------------------------------
     # Scheduling API

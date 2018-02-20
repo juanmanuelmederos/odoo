@@ -9,6 +9,7 @@ from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 
 from odoo.fields import Date, Datetime
+from odoo.addons.resource.models.resource import union, inter, difference
 from odoo.addons.resource.models.resource import to_naive_utc, to_naive_user_tz, to_tz
 from odoo.addons.resource.tests.common import TestResourceCommon
 
@@ -85,6 +86,52 @@ class TestIntervals(TestResourceCommon):
         self.assertEqual(result[1][:2], (Datetime.from_string('2013-02-04 17:00:00'), Datetime.from_string('2013-02-04 21:00:00')))
         # First interval: 04, 08-11:30
         self.assertEqual(result[0][:2], (Datetime.from_string('2013-02-04 12:30:00'), Datetime.from_string('2013-02-04 14:00:00')))
+
+    def test_union(self):
+        self.assertEqual(union([(1, 2), (3, 4)]), [(1, 2), (3, 4)])
+        self.assertEqual(union([(1, 2), (2, 4)]), [(1, 4)])
+        self.assertEqual(union([(1, 3), (2, 4)]), [(1, 4)])
+        self.assertEqual(union([(1, 4), (2, 3)]), [(1, 4)])
+        self.assertEqual(union([(3, 4), (1, 2)]), [(1, 2), (3, 4)])
+        self.assertEqual(union([(2, 4), (1, 2)]), [(1, 4)])
+        self.assertEqual(union([(2, 4), (1, 3)]), [(1, 4)])
+        self.assertEqual(union([(2, 3), (1, 4)]), [(1, 4)])
+
+    def test_inter(self):
+        self.assertEqual(inter([(10, 20)], [(5, 8)]), [])
+        self.assertEqual(inter([(10, 20)], [(5, 10)]), [])
+        self.assertEqual(inter([(10, 20)], [(5, 15)]), [(10, 15)])
+        self.assertEqual(inter([(10, 20)], [(5, 20)]), [(10, 20)])
+        self.assertEqual(inter([(10, 20)], [(5, 25)]), [(10, 20)])
+        self.assertEqual(inter([(10, 20)], [(10, 15)]), [(10, 15)])
+        self.assertEqual(inter([(10, 20)], [(10, 20)]), [(10, 20)])
+        self.assertEqual(inter([(10, 20)], [(10, 25)]), [(10, 20)])
+        self.assertEqual(inter([(10, 20)], [(15, 18)]), [(15, 18)])
+        self.assertEqual(inter([(10, 20)], [(15, 20)]), [(15, 20)])
+        self.assertEqual(inter([(10, 20)], [(15, 25)]), [(15, 20)])
+        self.assertEqual(inter([(10, 20)], [(20, 25)]), [])
+        int1 = [(0, 5), (10, 15), (20, 25), (30, 35)]
+        int2 = [(6, 7), (9, 12), (13, 17), (22, 23), (24, 40)]
+        res = [(10, 12), (13, 15), (22, 23), (24, 25), (30, 35)]
+        self.assertEqual(inter(int1, int2), res)
+
+    def test_difference(self):
+        self.assertEqual(difference([(10, 20)], [(5, 8)]), [(10, 20)])
+        self.assertEqual(difference([(10, 20)], [(5, 10)]), [(10, 20)])
+        self.assertEqual(difference([(10, 20)], [(5, 15)]), [(15, 20)])
+        self.assertEqual(difference([(10, 20)], [(5, 20)]), [])
+        self.assertEqual(difference([(10, 20)], [(5, 25)]), [])
+        self.assertEqual(difference([(10, 20)], [(10, 15)]), [(15, 20)])
+        self.assertEqual(difference([(10, 20)], [(10, 20)]), [])
+        self.assertEqual(difference([(10, 20)], [(10, 25)]), [])
+        self.assertEqual(difference([(10, 20)], [(15, 18)]), [(10, 15), (18, 20)])
+        self.assertEqual(difference([(10, 20)], [(15, 20)]), [(10, 15)])
+        self.assertEqual(difference([(10, 20)], [(15, 25)]), [(10, 15)])
+        self.assertEqual(difference([(10, 20)], [(20, 25)]), [(10, 20)])
+        int1 = [(0, 5), (10, 15), (20, 25), (30, 35)]
+        int2 = [(6, 7), (9, 12), (13, 17), (22, 23), (24, 40)]
+        res = [(0, 5), (12, 13), (20, 22), (23, 24)]
+        self.assertEqual(difference(int1, int2), res)
 
 
 class TestCalendarBasics(TestResourceCommon):
@@ -649,12 +696,12 @@ class TestResourceMixin(TestResourceCommon):
         res = self.test.get_work_days_count(
             to_naive_utc(Datetime.from_string('2013-02-12 06:00:00'), self.env.user),
             to_naive_utc(Datetime.from_string('2013-02-22 23:00:00'), self.env.user))
-        self.assertEqual(res, 3.75)  # generic leaves, 3 hours
+        self.assertEqual(res, 4.0)  # generic leaves, 3 hours
 
         res = self.test.get_work_days_count(
             to_naive_utc(Datetime.from_string('2013-02-12 06:00:00'), self.env.user),
             to_naive_utc(Datetime.from_string('2013-02-22 20:00:00'), self.env.user))
-        self.assertEqual(res, 3.5)  # last day is truncated of 3 hours on 12)
+        self.assertEqual(res, 3.75)  # last day is truncated of 3 hours on 12)
 
         self.env['resource.calendar.leaves'].create({
             'name': 'Timezoned Leaves',
@@ -667,7 +714,7 @@ class TestResourceMixin(TestResourceCommon):
         res = self.test.get_work_days_count(
             to_naive_utc(Datetime.from_string('2013-02-12 06:00:00'), self.env.user),
             to_naive_utc(Datetime.from_string('2013-02-22 20:00:00'), self.env.user))
-        self.assertEqual(res, 2.5)  # one day is on leave and last day is truncated of 3 hours on 12)
+        self.assertEqual(res, 2.75)  # one day is on leave and last day is truncated of 3 hours on 12)
 
     def test_work_days_count_timezones_ultra(self):
         # user in timezone UTC+4 is attached to the resource and create leaves
@@ -688,15 +735,15 @@ class TestResourceMixin(TestResourceCommon):
         res = self.test.get_work_days_data(
             to_naive_utc(Datetime.from_string('2013-02-12 06:00:00'), self.env.user),
             to_naive_utc(Datetime.from_string('2013-02-12 20:00:00'), self.env.user))
-        self.assertEqual(res['days'], 0.75)
-        self.assertEqual(res['hours'], 6.0)
+        self.assertEqual(res['days'], 1.0)
+        self.assertEqual(res['hours'], 8.0)
 
         # user in timezone UTC+4 read and manipulate leaves
         res = self.test.sudo(self.lost_user).get_work_days_data(
             to_naive_utc(Datetime.from_string('2013-02-12 06:00:00'), self.env.user),
             to_naive_utc(Datetime.from_string('2013-02-12 20:00:00'), self.env.user))
-        self.assertEqual(res['days'], 0.75)
-        self.assertEqual(res['hours'], 6.0)
+        self.assertEqual(res['days'], 0.0)
+        self.assertEqual(res['hours'], 0.0)
 
     def test_days_count_with_domain(self):
         self.test.resource_id.write({
