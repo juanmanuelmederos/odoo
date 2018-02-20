@@ -34,7 +34,6 @@ class SaleOrder(models.Model):
         for order in self:
             if order.amount_untaxed < order.margin_price_total and not self.env.user.has_group('sales_team.group_sale_manager'):
                 raise UserError(_('You can\'t sell products below their margin price.'))
-                return False
             else:
                 return super(SaleOrder, self)._action_confirm()
 
