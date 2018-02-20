@@ -96,24 +96,38 @@ var KanbanColumn = Widget.extend({
         }
         this.$header.find('.o_kanban_header_title').tooltip();
 
+        var count = 0;
         var sortable = new Sortable(this.el, {
             group: { name: ".o_kanban_group", pull: ['clone']},
             ghostClass: "oe_kanban_card_ghost",
             sort: true,
             draggable: ".o_kanban_record",
+            delay: 200,
+            scrollFn: function(offsetX) {
+                if(offsetX != 0 && config.device.isMobile){
+                    count += 1
+                    if (count > 30) {
+                        var swipeTo = offsetX > 0 ? 'left' : 'right';
+                        self.trigger_up("kanban_column_swipe_" + swipeTo);
+                        count = 0;
+                    }
+                }
+            },
             onSort: function (event) {
                 var record = $(event.item).data('record');
                 var index = self.records.indexOf(record);
-                record.$el.removeAttr('style');  // jqueryui sortable add display:block inline
-                if (index >= 0) {
-                    if ($.contains(self.$el[0], record.$el[0])) {
-                        // resequencing records
-                        self.trigger_up('kanban_column_resequence', {ids: self._getIDs()});
+                if (record) {
+                    record.$el.removeAttr('style');  // jqueryui sortable add display:block inline
+                    if (index >= 0) {
+                        if ($.contains(self.$el[0], record.$el[0])) {
+                            // resequencing records
+                            self.trigger_up('kanban_column_resequence', {ids: self._getIDs()});
+                        }
+                    } else {
+                        // adding record to this column
+                        $(event.item).addClass('o_updating');
+                        self.trigger_up('kanban_column_add_record', {record: record, ids: self._getIDs()});
                     }
-                } else {
-                    // adding record to this column
-                    $(event.item).addClass('o_updating');
-                    self.trigger_up('kanban_column_add_record', {record: record, ids: self._getIDs()});
                 }
             },
         });
