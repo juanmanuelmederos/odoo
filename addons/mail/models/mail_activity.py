@@ -149,7 +149,7 @@ class MailActivity(models.Model):
         self.activity_type_id = self.recommended_activity_type_id
 
     @api.multi
-    def _check_access(self, operation):
+    def _check_access(self, operation, values = {}):
         """ Rule to access activities
 
          * create: check write rights on related document;
@@ -171,14 +171,17 @@ class MailActivity(models.Model):
         for activity in self.sudo():
             if activity.res_model and activity.res_id:
                 activity_to_documents.setdefault(activity.res_model, list()).append(activity.res_id)
+            else:
+                if (operation != 'create' and self.env.user.id != activity.user_id.id):
+                    self._raise_access_exception(operation,_("You can only access your own records."))
+                elif operation =='create' and not self.env.user.has_group('base.group_user'):
+                    self._raise_access_exception(operation,_("Only employee can create reminder."))
         for model, res_ids in activity_to_documents.items():
             self.env[model].check_access_rights(doc_operation, raise_exception=True)
             try:
                 self.env[model].browse(res_ids).check_access_rule(doc_operation)
             except exceptions.AccessError:
-                raise exceptions.AccessError(
-                    _('The requested operation cannot be completed due to security restrictions. Please contact your system administrator.\n\n(Document type: %s, Operation: %s)') %
-                    (self._description, operation))
+                self._raise_access_exception(operation)
 
     @api.model
     def create(self, values):
@@ -187,9 +190,8 @@ class MailActivity(models.Model):
         values_w_defaults.update(values)
 
         # Reminder have no summary (for display name) It will add first line of note to summary.
-        if 'res_model_id' not in values:
-            text = html2plaintext(values.get('note', _('Reminder')))
-            values_w_defaults['summary'] = text.strip().replace('*', '').split("\n")[0]
+        if 'res_model_id' not in values and 'summary' not in values:
+            values_w_defaults['summary'] = self._summary_from_note(values.get('note', _('Reminder')))
 
         # continue as sudo because activities are somewhat protected
         activity = super(MailActivity, self.sudo()).create(values_w_defaults)
@@ -205,27 +207,29 @@ class MailActivity(models.Model):
 
     @api.multi
     def write(self, values):
-        self._check_access('write')
+        self._check_access('write',values)
+        if not self.env.user._is_admin() and ('res_model' in values or 'res_id' in values or 'res_model_id' in values):
+            self._raise_access_exception('write',_("You cannot change a reminder's parent record."))
         if values.get('user_id'):
             pre_responsibles = self.mapped('user_id.partner_id')
 
         activities = self.env['mail.activity']
         reminders = self.env['mail.activity']
         for activity in self:
-            if not activity.res_id and not activity.res_model and 'note' in values:
+            if not activity.res_id and not activity.res_model and 'note' in values and not 'summary' in values:
                 # need to write separately for storing summary from note.
                 reminders += activity
             else:
                 activities += activity
 
-        res = False
+        res = True
         if activities:
-            res = super(MailActivity, activities.sudo()).write(values)
-        if reminders:
-            text = html2plaintext(values.get('note', _('Reminder')))
-            values['summary'] = text.strip().replace('*', '').split("\n")[0]
-            res = super(MailActivity, reminders.sudo()).write(values)
-
+            res &= super(MailActivity, activities.sudo()).write(values)
+        if reminders: 
+            #if we have reminder, note is set and summary is not set. We need to update summary
+            values['summary'] = self._summary_from_note(values.get('note', _('Reminder')))
+            res &= super(MailActivity, reminders.sudo()).write(values)
+            
         if values.get('user_id'):
             for activity in self:
                 if activity.res_id and activity.res_model:
@@ -298,6 +302,19 @@ class MailActivity(models.Model):
     @api.multi
     def action_close_dialog(self):
         return {'type': 'ir.actions.act_window_close'}
+
+    def _summary_from_note(self,value):
+        """
+            Returns the first line of given text without html tags and * 
+            Usefull to create a summary from a note content
+        """
+        cleanedNote = html2plaintext(value).strip().replace('*', '').split("\n")[0]
+        if cleanedNote == '':
+            cleanedNote = _('Reminder')
+        return cleanedNote
+    def _raise_access_exception(self,operation,message=''):
+         raise exceptions.AccessError(_('The requested operation cannot be completed due to security restrictions. %s Please contact your system administrator.\n\n(Document type: %s, Operation: %s)') % 
+                    (message,self._description, operation))
 
 
 class MailActivityMixin(models.AbstractModel):

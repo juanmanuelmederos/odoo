@@ -182,7 +182,7 @@
         </field>
     </record>
 
-    <record id="mail_activity_reminder_view_form" model="ir.ui.view">
+    <record id="mail_activity_view_form_reminder" model="ir.ui.view">
         <field name="name">mail.activity.view.form</field>
         <field name="model">mail.activity</field>
         <field name="priority">21</field>
@@ -227,7 +227,7 @@
                             </div>
                             <div class="oe_kanban_content">
                                 <div>
-                                    <div t-attf-class="#{record.active.raw_value ? '' : 'o_text_line_through'}">
+                                    <div t-attf-class="#{record.active.raw_value ? '' : 'o_text_line_through'} o_reminder_title">
                                         <strong><field name="summary"/></strong>
                                     </div>
                                     <div class="row">
@@ -248,7 +248,7 @@
         </field>
     </record>
 
-    <record id="mail_activity_reminder_view_search" model="ir.ui.view">
+    <record id="mail_activity_view_search_reminder" model="ir.ui.view">
         <field name="name">mail.activity.reminder.view.search</field>
         <field name="model">mail.activity</field>
         <field name="arch" type="xml">
@@ -268,17 +268,17 @@
         </field>
     </record>
 
-     <record id="mail_activity_reminders_action" model="ir.actions.act_window">
+    <record id="mail_activity_action_reminders" model="ir.actions.act_window">
         <field name="name">Reminders</field>
         <field name="res_model">mail.activity</field>
         <field name="view_type">form</field>
-        <field name="search_view_id" ref="mail_activity_reminder_view_search"/>
+        <field name="search_view_id" ref="mail_activity_view_search_reminder"/>
         <field name="view_ids"
                    eval="[(5, 0, 0),
                           (0, 0, {'view_mode': 'kanban', 'view_id': ref('mail_activity_view_kanban')}),
-                          (0, 0, {'view_mode': 'form', 'view_id': ref('mail_activity_reminder_view_form')})]"/>
+                          (0, 0, {'view_mode': 'form', 'view_id': ref('mail_activity_view_form_reminder')})]"/>
         <field name="view_id" ref="mail.mail_activity_view_kanban"/>
         <field name="view_mode">kanban,form</field>
-        <field name="domain">[('user_id', '=', uid), ('res_id', '=', False), ('res_model', '=', False)]</field>
+        <field name="domain">[('user_id', '=', uid), ('res_model', '=', False), ('res_id', 'in', [0,None])]</field>
     </record>
 </odoo>

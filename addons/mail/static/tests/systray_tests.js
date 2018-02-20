@@ -79,7 +79,7 @@ QUnit.test('activity menu widget: menu with no records', function (assert) {
     activityMenu.destroy();
 });
 
-QUnit.test('activity menu widget: activity menu with 3 records', function (assert) {
+QUnit.test('activity menu widget: activity menu with 4 records', function (assert) {
     assert.expect(22);
     var self = this;
     var activityMenu = new systray.ActivityMenu();

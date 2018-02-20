@@ -83,7 +83,7 @@
         <div class="o_reminder_show">
             <a class="btn btn-block text-center">Add new reminder</a>
         </div>
-        <div class="o_reminder o_reminder o_mail_channel_preview hidden">
+        <div class="o_reminder o_mail_channel_preview hidden">
             <div class="o_mail_channel_image o_mail_channel_app">
                 <img src="/mail/static/src/img/reminder.png"/>
             </div>

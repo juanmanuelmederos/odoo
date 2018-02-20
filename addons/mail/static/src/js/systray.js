@@ -281,7 +281,7 @@ var ActivityMenu = Widget.extend({
         }
         if (data.res_model === 'mail.activity') {
             // Opening Reminder custom kanban view with action.
-            this.do_action('mail.mail_activity_reminders_action', {additional_context: context});
+            this.do_action('mail.mail_activity_action_reminders', {additional_context: context});
         } else {
             this.do_action({
                 type: 'ir.actions.act_window',
