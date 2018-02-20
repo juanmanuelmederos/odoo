@@ -11,3 +11,6 @@ class SaleReport(models.Model):
 
     def _select(self):
         return super(SaleReport, self)._select() + ", SUM(l.margin / COALESCE(cr.rate, 1.0)) AS margin"
+
+    def _select_pos(self):
+        return super(SaleReport, self)._select_pos() + ", NULL AS margin"

@@ -14,3 +14,6 @@ class SaleReport(models.Model):
 
     def _group_by(self):
         return super(SaleReport, self)._group_by() + ", s.warehouse_id"
+
+    def _select_pos(self):
+        return super(SaleReport, self)._select_pos() + ", NULL AS warehouse_id"

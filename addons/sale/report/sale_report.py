@@ -46,9 +46,11 @@ class SaleReport(models.Model):
     weight = fields.Float('Gross Weight', readonly=True)
     volume = fields.Float('Volume', readonly=True)
 
+    def _with_qry(self):
+        return """WITH currency_rate as (%s)"""% self.env['res.currency']._select_companies_rates()
+
     def _select(self):
         select_str = """
-            WITH currency_rate as (%s)
              SELECT min(l.id) as id,
                     l.product_id as product_id,
                     t.uom_id as product_uom,
@@ -78,7 +80,7 @@ class SaleReport(models.Model):
                     partner.commercial_partner_id as commercial_partner_id,
                     sum(p.weight * l.product_uom_qty / u.factor * u2.factor) as weight,
                     sum(p.volume * l.product_uom_qty / u.factor * u2.factor) as volume
-        """ % self.env['res.currency']._select_companies_rates()
+        """
         return select_str
 
     def _from(self):
@@ -124,11 +126,11 @@ class SaleReport(models.Model):
     def init(self):
         # self._table = sale_report
         tools.drop_view_if_exists(self.env.cr, self._table)
-        self.env.cr.execute("""CREATE or REPLACE VIEW %s as (
+        self.env.cr.execute("""CREATE or REPLACE VIEW %s as (%s
             %s
             FROM ( %s )
             %s
-            )""" % (self._table, self._select(), self._from(), self._group_by()))
+            )""" % (self._table, self._with_qry(), self._select(), self._from(), self._group_by()))
 
 class SaleOrderReportProforma(models.AbstractModel):
     _name = 'report.sale.report_saleproforma'
