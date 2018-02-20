@@ -44,7 +44,7 @@ class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'
 
     commission = fields.Monetary(string='Commission', compute='_compute_commission',store=True)
-    margin_price = fields.Monetary(string='Minimal Price', compute='_compute_margin', store=True)
+    margin_price = fields.Monetary(string='Minimal Price', compute='_compute_margin_price', store=True)
     margin_percentage = fields.Integer(string='Margin %', compute='_get_margin_percent')
 
     @api.depends('price_total')
@@ -56,7 +56,7 @@ class SaleOrderLine(models.Model):
             order_line.commission = ( commission_percentage / 100 ) * order_line.price_total
 
     @api.depends('product_id.standard_price')
-    def _compute_margin(self):
+    def _compute_margin_price(self):
         for order_line in self:
             cost = order_line.product_id.standard_price
             margin_percentage = order_line.product_id.categ_id.margin_percentage
