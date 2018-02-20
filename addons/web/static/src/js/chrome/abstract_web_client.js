@@ -132,14 +132,14 @@ var AbstractWebClient = Widget.extend(ServiceProviderMixin, {
                 core.bus.trigger('web_client_ready');
             });
     },
-    
+
     hide_accesskey_overlay:function(){
-        var accesskeyElements = $(document).find('[accesskey]').filter(':visible');
+        this.areAccessKeyVisible = false;
+        var accesskeyElements = this.$el.find('[accesskey]').filter(':visible');
         var overlays = accesskeyElements.find('.o_web_accesskey_overlay');
         if (overlays.length) {
             return overlays.remove();
         }
-        this.areAccessKeyVisible = false;
     },
     bind_events: function () {
         var self = this;
@@ -169,12 +169,32 @@ var AbstractWebClient = Widget.extend(ServiceProviderMixin, {
             }, 0);
         });
         this.$el.on('click',function(ev) {
-            self.hide_accesskey_overlay.apply(self);
+            self.hide_accesskey_overlay.call(self);
         });
-        
+        var knownUnusableAccessKeys = [' ','A','C','H','J','K','L','N','P','S','0','1','2','3','4','5','6','7','8','9'];
         this.$el.on('keydown', function (e) {
-            if (!self.areAccessKeyVisible && e.altKey && e.shiftKey ) {
+            if ((!self.areAccessKeyVisible) && e.altKey ) {
                 self.areAccessKeyVisible = true;
+                self.$el.find('.o_menu_sections>li>a').each(function(number,item) {
+                    item.accessKey = number+1;
+                });
+                var usedAccessKey = knownUnusableAccessKeys.slice();
+                self.$el.find('[accesskey]').each(function(_,elem){ usedAccessKey.push(elem.accessKey);});
+                var buttonWithoutAccessKey = self.$el.find('button.btn:visible').not('[accesskey]').not('[disabled]');
+                _.each(buttonWithoutAccessKey,function(elem) {
+                    var buttonString = elem.innerText || elem.title;
+                    if (buttonString) {
+                        for (var letterIndex = 0; letterIndex< buttonString.length; letterIndex++) {
+                            var candidateAccessKey = buttonString[letterIndex].toUpperCase();
+                            if (!usedAccessKey.includes(candidateAccessKey)){
+                                elem.accessKey = candidateAccessKey;
+                                usedAccessKey.push(candidateAccessKey);
+                                break;
+                            }
+                        }
+                    }
+                });
+                
                 var accesskeyElements = $(document).find('[accesskey]').filter(':visible');
                 _.each(accesskeyElements, function (elem) {
                     $(_.str.sprintf("<div class='o_web_accesskey_overlay'>%s</div>", $(elem).attr('accesskey').toUpperCase()))
@@ -182,8 +202,12 @@ var AbstractWebClient = Widget.extend(ServiceProviderMixin, {
                 });
             } 
         });
-        this.$el.on('keyup',function(){
-            self.hide_accesskey_overlay.apply(self);
+        this.$el.on('keyup',function(e){
+            self.hide_accesskey_overlay.call(self);
+            if (e.altKey || e.key === 'Alt') {
+                e.preventDefault();
+                return false;
+            }
         });
         core.bus.on('click', this, function (ev) {
             $('.tooltip').remove();
