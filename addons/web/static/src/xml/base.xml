@@ -390,6 +390,15 @@
     </div>
 </t>
 
+<t t-name="ListView.SelectAll">
+    <div class="o_list_view_select_all pt4 pb4 alert alert-warning text-center">
+        <t t-esc="title"/>
+        <a class="o_select_action btn btn-link btn-sm" t-att-data-action_type="action_type">
+            <t t-esc="action_label"/> <i class="fa fa-arrow-right"> </i>
+        </a>
+    </div>
+</t>
+
 <t t-name="FormView.buttons">
     <div class="o_form_buttons_view">
         <button t-if="widget.is_action_enabled('edit')" type="button"

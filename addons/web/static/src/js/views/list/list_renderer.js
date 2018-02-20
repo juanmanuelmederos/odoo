@@ -10,6 +10,7 @@ var Pager = require('web.Pager');
 var utils = require('web.utils');
 
 var _t = core._t;
+var qweb = core.qweb;
 
 // Allowed decoration on the list's rows: bold, italic and bootstrap semantics classes
 var DECORATIONS = [
@@ -37,6 +38,7 @@ var ListRenderer = BasicRenderer.extend({
         'click thead th.o_column_sortable': '_onSortColumn',
         'click .o_group_header': '_onToggleGroup',
         'click thead .o_list_record_selector input': '_onToggleSelection',
+        'click .o_select_action': '_onSelectActionClick',
     },
     /**
      * @constructor
@@ -59,6 +61,8 @@ var ListRenderer = BasicRenderer.extend({
         this.hasSelectors = params.hasSelectors;
         this.selection = [];
         this.pagers = []; // instantiated pagers (only for grouped lists)
+        this.allSelected = false;
+        this.isCurrentAllSelected = false;
         this.editable = params.editable;
     },
 
@@ -596,6 +600,31 @@ var ListRenderer = BasicRenderer.extend({
         return _.map(this.state.data, this._renderRow.bind(this));
     },
     /**
+     * Render selection bar
+     *
+     * @private
+     */
+    _renderSelectAll: function () {
+        var values;
+        this.$el.find('.o_list_view_select_all').remove();
+        if (this.allSelected) {
+            values = {
+                title: _.str.sprintf('All %s records are selected', this.state.count),
+                action_type: 'clear_selection',
+                action_label: 'Clear Selection'
+            }
+        } else if (this.isCurrentAllSelected) {
+            values = {
+                title: _.str.sprintf('All %s records of this page are selected', this.state.data.length),
+                action_type: 'select_all',
+                action_label: _.str.sprintf('Select all %s', this.state.count)
+            };
+        }
+        if (this.isCurrentAllSelected) {
+            this.$el.prepend(qweb.render('ListView.SelectAll', values));
+        }
+    },
+    /**
      * A 'selector' is the small checkbox on the left of a record in a list
      * view.  This is rendered as an input inside a div, so we can properly
      * style it.
@@ -708,7 +737,15 @@ var ListRenderer = BasicRenderer.extend({
         this.selection = _.map($selectedRows, function (row) {
             return $(row).data('id');
         });
-        this.trigger_up('selection_changed', { selection: this.selection });
+        this.isCurrentAllSelected = this.selection.length === this.state.data.length;
+        if (this.isCurrentAllSelected && this.state.count > this.selection.length) {
+            this.$('thead .o_list_record_selector input').prop('checked', true);
+            this._renderSelectAll();
+        } else {
+            this.allSelected = false;
+            this.$el.find('.o_list_view_select_all').remove();
+        }
+        this.trigger_up('selection_changed', { selection: this.selection, allSelected: this.allSelected });
         this._updateFooter();
     },
 
@@ -729,6 +766,21 @@ var ListRenderer = BasicRenderer.extend({
                 this.trigger_up('open_record', {id:id, target: event.target});
             }
         }
+    },
+    /**
+     * @private
+     * @param {MouseEvent} event
+     */
+    _onSelectActionClick: function (event) {
+        var actionType = $(event.currentTarget).data('action_type');
+        if (actionType == 'select_all') {
+            this.allSelected = true;
+        } else if (actionType == 'clear_selection') {
+            this.allSelected = false;
+            this.$('th.o_list_record_selector input').click();
+        }
+        this.trigger_up('selection_changed', { selection: this.selection, allSelected: this.allSelected });
+        this._renderSelectAll();
     },
     /**
      * @private
@@ -768,6 +820,7 @@ var ListRenderer = BasicRenderer.extend({
      */
     _onToggleSelection: function (event) {
         var checked = $(event.currentTarget).prop('checked') || false;
+        this.allSelected = false;
         this.$('tbody .o_list_record_selector input').prop('checked', checked);
         this._updateSelection();
     },
