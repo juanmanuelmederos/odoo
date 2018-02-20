@@ -157,7 +157,7 @@ class Web_Editor(http.Controller):
                 'name': name,
                 'type': 'url',
                 'url': url,
-                'public': True,
+                'public': res_model == 'ir.ui.view',
                 'res_id': res_id,
                 'res_model': res_model,
             })
@@ -184,7 +184,7 @@ class Web_Editor(http.Controller):
                         'name': c_file.filename,
                         'datas': base64.b64encode(data),
                         'datas_fname': c_file.filename,
-                        'public': True,
+                        'public': res_model == 'ir.ui.view',
                         'res_id': res_id,
                         'res_model': res_model,
                     })

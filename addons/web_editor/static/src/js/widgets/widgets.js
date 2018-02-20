@@ -121,9 +121,11 @@ var ImageDialog = Widget.extend({
         this._super.apply(this, arguments);
         this.options = options || {};
         this.accept = this.options.accept || this.options.document ? "*/*" : "image/*";
-        if (this.options.res_id) {
+        if (options.domain) {
+            this.domain = typeof options.domain === 'function' ? options.domain() : options.domain;
+        } else if (options.res_id) {
             this.domain = ['|',
-                '&', ['res_model', '=', this.options.res_model], ['res_id', '=', this.options.res_id],
+                '&', ['res_model', '=', options.res_model], ['res_id', '=', options.res_id],
                 ['res_model', '=', 'ir.ui.view']];
         } else {
             this.domain = [['res_model', '=', 'ir.ui.view']];
@@ -1064,7 +1066,7 @@ var MediaDialog = Dialog.extend({
             }
             var media = self.active.media;
 
-            self.final_data = [media, self.old_media];
+            self.final_data = [media, self.old_media, self.active.images];
             $(document.body).trigger("media-saved", self.final_data);
             $(self.old_media).trigger("save", self.final_data);
             $(self.final_data).trigger('input');

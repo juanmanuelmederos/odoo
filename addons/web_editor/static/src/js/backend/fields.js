@@ -83,12 +83,37 @@ var FieldTextHtmlSimple = basic_fields.DebouncedField.extend(TranslatableFieldMi
     // Private
     //--------------------------------------------------------------------------
 
+    _getAttachmentsDomain: function () {
+        var domain = ['|', ['id', 'in', _.pluck(this.attachments, 'id')]];
+        if (this.recordData.model) {
+            domain = domain.concat([
+                '&',
+                '&',
+                ['res_model', '=', this.model],
+                ['res_id', '=', this.res_id|0],
+                ['create_uid', '=', session.uid]]);
+        } else {
+            domain = domain.concat([
+                '&',
+                ['res_model', '=', this.model],
+                ['res_id', '=', this.res_id|0]]);
+        }
+        if (this.recordData.model) {
+            domain = ['|'].concat(domain).concat([
+                '&',
+                ['res_model', '=', this.recordData.model],
+                ['res_id', '=', this.recordData.res_id|0]]);
+        }
+        return domain;
+    },
     /**
      * @private
      * @returns {Object} the summernote configuration
      */
     _getSummernoteConfig: function () {
         var summernoteConfig = {
+            model: this.model,
+            id: this.res_id,
             focus: false,
             height: 180,
             toolbar: [
@@ -107,6 +132,17 @@ var FieldTextHtmlSimple = basic_fields.DebouncedField.extend(TranslatableFieldMi
             lang: "odoo",
             onChange: this._doDebouncedAction.bind(this),
         };
+
+        var fieldNameAttachment = _.first(_.find(_.pairs(this.recordData), function (value) {
+            return _.isObject(value[1]) && value[1].model === "ir.attachment";
+        }));
+        if (fieldNameAttachment) {
+            this.fieldNameAttachment = fieldNameAttachment;
+            this.attachments = [];
+            summernoteConfig.onImageUpload = this._onImageUpload.bind(this);
+            summernoteConfig.getMediaDomain = this._getAttachmentsDomain.bind(this);
+        }
+
         if (config.debug) {
             summernoteConfig.toolbar.splice(7, 0, ['view', ['codeview']]);
         }
@@ -124,6 +160,23 @@ var FieldTextHtmlSimple = basic_fields.DebouncedField.extend(TranslatableFieldMi
         }
         return this.$content.html();
     },
+    _onImageUpload: function (data) {
+        var self = this;
+        var attachments = _.filter(data[2], function (attachment) {
+            return !_.findWhere(self.attachments, {id: attachment.id});
+        });
+        if (!attachments.length) {
+            return;
+        }
+        this.attachments = this.attachments.concat(attachments);
+        this.trigger_up('field_changed', {
+            dataPointID: this.dataPointID,
+            changes: _.object([this.fieldNameAttachment], [{
+                operation: 'ADD_M2M',
+                ids: data[2]
+            }])
+        });
+    },
     /**
      * @override
      * @private
@@ -134,8 +187,6 @@ var FieldTextHtmlSimple = basic_fields.DebouncedField.extend(TranslatableFieldMi
         this.$textarea.summernote(this._getSummernoteConfig());
         this.$content = this.$('.note-editable:first');
         this.$content.html(this._textToHtml(this.value));
-        this.$content.data('oe-id', this.recordData.res_id || this.res_id);
-        this.$content.data('oe-model', this.recordData.model || this.model);
         // trigger a mouseup to refresh the editor toolbar
         this.$content.trigger('mouseup');
         if (this.nodeOptions['style-inline']) {
