@@ -154,7 +154,7 @@ class Lang(models.Model):
             'thousands_sep' : fix_xa0(str(conv['thousands_sep'])),
             'grouping' : str(conv.get('grouping', [])),
             'position': 'before' if conv.get('p_cs_precedes', 'n_cs_precedes') == 1 else 'after',
-            'is_space': True if conv.get('p_sep_by_space', 'n_sep_by_space') == 1 else False
+            'is_space': False if conv.get('p_sep_by_space', 'n_sep_by_space') == 0 else True
         }
         try:
             return self.create(lang_info).id
