@@ -27,6 +27,8 @@ var KanbanColumn = Widget.extend({
         'click .o_kanban_quick_add': '_onAddQuickCreate',
         'click .o_kanban_load_more': '_onLoadMore',
         'click .o_kanban_toggle_fold': '_onToggleFold',
+        'click .o_column_archive_records': '_onArchiveRecords',
+        'click .o_column_unarchive_records': '_onUnarchiveRecords'
     },
     /**
      * @override
@@ -355,6 +357,37 @@ var KanbanColumn = Widget.extend({
             ev.data.callback(record.$el, record.state.data);
         });
     },
+    /**
+     * @private
+     * @param {MouseEvent} event
+     */
+    _onArchiveRecords: function (event) {
+        event.preventDefault();
+        var buttons = [
+            {
+                text: _t("Ok"),
+                classes: 'btn-primary',
+                close: true,
+                click: this.trigger_up.bind(this, 'kanban_column_records_active_status', {archive: true}),
+            },
+            {text: _t("Cancel"), close: true}
+        ];
+        new Dialog(this, {
+            size: 'medium',
+            buttons: buttons,
+            $content: $('<div>', {
+                text: _t("Are you sure that you want to archive all the records from this column ?")
+            }),
+        }).open();
+    },
+    /**
+     * @private
+     * @param {MouseEvent} event
+     */
+    _onUnarchiveRecords: function (event) {
+        event.preventDefault();
+        this.trigger_up('kanban_column_records_active_status', {archive: false});
+    }
 });
 
 return KanbanColumn;
