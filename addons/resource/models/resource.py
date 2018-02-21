@@ -606,11 +606,21 @@ class ResourceCalendar(models.Model):
     def get_work_hours_count(self, start_dt, end_dt, resource_id, compute_leaves=True, domain=None):
         """ Count number of work hours between two datetimes. For compute_leaves,
         resource_id: see _get_day_work_intervals. """
-        res = timedelta()
-        for intervals in self._iter_work_intervals(start_dt, end_dt, resource_id, compute_leaves=compute_leaves, domain=domain):
-            for interval in intervals:
-                res += interval[1] - interval[0]
-        return res.total_seconds() / 3600.0
+        if not start_dt.tzinfo:
+            start_dt = start_dt.replace(tzinfo=pytz.UTC)
+        if not end_dt.tzinfo:
+            end_dt = end_dt.replace(tzinfo=pytz.UTC)
+
+        if compute_leaves:
+            resource = self.env['resource.resource'].browse(resource_id)
+            intervals = self._work_intervals(start_dt, end_dt, resource, domain)
+        else:
+            intervals = self._attendance_intervals(start_dt, end_dt)
+
+        return sum(
+            (stop - start).total_seconds() / 3600
+            for start, stop in intervals
+        )
 
     # --------------------------------------------------
     # Alternative computation API
@@ -750,12 +760,40 @@ class ResourceCalendar(models.Model):
     @api.multi
     def plan_hours(self, hours, day_dt, compute_leaves=False, resource_id=None, domain=None):
         """ Return datetime after having planned hours """
-        res = self._schedule_hours(hours, day_dt, compute_leaves, resource_id, domain)
-        if res and hours < 0.0:
-            return res[0][0]
-        elif res:
-            return res[-1][1]
-        return False
+        if not day_dt.tzinfo:
+            day_dt = day_dt.replace(tzinfo=pytz.UTC)
+
+        # which method to use for retrieving intervals
+        if compute_leaves:
+            resource = self.env['resource.resource'].browse(resource_id)
+            get_intervals = lambda a, b: self._work_intervals(a, b, resource, domain)
+        else:
+            get_intervals = self._attendance_intervals
+
+        if hours > 0:
+            delta = timedelta(days=14)
+            for n in range(100):
+                dt = day_dt + delta * n
+                for start, stop in get_intervals(dt, dt + delta):
+                    interval_hours = (stop - start).total_seconds() / 3600
+                    if hours <= interval_hours:
+                        return (start + timedelta(hours=hours)).astimezone(day_dt.tzinfo)
+                    hours -= interval_hours
+            return False
+
+        elif hours < 0:
+            delta = timedelta(days=14)
+            for n in range(100):
+                dt = day_dt - delta * n
+                for start, stop in reversed(get_intervals(dt - delta, dt)):
+                    interval_hours = (stop - start).total_seconds() / 3600
+                    if hours <= interval_hours:
+                        return (stop - timedelta(hours=hours)).astimezone(day_dt.tzinfo)
+                    hours -= interval_hours
+            return False
+
+        else:
+            return day_dt
 
     @api.multi
     def _schedule_days(self, days, day_dt, compute_leaves=False, resource_id=None, domain=None):
@@ -800,8 +838,40 @@ class ResourceCalendar(models.Model):
     @api.multi
     def plan_days(self, days, day_dt, compute_leaves=False, resource_id=None, domain=None):
         """ Returns the datetime of a days scheduling. """
-        res = self._schedule_days(days, day_dt, compute_leaves, resource_id, domain)
-        return res and res[-1][1] or False
+        if not day_dt.tzinfo:
+            day_dt = day_dt.replace(tzinfo=pytz.UTC)
+
+        # which method to use for retrieving intervals
+        if compute_leaves:
+            resource = self.env['resource.resource'].browse(resource_id)
+            get_intervals = lambda a, b: self._work_intervals(a, b, resource, domain)
+        else:
+            get_intervals = self._attendance_intervals
+
+        if days > 0:
+            found = set()
+            delta = timedelta(days=14)
+            for n in range(100):
+                dt = day_dt + delta * n
+                for start, stop in get_intervals(dt, dt + delta):
+                    found.add(start.date())
+                    if len(found) == days:
+                        return stop.astimezone(day_dt.tzinfo)
+            return False
+
+        elif days < 0:
+            found = set()
+            delta = timedelta(days=14)
+            for n in range(100):
+                dt = day_dt - delta * n
+                for start, stop in reversed(get_intervals(dt - delta, dt)):
+                    found.add(start.date())
+                    if len(found) == days:
+                        return start.astimezone(day_dt.tzinfo)
+            return False
+
+        else:
+            return day_dt
 
 
 class ResourceCalendarAttendance(models.Model):

@@ -445,7 +445,7 @@ class ResourceWorkingHours(TestResourceCommon):
         self.assertEqual(td.total_seconds() / 3600.0, 40.0)
 
         res = self.calendar.plan_hours(-40, day_dt=Datetime.from_string('2013-02-12 09:00:00'))
-        self.assertEqual(res, Datetime.from_string('2013-01-29 09:00:00'))
+        self.assertEqual(res.replace(tzinfo=None), Datetime.from_string('2013-01-29 09:00:00'))
 
     def test_calendar_hours_scheduling_forward(self):
         res = self.calendar._schedule_hours(40, day_dt=Datetime.from_string('2013-02-12 09:00:00'))
@@ -463,7 +463,7 @@ class ResourceWorkingHours(TestResourceCommon):
         self.assertEqual(td.total_seconds() / 3600.0, 40.0)
 
         res = self.calendar.plan_hours(40, day_dt=Datetime.from_string('2013-02-12 09:00:00'))
-        self.assertEqual(res, Datetime.from_string('2013-02-26 09:00:00'))
+        self.assertEqual(res.replace(tzinfo=None), Datetime.from_string('2013-02-26 09:00:00'))
 
     def test_calendar_hours_scheduling_timezone(self):
         # user in timezone UTC-9 asks for work hours
@@ -471,7 +471,7 @@ class ResourceWorkingHours(TestResourceCommon):
         res = self.calendar.plan_hours(
             42,
             to_naive_utc(Datetime.from_string('2013-02-12 09:25:00'), self.env.user))
-        self.assertEqual(res, to_naive_utc(Datetime.from_string('2013-02-26 11:25:00'), self.env.user))
+        self.assertEqual(res.replace(tzinfo=None), to_naive_utc(Datetime.from_string('2013-02-26 11:25:00'), self.env.user))
 
     def test_calendar_hours_scheduling_timezone_2(self):
         # Call schedule_hours for a user in Autralia, Sydney (GMT+10)
