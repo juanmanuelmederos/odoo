@@ -1202,16 +1202,10 @@ var ManualModel = StatementModel.extend({
                             return $.when.apply($, defs);
                         });
                 default:
-                    var partner_ids = context.partner_ids;
-                    var account_ids = self.account_ids;
-                    if (partner_ids && !account_ids) account_ids = [];
-                    if (!partner_ids && account_ids) partner_ids = [];
-                    account_ids = null; // TOFIX: REMOVE ME
-                    partner_ids = null; // TOFIX: REMOVE ME
                     return self._rpc({
                             model: 'account.move.line',
                             method: 'get_data_for_manual_reconciliation_widget',
-                            args: [partner_ids, account_ids],
+                            args: [null, null],
                             context: context,
                         })
                         .then(function (result) {
