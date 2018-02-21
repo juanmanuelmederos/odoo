@@ -732,7 +732,6 @@ class PosOrder(models.Model):
             # when the pos.config has no picking_type_id set only the moves will be created
             if moves and not return_picking and not order_picking:
                 moves._action_assign()
-                moves.filtered(lambda m: m.state in ['confirmed', 'waiting']).force_assign()
                 moves.filtered(lambda m: m.product_id.tracking == 'none')._action_done()
 
         return True
@@ -741,7 +740,6 @@ class PosOrder(models.Model):
         """Force picking in order to be set as done."""
         self.ensure_one()
         picking.action_assign()
-        picking.force_assign()
         wrong_lots = self.set_pack_operation_lot(picking)
         if not wrong_lots:
             picking.action_done()

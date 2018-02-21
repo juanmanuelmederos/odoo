@@ -2409,7 +2409,6 @@ class TestStockValuation(TransactionCase):
         })
         move2._action_confirm()
         move2._action_assign()
-        move2._force_assign()
         move2.move_line_ids.qty_done = 20.0
         move2._action_done()
 
@@ -2454,7 +2453,6 @@ class TestStockValuation(TransactionCase):
             'product_uom_qty': 10.0,
         })
         move1._action_confirm()
-        move1._force_assign()
         move1.quantity_done = 10.0
         move1._action_done()
         self.assertEqual(move1.value, -990.0)  # as no move out were done for this product, fallback on the standard price
@@ -2511,7 +2509,6 @@ class TestStockValuation(TransactionCase):
             'product_uom_qty': 10.0,
         })
         move3._action_confirm()
-        move3._force_assign()
         move3.quantity_done = 10.0
         move3._action_done()
 
@@ -2589,7 +2586,6 @@ class TestStockValuation(TransactionCase):
             'product_uom_qty': 5.0,
         })
         move3._action_confirm()
-        move3._force_assign()
         move3.quantity_done = 5.0
         move3._action_done()
 
@@ -2606,7 +2602,6 @@ class TestStockValuation(TransactionCase):
             'product_uom_qty': 30.0,
         })
         move4._action_confirm()
-        move4._force_assign()
         move4.quantity_done = 30.0
         move4._action_done()
 
@@ -2643,7 +2638,6 @@ class TestStockValuation(TransactionCase):
             'product_uom_qty': 5.0,
         })
         move6._action_confirm()
-        move6._force_assign()
         move6.quantity_done = 5.0
         move6._action_done()
 
