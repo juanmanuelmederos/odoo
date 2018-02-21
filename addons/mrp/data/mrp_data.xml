@@ -44,6 +44,20 @@
             <field name='manufacture_to_resupply' eval='True'/>
         </record>
 
+        <!--  Category for Blocking Reasons Workcenter -->
+        <record id="category_availability" model="mrp.workcenter.productivity.loss.type">
+            <field name="loss_type">availability</field>
+        </record>
+        <record id="category_performance" model="mrp.workcenter.productivity.loss.type">
+            <field name="loss_type">performance</field>
+        </record>
+        <record id="category_quality" model="mrp.workcenter.productivity.loss.type">
+            <field name="loss_type">quality</field>
+        </record>
+        <record id="category_productive" model="mrp.workcenter.productivity.loss.type">
+            <field name="loss_type">productive</field>
+        </record>
+
         <!-- Reasons To Block Workcenter -->
         <record id="block_reason0" model="mrp.workcenter.productivity.loss">
             <field name="name">Material Availability</field>

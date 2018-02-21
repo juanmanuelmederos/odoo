@@ -441,13 +441,13 @@
         <field name="name">mrp.workcenter.productivity.loss.form</field>
         <field name="model">mrp.workcenter.productivity.loss</field>
         <field name="arch" type="xml">
-            <form string="Workcenter Productivity Loss">
+            <form string="Workcenter Blocking Reasons">
                 <group>
                     <group>
                         <field name="name"/>
-                        <field name="loss_type"/>
+                        <field name="loss_id" widget="selection"/>
                     </group><group>
-                        <field name="manual"/>
+                        <field name="manual" invisible="1"/>
                     </group>
                 </group>
             </form>

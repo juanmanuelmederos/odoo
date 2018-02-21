@@ -165,6 +165,17 @@ class MrpWorkcenter(models.Model):
         return {'type': 'ir.actions.client', 'tag': 'reload'}
 
 
+class MrpWorkcenterProductivityLossType(models.Model):
+    _name = "mrp.workcenter.productivity.loss.type"
+    _rec_name = 'loss_type'
+
+    loss_type = fields.Selection([
+            ('availability', 'Availability'),
+            ('performance', 'Performance'),
+            ('quality', 'Quality'),
+            ('productive', 'Productive')], string='Category', default='availability', required=True)
+
+
 class MrpWorkcenterProductivityLoss(models.Model):
     _name = "mrp.workcenter.productivity.loss"
     _description = "TPM Big Losses"
@@ -173,12 +184,8 @@ class MrpWorkcenterProductivityLoss(models.Model):
     name = fields.Char('Reason', required=True)
     sequence = fields.Integer('Sequence', default=1)
     manual = fields.Boolean('Is a Blocking Reason', default=True)
-    loss_type = fields.Selection([
-        ('availability', 'Availability'),
-        ('performance', 'Performance'),
-        ('quality', 'Quality'),
-        ('productive', 'Productive')], "Effectiveness Category",
-        default='availability', required=True)
+    loss_id = fields.Many2one('mrp.workcenter.productivity.loss.type', domain=([('loss_type', 'in', ['quality', 'availability'])]), string='Effectiveness Category')
+    loss_type = fields.Selection('Category', related='loss_id.loss_type', store=True)
 
 
 class MrpWorkcenterProductivity(models.Model):
