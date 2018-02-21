@@ -23,6 +23,12 @@ class TestInventory(TransactionCase):
             'tracking': 'serial',
             'categ_id': self.env.ref('product.product_category_all').id,
         })
+        self.product3 = self.env['product.product'].create({
+            'name': 'Product B',
+            'type': 'product',
+            'tracking': 'lot',
+            'categ_id': self.env.ref('product.product_category_all').id,
+        })
 
     def test_inventory_1(self):
         """ Check that making an inventory adjustment to remove all products from stock is working
@@ -295,3 +301,32 @@ class TestInventory(TransactionCase):
         self.assertEqual(len(inventory.line_ids), 1)
         self.assertEqual(inventory.line_ids.theoretical_qty, 2)
 
+    def test_inventory_8(self):
+        """ Check that even if a product is tracked by serial number or lot, but do not provied sn/lot number
+            for track product in an inventory adjustment, then it will be open track products confirmation wizard.
+        """
+        inventory = self.env['stock.inventory'].create({
+            'name': 'remove product1',
+            'filter': 'product',
+            'location_id': self.stock_location.id,
+            'product_id': self.product3.id,
+            'exhausted': True,  # should be set by an onchange
+        })
+        inventory.action_start()
+        self.assertEqual(len(inventory.line_ids), 1)
+        self.assertEqual(inventory.line_ids.theoretical_qty, 0)
+
+        inventory.line_ids.product_qty = 10
+
+        self.env['stock.inventory.line'].create({
+            'inventory_id': inventory.id,
+            'product_id': self.product2.id,
+            'product_uom_id': self.uom_unit.id,
+            'product_qty': 1,
+            'location_id': self.stock_location.id,
+        })
+        action = inventory.action_validate()  # should open confirmation wizard
+        self.assertTrue(isinstance(action, dict), 'Should open track products confirmation wizard')
+        self.assertEqual(action.get('res_model'), 'stock.track.confirmation')
+        track_product = self.env['stock.track.confirmation'].with_context({'active_id': inventory.id})
+        track_product.action_confirm()
