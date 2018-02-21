@@ -6,7 +6,7 @@ from datetime import timedelta, timezone
 
 from odoo import api, fields, models
 from odoo.tools import float_utils
-from .resource import difference
+from .resource import inter, difference
 
 class ResourceMixin(models.AbstractModel):
     _name = "resource.mixin"
@@ -110,17 +110,37 @@ class ResourceMixin(models.AbstractModel):
         return self.get_leaves_days_data(from_datetime, to_datetime, calendar=calendar, domain=domain)['hours']
 
     def get_leaves_days_data(self, from_datetime, to_datetime, calendar=None, domain=None):
-        days_count = 0.0
-        total_leave_time = timedelta()
         calendar = calendar or self.resource_calendar_id
-        for day_intervals in calendar._iter_leave_intervals(from_datetime, to_datetime, self.resource_id.id, domain=domain):
-            theoric_hours = self.get_day_work_hours_count(day_intervals[0][0].date(), calendar=calendar)
-            leave_time = sum((interval[1] - interval[0] for interval in day_intervals), timedelta())
-            total_leave_time += leave_time
-            days_count += float_utils.round((leave_time.total_seconds() / 3600 / theoric_hours) * 4) / 4
+
+        # naive datetimes are made explicit in UTC
+        if not from_datetime.tzinfo:
+            from_datetime = from_datetime.replace(tzinfo=timezone.utc)
+        if not to_datetime.tzinfo:
+            to_datetime = to_datetime.replace(tzinfo=timezone.utc)
+
+        # retrieve attendances and leaves (with one extra day margin)
+        from_full = from_datetime + timedelta(days=-1)
+        to_full = to_datetime + timedelta(days=1)
+        attendances = calendar._attendance_intervals(from_full, to_full)
+        leaves = calendar._leave_intervals(from_full, to_full, self.resource_id, domain)
+
+        # compute actual and total hours per day
+        day_hours = defaultdict(float)
+        day_total = defaultdict(float)
+        for start, stop in inter(attendances, leaves):
+            day_total[start.date()] += (stop - start).total_seconds() / 3600
+            start, stop = max(start, from_datetime), min(stop, to_datetime)
+            if start < stop:
+                day_hours[start.date()] += (stop - start).total_seconds() / 3600
+
+        # compute number of days as quarters
+        days = sum(
+            float_utils.round(4 * day_hours[day] / day_total[day]) / 4
+            for day in day_hours
+        )
         return {
-            'days': days_count,
-            'hours': total_leave_time.total_seconds() / 3600,
+            'days': days,
+            'hours': sum(day_hours.values()),
         }
 
     def iter_leaves(self, from_datetime, to_datetime, calendar=None, domain=None):
