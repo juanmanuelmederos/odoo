@@ -689,6 +689,29 @@ def call_kw(model, name, args, kwargs):
         return call_kw_multi(method, model, args, kwargs)
 
 
+class FrozenContext(frozendict):
+
+    def __call__(self, env):
+        self.env = env
+
+    def __getitem__(self, key):
+        if (key != 'active_ids'):
+            return dict.__getitem__(self, key)
+        try:
+            active_domain = dict.__getitem__(self, 'active_domain')
+            all_selected = dict.__getitem__(self, 'all_selected')
+            active_model = dict.__getitem__(self, 'active_model')
+        except KeyError:
+            active_domain = False
+            all_selected = False
+            active_model = False
+
+        if active_domain and all_selected and active_model:
+            ids = self.env[active_model].search(active_domain).ids
+            return ids
+        else:
+            return dict.__getitem__(self, key)
+
 class Environment(Mapping):
     """ An environment wraps data for ORM records:
 
@@ -738,7 +761,9 @@ class Environment(Mapping):
 
         # otherwise create environment, and add it in the set
         self = object.__new__(cls)
-        self.cr, self.uid, self.context = self.args = (cr, uid, frozendict(context))
+        frozenContext = FrozenContext(context)
+        frozenContext(self)
+        self.cr, self.uid, self.context = self.args = (cr, uid, frozenContext)
         self.registry = Registry(cr.dbname)
         self.cache = envs.cache
         self._protected = StackMap()                # {field: ids, ...}
