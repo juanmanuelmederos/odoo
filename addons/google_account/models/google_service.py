@@ -191,8 +191,3 @@ class GoogleService(models.TransientModel):
                     raise error
                 raise self.env['res.config.settings'].get_config_warning(_("Something went wrong with your request to google"))
         return (status, response, ask_time)
-
-    # TODO : remove me, it is only used in google calendar. Make google_calendar use the constants
-    @api.model
-    def get_client_id(self, service):
-        return self.env['ir.config_parameter'].sudo().get_param('google_%s_client_id' % (service,), default=False)

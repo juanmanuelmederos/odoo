@@ -14,12 +14,11 @@ class GoogleCalendarController(http.Controller):
             The dictionary may contains an url, to allow Odoo Client to redirect user on this URL for authorization for example
         """
         if model == 'calendar.event':
-            GoogleService = request.env['google.service']
             GoogleCal = request.env['google.calendar']
 
             # Checking that admin have already configured Google API for google synchronization !
             context = kw.get('local_context', {})
-            client_id = GoogleService.with_context(context).get_client_id('calendar')
+            client_id = request.env['ir.config_parameter'].sudo().with_context(context).get_param('google_calendar_client_id')
 
             if not client_id or client_id == '':
                 action_id = ''
