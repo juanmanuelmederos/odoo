@@ -27,11 +27,13 @@
         <record id="product_template_form_view" model="ir.ui.view">
             <field name="name">product.template.form.inherit</field>
             <field name="model">product.template</field>
-            <field name="inherit_id" ref="stock.view_template_property_form"/>
+            <field name="inherit_id" ref="product.product_template_form_view"/>
             <field name="arch" type="xml">
-                <group name="group_lots_and_weight" position="inside">
-                    <field name="intrastat_id"/>
-                </group>
+                <xpath expr="//group[@name='payables']" position="after">
+                    <group string="Intrastat" name="intrastat">
+                        <field name="intrastat_id"/>
+                    </group>
+                </xpath>
             </field>
         </record>
 
