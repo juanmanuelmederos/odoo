@@ -20,11 +20,6 @@ class DecimalPrecision(models.Model):
         res = self.env.cr.fetchone()
         return res[0] if res else 2
 
-    @api.model_cr
-    def clear_cache(self):
-        """ Deprecated, use `clear_caches` instead. """
-        self.clear_caches()
-
     @api.model
     def create(self, data):
         res = super(DecimalPrecision, self).create(data)
