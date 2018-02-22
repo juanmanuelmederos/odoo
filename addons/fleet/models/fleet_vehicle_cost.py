@@ -263,16 +263,7 @@ class FleetVehicleLogContract(models.Model):
         date_today = fields.Date.from_string(fields.Date.today())
         in_fifteen_days = fields.Date.to_string(date_today + relativedelta(days=+15))
         nearly_expired_contracts = self.search([('state', '=', 'open'), ('expiration_date', '<', in_fifteen_days)])
-        res = {}
-        for contract in nearly_expired_contracts:
-            if contract.vehicle_id.id in res:
-                res[contract.vehicle_id.id] += 1
-            else:
-                res[contract.vehicle_id.id] = 1
 
-        Vehicle = self.env['fleet.vehicle']
-        for vehicle, value in res.items():
-            Vehicle.browse(vehicle).message_post(body=_('%s contract(s) will expire soon and should be renewed and/or closed!') % value)
         nearly_expired_contracts.write({'state': 'diesoon'})
         for contract in nearly_expired_contracts.filtered(lambda contract: contract.user_id):
             contract.activity_schedule(
