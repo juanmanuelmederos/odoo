@@ -271,12 +271,6 @@ class Pricelist(models.Model):
         self.ensure_one()
         return self._compute_price_rule([(product, quantity, partner)], date=date, uom_id=uom_id)[product.id]
 
-    # Compatibility to remove after v10 - DEPRECATED
-    @api.model
-    def _price_rule_get_multi(self, pricelist, products_by_qty_by_partner):
-        """ Low level method computing the result tuple for a given pricelist and multi products - return tuple """
-        return pricelist._compute_price_rule(products_by_qty_by_partner)
-
     @api.multi
     def price_get(self, prod_id, qty, partner=None):
         """ Multi pricelist, mono product - returns price per pricelist """

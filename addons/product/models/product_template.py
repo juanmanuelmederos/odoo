@@ -404,11 +404,6 @@ class ProductTemplate(models.Model):
 
         return prices
 
-    # compatibility to remove after v10 - DEPRECATED
-    @api.model
-    def _price_get(self, products, ptype='list_price'):
-        return products.price_compute(ptype)
-
     @api.multi
     def create_variant_ids(self):
         Product = self.env["product.product"]

@@ -529,12 +529,6 @@ class ProductProduct(models.Model):
 
         return prices
 
-
-    # compatibility to remove after v10 - DEPRECATED
-    @api.multi
-    def price_get(self, ptype='list_price'):
-        return self.price_compute(ptype)
-
     @api.multi
     def _set_standard_price(self, value):
         ''' Store the standard price change in order to be able to retrieve the cost of a product for a given date'''
