@@ -22,6 +22,7 @@ class SaleOrder(models.Model):
             for order_line in order.order_line:
                 order.margin_price_total += order_line.margin_price * order_line.product_uom_qty
 
+    @api.depends('amount_untaxed','margin_price_total')
     def _compute_is_below_margin(self):
         for order in self:
             if order.amount_untaxed < order.margin_price_total:
@@ -32,7 +33,7 @@ class SaleOrder(models.Model):
 
     def _action_confirm(self):
         for order in self:
-            if order.amount_untaxed < order.margin_price_total and not self.env.user.has_group('sales_team.group_sale_manager'):
+            if order.is_below_margin and not self.env.user.has_group('sales_team.group_sale_manager'):
                 raise UserError(_('You can\'t sell products below their margin price.'))
             else:
                 return super(SaleOrder, self)._action_confirm()
@@ -64,6 +65,7 @@ class SaleOrderLine(models.Model):
                 margin_percentage = order_line.product_id.categ_id.parent_id.margin_percentage
             order_line.margin_price = ((margin_percentage + 100) / 100 ) * cost
 
+    @api.depends('product_id.categ_id.margin_percentage')
     def _get_margin_percent(self):
         for order_line in self:
             margin_percentage = order_line.product_id.categ_id.margin_percentage

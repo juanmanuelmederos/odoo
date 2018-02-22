@@ -6,15 +6,20 @@
         <field name="model">product.category</field>
         <field name="inherit_id" ref="product.product_category_form_view"/>
         <field name="arch" type="xml">
-          <xpath expr="//field[@name='parent_id']" position="after">
-              <label for="commission_percentage" string="Commission"/>
-              <div>
-                <field name="commission_percentage"/>%
-              </div>
-              <label for="margin_percentage" string="Margin"/>
-              <div>
-                <field name="margin_percentage"/>%
-              </div>
+          <xpath expr="//group[@name='first']" position="after">
+              <group>
+                <group>
+                  <label for="commission_percentage" string="Commission"/>
+                  <div class='o_row'>
+                    <field name="commission_percentage"/>
+                    <span>%</span>
+                  </div>
+                  <label for="margin_percentage" string="Margin"/>
+                  <div>
+                    <field name="margin_percentage"/>%
+                  </div>
+              </group>
+            </group>
 		      </xpath>
         </field>
       </record>
