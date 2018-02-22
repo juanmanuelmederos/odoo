@@ -177,8 +177,6 @@ class TestUnbuild(TestMrpCommon):
         mo.action_assign()
         for ml in mo.move_raw_ids.mapped('move_line_ids'):
             if ml.product_id.tracking != 'none':
-                ml.qty_done = ml.product_qty
-            if ml.product_id.tracking != 'none':
                 self.assertEqual(ml.lot_id, lot, 'Wrong reserved lot.')
 
         produce_wizard = self.env['mrp.product.produce'].with_context({
@@ -277,8 +275,6 @@ class TestUnbuild(TestMrpCommon):
             'product_qty': 5.0,
             'lot_id': lot_final.id,
         })
-        for pl in produce_wizard.produce_line_ids:
-            pl.qty_done = pl.qty_to_consume
         produce_wizard.do_produce()
 
         mo.button_mark_done()
@@ -367,8 +363,6 @@ class TestUnbuild(TestMrpCommon):
         self.env['stock.quant']._update_available_quantity(p2, self.stock_location, 3, lot_id=lot_2)
         self.env['stock.quant']._update_available_quantity(p2, self.stock_location, 2, lot_id=lot_3)
         mo.action_assign()
-        for ml in mo.move_raw_ids.mapped('move_line_ids').filtered(lambda m: m.product_id.tracking != 'none'):
-            ml.qty_done = ml.product_qty
 
         produce_wizard = self.env['mrp.product.produce'].with_context({
             'active_id': mo.id,
@@ -450,6 +444,6 @@ class TestUnbuild(TestMrpCommon):
         produce_wizard.do_produce()
         mo.button_mark_done()
         ml = mo.finished_move_line_ids[0].consume_line_ids.filtered(lambda m: m.product_id == p1 and m.lot_produced_id == lot_finished_1)
-        self.assertEqual(ml.qty_done, 12.0, 'Should have consumed 12 for the first lot')
+        self.assertEqual(ml[0].qty_done, 12.0, 'Should have consumed 12 for the first lot')
         ml = mo.finished_move_line_ids[1].consume_line_ids.filtered(lambda m: m.product_id == p1 and m.lot_produced_id == lot_finished_2)
-        self.assertEqual(ml.qty_done, 8.0, 'Should have consumed 8 for the second lot')
+        self.assertEqual(ml[0].qty_done, 8.0, 'Should have consumed 8 for the second lot')

@@ -455,6 +455,8 @@ class TestMrpOrder(TestMrpCommon):
         }).create({
             'product_qty': 8,
         })
+        produce_wizard.produce_line_ids[0].qty_done = 16
+        produce_wizard.produce_line_ids[1].qty_done = 34
         produce_wizard.do_produce()
         self.assertEqual(production.move_raw_ids[0].quantity_done, 16, 'Should use half-up rounding when producing')
         self.assertEqual(production.move_raw_ids[1].quantity_done, 34, 'Should use half-up rounding when producing')
@@ -475,7 +477,7 @@ class TestMrpOrder(TestMrpCommon):
             'active_ids': [mo.id],
         }).create({})
 
-        self.assertEqual(len(product_produce.produce_line_ids), 0, 'You should not have any produce lines since the consumed products are not tracked.')
+        self.assertEqual(len(product_produce.produce_line_ids), 2, 'You should have produce lines even the consumed products are not tracked.')
 
     def test_product_produce_2(self):
         """ Check that line are created when the consumed products are
@@ -503,7 +505,7 @@ class TestMrpOrder(TestMrpCommon):
             'active_ids': [mo.id],
         }).create({})
 
-        self.assertEqual(len(product_produce.produce_line_ids), 2, 'You should have 2 produce lines. One for each serial to consume')
+        self.assertEqual(len(product_produce.produce_line_ids), 3, 'You should have 3 produce lines. One for each serial to consume')
         product_produce.product_qty = 1
         produce_line_1 = product_produce.produce_line_ids[0]
         produce_line_1.qty_done = 1
@@ -514,8 +516,9 @@ class TestMrpOrder(TestMrpCommon):
             'active_id': mo.id,
             'active_ids': [mo.id],
         }).create({})
-        self.assertEqual(len(product_produce.produce_line_ids), 1, 'You should have 1 produce lines since one has already be consumed.')
-        self.assertEqual(product_produce.produce_line_ids[0].lot_id, remaining_lot, 'Wrong lot proposed.')
+        self.assertEqual(len(product_produce.produce_line_ids), 2, 'You should have 2 produce lines since one has already be consumed.')
+        for line in product_produce.produce_line_ids.filtered(lambda x: x.lot_id):
+            self.assertEqual(line.lot_id, remaining_lot, 'Wrong lot proposed.')
 
     def test_product_produce_3(self):
         """ Check that line are created when the consumed products are
@@ -556,7 +559,7 @@ class TestMrpOrder(TestMrpCommon):
         # product 1 lot 1 shelf1
         # product 1 lot 1 shelf2
         # product 1 lot 2
-        self.assertEqual(len(product_produce.produce_line_ids), 3, 'You should have 3 produce lines. lot 1 shelf_1, lot 1 shelf_2, lot2')
+        self.assertEqual(len(product_produce.produce_line_ids), 4, 'You should have 4 produce lines. lot 1 shelf_1, lot 1 shelf_2, lot2 and for product which have tracking None')
 
         for produce_line in product_produce.produce_line_ids:
             produce_line.qty_done = produce_line.qty_to_consume + 1
