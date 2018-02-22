@@ -644,7 +644,7 @@ class Task(models.Model):
     def _check_subtask_level(self):
         for task in self:
             if task.parent_id and task.child_ids:
-                raise ValidationError(_('Task %s can not have a parent task and subtasks. Only one subtask level is allowed.' % (task.name,)))
+                raise ValidationError(_('Task %s cannot have several subtask levels.' % (task.name,)))
 
     @api.multi
     @api.returns('self', lambda value: value.id)

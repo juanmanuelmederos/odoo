@@ -474,9 +474,9 @@ class AccountJournal(models.Model):
     def _check_currency(self):
         if self.currency_id:
             if self.default_credit_account_id and not self.default_credit_account_id.currency_id.id == self.currency_id.id:
-                raise ValidationError(_('Configuration error!\nThe currency of the journal should be the same than the default credit account.'))
+                raise ValidationError(_('The currency of the journal should be the same than the default credit account.'))
             if self.default_debit_account_id and not self.default_debit_account_id.currency_id.id == self.currency_id.id:
-                raise ValidationError(_('Configuration error!\nThe currency of the journal should be the same than the default debit account.'))
+                raise ValidationError(_('The currency of the journal should be the same than the default debit account.'))
 
     @api.one
     @api.constrains('type', 'bank_account_id')
@@ -740,7 +740,7 @@ class ResPartnerBank(models.Model):
     @api.constrains('journal_id')
     def _check_journal_id(self):
         if len(self.journal_id) > 1:
-            raise ValidationError(_('A bank account can only belong to one journal.'))
+            raise ValidationError(_('A bank account can belong to only one journal.'))
 
 
 #----------------------------------------------------------
@@ -809,7 +809,7 @@ class AccountTax(models.Model):
     @api.constrains('children_tax_ids', 'type_tax_use')
     def _check_children_scope(self):
         if not all(child.type_tax_use in ('none', self.type_tax_use) for child in self.children_tax_ids):
-            raise ValidationError(_('The application scope of taxes in a group must be either the same as the group or "None".'))
+            raise ValidationError(_('The application scope of taxes in a group must be either the same as the group or left empty.'))
 
     @api.multi
     @api.returns('self', lambda value: value.id)

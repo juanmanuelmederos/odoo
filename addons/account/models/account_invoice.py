@@ -1774,10 +1774,10 @@ class AccountPaymentTerm(models.Model):
     def _check_lines(self):
         payment_term_lines = self.line_ids.sorted()
         if payment_term_lines and payment_term_lines[-1].value != 'balance':
-            raise ValidationError(_('A Payment Terms should have its last line of type Balance.'))
+            raise ValidationError(_('The last line of a Payment Term should have the Balance type.'))
         lines = self.line_ids.filtered(lambda r: r.value == 'balance')
         if len(lines) > 1:
-            raise ValidationError(_('A Payment Terms should have only one line of type Balance.'))
+            raise ValidationError(_('A Payment Term should have only one line of type Balance.'))
 
     @api.one
     def compute(self, value, date_ref=False):
@@ -1857,7 +1857,7 @@ class AccountPaymentTermLine(models.Model):
     @api.constrains('value', 'value_amount')
     def _check_percent(self):
         if self.value == 'percent' and (self.value_amount < 0.0 or self.value_amount > 100.0):
-            raise ValidationError(_('Percentages for Payment Terms Line must be between 0 and 100.'))
+            raise ValidationError(_('Percentages on the Payment Terms lines must be between 0 and 100.'))
 
     @api.constrains('days')
     def _check_days(self):

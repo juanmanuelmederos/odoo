@@ -148,7 +148,7 @@ class PosSession(models.Model):
                 ('user_id', '=', self.user_id.id),
                 ('rescue', '=', False)
             ]) > 1:
-            raise ValidationError(_("You cannot create two active sessions with the same responsible!"))
+            raise ValidationError(_("You cannot create two active sessions with the same responsible."))
 
     @api.constrains('config_id')
     def _check_pos_config(self):

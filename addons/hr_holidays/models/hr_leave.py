@@ -179,7 +179,7 @@ class HolidaysRequest(models.Model):
             ]
             nholidays = self.search_count(domain)
             if nholidays:
-                raise ValidationError(_('You can not have 2 leaves that overlaps on same day!'))
+                raise ValidationError(_('You can not have 2 leaves that overlaps on the same day.'))
 
     @api.constrains('state', 'number_of_days_temp')
     def _check_holidays(self):
@@ -190,7 +190,7 @@ class HolidaysRequest(models.Model):
             if float_compare(leave_days['remaining_leaves'], 0, precision_digits=2) == -1 or \
               float_compare(leave_days['virtual_remaining_leaves'], 0, precision_digits=2) == -1:
                 raise ValidationError(_('The number of remaining leaves is not sufficient for this leave type.\n'
-                                        'Please verify also the leaves waiting for validation.'))
+                                        'Please also check the leaves waiting for validation.'))
 
     def _get_number_of_days(self, date_from, date_to, employee_id):
         """ Returns a float equals to the timedelta between two dates given as string."""

@@ -79,7 +79,7 @@ class StockQuant(models.Model):
     def check_in_date(self):
         for quant in self:
             if quant.in_date and not quant.lot_id:
-                raise ValidationError(_('An incoming date cannot be set to an untracked product.'))
+                raise ValidationError(_('An incoming date cannot be set on an untracked product.'))
 
     @api.constrains('location_id')
     def check_location_id(self):

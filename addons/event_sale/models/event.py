@@ -149,7 +149,7 @@ class EventTicket(models.Model):
     def _check_seats_limit(self):
         for record in self:
             if record.seats_max and record.seats_available < 0:
-                raise ValidationError(_('No more available seats for the ticket'))
+                raise ValidationError(_('No more available seats for this ticket type'))
 
     @api.constrains('event_type_id', 'event_id')
     def _constrains_event(self):

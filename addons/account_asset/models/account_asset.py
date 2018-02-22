@@ -388,7 +388,7 @@ class AccountAssetAsset(models.Model):
     @api.constrains('prorata', 'method_time')
     def _check_prorata(self):
         if self.prorata and self.method_time != 'number':
-            raise ValidationError(_('Prorata temporis can be applied only for time method "number of depreciations".'))
+            raise ValidationError(_('Prorata temporis can be applied only for the "number of depreciations" time method.'))
 
     @api.onchange('category_id')
     def onchange_category_id(self):

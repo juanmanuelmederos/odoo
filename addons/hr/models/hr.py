@@ -184,7 +184,7 @@ class Employee(models.Model):
     def _check_parent_id(self):
         for employee in self:
             if not employee._check_recursion():
-                raise ValidationError(_('Error! You cannot create recursive hierarchy of Employee(s).'))
+                raise ValidationError(_('You cannot create a recursive hierarchy.'))
 
     @api.onchange('address_id')
     def _onchange_address(self):
