@@ -124,6 +124,13 @@
         <script type="text/javascript" src="/web_editor/static/tests/web_editor_tests.js"></script>
     </xpath>
 </template>
+<template id="report_layout" inherit_id="web.report_layout">
+    <xpath expr="//t[@t-call-assets='web.report_assets_editor'][@t-css='false']" position="after">
+        <script type="text/javascript" src="/web_editor/static/src/js/content/body_manager.js"/>
+        <script type="text/javascript" src="/web_editor/static/src/js/root_widget.js"/>
+        <script type="text/javascript" src="/web_editor/static/src/js/iframe.js"></script>
+    </xpath>
+</template>
 
 <!--
     The web_editor.colorpicker template regroups section of colorpicker menu for website customization

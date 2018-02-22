@@ -13,11 +13,14 @@ var trusted_origin = utils.build_origin(trusted_protocol, trusted_host);
 
 // Patch the editor's behavior when it is launched inside an iframe.
 if (window.self !== window.top) {
-    $(document.body).addClass('o_in_iframe'); //  in order to apply css rules
-
     // And now we chain some deferred to `save` and `cancel` in order to inform
     // the report's client action that the actions are done.
     editor.Class.include({
+        start: function () {
+            return this._super.apply(this, arguments).then(function () {
+                $(document.body).addClass('o_in_iframe'); //  in order to apply css rules
+            });
+        },
         save: function () {
             // Force to not reload
             return this._super(false).then(function () {
@@ -50,10 +53,10 @@ if (window.self !== window.top) {
 
             switch (message) {
                 case 'report.editor:ask_save':
-                    core.bus.trigger('editor_save_request');
+                    core.bus.trigger_up('editor_save_request');
                     break;
                 case 'report.editor:ask_discard':
-                    core.bus.trigger('editor_discard_request');
+                    core.bus.trigger_up('editor_discard_request');
                     break;
                 default:
             }

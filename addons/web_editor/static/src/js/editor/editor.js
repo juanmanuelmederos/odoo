@@ -89,6 +89,7 @@ var EditorMenuBar = Widget.extend({
         // Snippets menu
         defs.push(this.snippetsMenu.insertAfter(this.$el));
         this.rte.editable().find('*').off('mousedown mouseup click');
+        this.$('form.navbar-form').css('display', 'block');
 
         return $.when.apply($, defs).then(function () {
             self.trigger_up('edit_mode');
