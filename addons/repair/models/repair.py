@@ -186,11 +186,6 @@ class Repair(models.Model):
             self.pricelist_id = self.partner_id.property_product_pricelist.id
 
     @api.multi
-    def button_dummy(self):
-        # TDE FIXME: this button is very interesting
-        return True
-
-    @api.multi
     def action_repair_cancel_draft(self):
         if self.filtered(lambda repair: repair.state != 'cancel'):
             raise UserError(_("Repair must be canceled in order to reset it to draft."))
