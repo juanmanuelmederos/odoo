@@ -593,8 +593,8 @@ class MailThread(models.AbstractModel):
                 subtype_xmlid = record._track_subtype(dict((col_name, initial_values[record.id][col_name]) for col_name in changes))
 
             if subtype_xmlid:
-                subtype_rec = self.env.ref(subtype_xmlid)  # TDE FIXME check for raise if not found
-                if not (subtype_rec and subtype_rec.exists()):
+                subtype_rec = self.env.ref(subtype_xmlid, raise_if_not_found=False)
+                if not subtype_rec:
                     _logger.debug('subtype %s not found' % subtype_xmlid)
                     continue
                 record.message_post(subtype=subtype_xmlid, tracking_value_ids=tracking_value_ids)
