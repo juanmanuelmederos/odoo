@@ -68,9 +68,6 @@ class MailComposer(models.TransientModel):
         if 'no_auto_thread' not in result and (result['model'] not in self.env or not hasattr(self.env[result['model']], 'message_post')):
             result['no_auto_thread'] = True
 
-        # default values according to composition mode - NOTE: reply is deprecated, fall back on comment
-        if result['composition_mode'] == 'reply':
-            result['composition_mode'] = 'comment'
         vals = {}
         if 'active_domain' in self._context:  # not context.get() because we want to keep global [] domains
             vals['active_domain'] = '%s' % self._context.get('active_domain')
