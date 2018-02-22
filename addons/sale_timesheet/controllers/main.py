@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
+import babel
+from dateutil.relativedelta import relativedelta
 
-from odoo import http, _
+from odoo import http, fields, _
 from odoo.http import request
-from odoo.osv import expression
-
 from odoo.tools import float_round
+
+DEFAULT_MONTH_RANGE = 3
 
 
 class SaleTimesheetController(http.Controller):
@@ -114,7 +116,157 @@ class SaleTimesheetController(http.Controller):
         values['repartition_employee_max'] = (max(hours_per_employee) if hours_per_employee else 1) or 1
         values['repartition_employee'] = repartition_employee
 
+        #
+        # Table grouped by SO / SOL / Employees
+        #
+        if not projects:
+            return values
+
+        # build SQL query and fetch raw data
+        query, query_params = self._table_rows_sql_query(projects)
+        request.env.cr.execute(query, query_params)
+        raw_data = request.env.cr.dictfetchall()
+        rows_employee = self._table_rows_get_employee_lines(projects, raw_data)
+        default_row_vals = self._table_row_default(projects)
+
+        # extract row labels
+        sale_line_ids = set()
+        sale_order_ids = set()
+        for key_tuple, row in rows_employee.items():
+            if row[0]['sale_line_id']:
+                sale_line_ids.add(row[0]['sale_line_id'])
+            if row[0]['sale_order_id']:
+                sale_order_ids.add(row[0]['sale_order_id'])
+
+        map_so_names = {so.id: so.name for so in request.env['sale.order'].sudo().browse(sale_order_ids)}
+        map_sol = {sol.id: sol for sol in request.env['sale.order.line'].sudo().browse(sale_line_ids)}
+
+        rows_sale_line = {}  # (so, sol) -> [INFO, before, M1, M2, M3, Done, M3, M4, M5, After, Forecasted]
+        for row_key, row_employee in rows_employee.items():
+            sale_line_id = row_key[1]
+            sale_order_id = row_key[0]
+            # sale line row
+            sale_line_row_key = (sale_order_id, sale_line_id)
+            if sale_line_row_key not in rows_sale_line:
+                sale_line = map_sol.get(sale_line_id, request.env['sale.order.line'])
+                rows_sale_line[sale_line_row_key] = [{'label': sale_line.name or _('No Sale Order Line'), 'res_id': sale_line_id, 'res_model': 'sale.order.line', 'type': 'sale_order_line'}] + default_row_vals[:]  # INFO, before, M1, M2, M3, Done, M3, M4, M5, After, Forecasted
+                rows_sale_line[sale_line_row_key][-2] = sale_line.product_uom_qty or 0.0
+
+            for index in range(len(rows_employee[row_key])):
+                if index != 0:
+                    rows_sale_line[sale_line_row_key][index] += rows_employee[row_key][index]
+                    rows_sale_line[sale_line_row_key][-1] = rows_sale_line[sale_line_row_key][-2] - rows_sale_line[sale_line_row_key][5]
+
+        rows_sale_order = {}  # so -> [INFO, before, M1, M2, M3, Done, M3, M4, M5, After, Forecasted]
+        for row_key, row_sale_line in rows_sale_line.items():
+            sale_order_id = row_key[0]
+            # sale order row
+            if sale_order_id not in rows_sale_order:
+                rows_sale_order[sale_order_id] = [{'label': map_so_names.get(sale_order_id, _('No Sale Order')), 'res_id': sale_order_id, 'res_model': 'sale.order', 'type': 'sale_order'}] + default_row_vals[:]  # INFO, before, M1, M2, M3, Done, M3, M4, M5, After, Forecasted
+
+            for index in range(len(rows_sale_line[row_key])):
+                if index != 0:
+                    rows_sale_order[sale_order_id][index] += rows_sale_line[row_key][index]
+
+        # group rows SO, SOL and their related employee rows.
+        timesheet_forecast_table_rows = []
+        for sale_order_id, sale_order_row in rows_sale_order.items():
+            timesheet_forecast_table_rows.append(sale_order_row)
+            for sale_line_row_key, sale_line_row in rows_sale_line.items():
+                if sale_order_id == sale_line_row_key[0]:
+                    timesheet_forecast_table_rows.append(sale_line_row)
+                    for employee_row_key, employee_row in rows_employee.items():
+                        if sale_order_id == employee_row_key[0] and sale_line_row_key[1] == employee_row_key[1]:
+                            timesheet_forecast_table_rows.append(employee_row)
+
+        # complete table data
+        values['timesheet_forecast_table'] = {
+            'header': self._table_header(projects),
+            'rows': timesheet_forecast_table_rows
+        }
         return values
+
+    def _table_header(self, projects):
+        initial_date = fields.Date.from_string(fields.Date.today())
+        ts_months = sorted([fields.Date.to_string(initial_date - relativedelta(months=i, day=1)) for i in range(0, DEFAULT_MONTH_RANGE)])  # M1, M2, M3
+
+        def _to_short_month_name(date):
+            month_index = fields.Date.from_string(date).month
+            return babel.dates.get_month_names('abbreviated', locale=request.env.context.get('lang', 'en_US'))[month_index]
+
+        header = [_('Name'), _('Before')] + [_to_short_month_name(date) for date in ts_months] + [_('Done'), _('Sold'), _('Remaining')]
+        return header
+
+    def _table_row_default(self, projects):
+        return [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # before, M1, M2, M3, Done, Sold, Remaining
+
+    def _table_rows_sql_query(self, projects):
+        initial_date = fields.Date.from_string(fields.Date.today())
+        ts_months = sorted([fields.Date.to_string(initial_date - relativedelta(months=i, day=1)) for i in range(0, DEFAULT_MONTH_RANGE)])  # M1, M2, M3
+        # build query
+        query = """
+            SELECT
+                'timesheet' AS type,
+                date_trunc('month', date)::date AS month_date,
+                E.id AS employee_id,
+                S.order_id AS sale_order_id,
+                A.so_line AS sale_line_id,
+                SUM(A.unit_amount) AS number_hours
+            FROM account_analytic_line A
+                JOIN hr_employee E ON E.id = A.employee_id
+                LEFT JOIN sale_order_line S ON S.id = A.so_line
+            WHERE A.project_id IS NOT NULL
+                AND A.project_id IN %s
+                AND A.date < %s
+            GROUP BY date_trunc('month', date)::date, S.order_id, A.so_line, E.id
+        """
+
+        last_ts_month = fields.Date.to_string(fields.Date.from_string(ts_months[-1]) + relativedelta(months=1))
+        query_params = (tuple(projects.ids), last_ts_month)
+        return query, query_params
+
+    def _table_rows_get_employee_lines(self, projects, data_from_db):
+        initial_date = fields.Date.from_string(fields.Date.today())
+        ts_months = sorted([fields.Date.to_string(initial_date - relativedelta(months=i, day=1)) for i in range(0, DEFAULT_MONTH_RANGE)])  # M1, M2, M3
+        default_row_vals = self._table_row_default(projects)
+
+        # extract employee names
+        employee_ids = set()
+        for data in data_from_db:
+            employee_ids.add(data['employee_id'])
+        map_empl_names = {empl.id: empl.name for empl in request.env['hr.employee'].sudo().browse(employee_ids)}
+
+        # extract rows data for employee, sol and so rows
+        rows_employee = {}  # (so, sol, employee) -> [INFO, before, M1, M2, M3, Done, M3, M4, M5, After, Forecasted]
+        for data in data_from_db:
+            sale_line_id = data['sale_line_id']
+            sale_order_id = data['sale_order_id']
+            # employee row
+            row_key = (data['sale_order_id'], sale_line_id, data['employee_id'])
+            if row_key not in rows_employee:
+                meta_vals = {
+                    'label': map_empl_names.get(row_key[2]),
+                    'sale_line_id': sale_line_id,
+                    'sale_order_id': sale_order_id,
+                    'res_id': row_key[2],
+                    'res_model': 'hr.employee',
+                    'type': 'hr_employee'
+                }
+                rows_employee[row_key] = [meta_vals] + default_row_vals[:]  # INFO, before, M1, M2, M3, Done, M3, M4, M5, After, Forecasted
+
+            index = False
+            if data['type'] == 'timesheet':
+                if data['month_date'] in ts_months:
+                    index = ts_months.index(data['month_date']) + 2
+                elif data['month_date'] < ts_months[0]:
+                    index = 1
+                rows_employee[row_key][index] += data['number_hours']
+                rows_employee[row_key][5] += data['number_hours']
+        return rows_employee
+
+    # --------------------------------------------------
+    # Actions: Stat buttons, ...
+    # --------------------------------------------------
 
     def _plan_get_stat_button(self, projects):
         stat_buttons = []
