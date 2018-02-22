@@ -108,7 +108,14 @@ var LivechatButton = Widget.extend({
                     page_history: history,
                 });
             } else { // normal message
-                this.add_message(notification[1]);
+                if (this.is_chat_window_destroyed && notification[1]['author_id'][1]) {
+                    this.channel.state = "open";
+                    utils.set_cookie('im_livechat_session', JSON.stringify(this.channel), 60*60);
+                    this.open_chat();
+                }
+                if (!_.findWhere(this.messages, {id: notification[1].id})) {
+                    this.add_message(notification[1]);
+                }
                 this.render_messages();
                 if (this.chat_window.folded || !this.chat_window.thread.is_at_bottom()) {
                     this.chat_window.update_unread(this.chat_window.unread_msgs+1);
@@ -209,7 +216,10 @@ var LivechatButton = Widget.extend({
 
     close_chat: function () {
         this.chat_window.destroy();
-        utils.set_cookie('im_livechat_session', "", -1); // remove cookie
+        this.is_chat_window_destroyed = true;
+        // set channel as folded instead of destroying session
+        this.channel.state = "folded";
+        utils.set_cookie('im_livechat_session', JSON.stringify(this.channel), 60*20);
     },
 
     send_message: function (message) {
@@ -262,7 +272,7 @@ var LivechatButton = Widget.extend({
     },
 
     send_welcome_message: function () {
-        if (this.options.default_message) {
+        if (this.options.default_message && !this.is_chat_window_destroyed) {
             this.add_message({
                 id: '_welcome',
                 attachment_ids: [],
