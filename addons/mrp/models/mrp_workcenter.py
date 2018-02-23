@@ -61,13 +61,13 @@ class MrpWorkcenter(models.Model):
         result = {wid: {} for wid in self.ids}
         result_duration_expected = {wid: 0 for wid in self.ids}
         #Count Late Workorder
-        data = MrpWorkorder.read_group([('workcenter_id', 'in', self.ids), ('state', 'in', ('pending', 'ready')), ('date_planned_start', '<', datetime.datetime.now().strftime('%Y-%m-%d'))], ['workcenter_id'], ['workcenter_id'])
+        data = MrpWorkorder.read_group([('workcenter_id', 'in', self.ids), ('state', 'in', ('pending', 'ready')), ('date_planned_start', '<', datetime.datetime.now().strftime('%Y-%m-%d'))], ['workcenter_id'], ['workcenter_id'], label=False)
         count_data = dict((item['workcenter_id'][0], item['workcenter_id_count']) for item in data)
         #Count All, Pending, Ready, Progress Workorder
         res = MrpWorkorder.read_group(
             [('workcenter_id', 'in', self.ids)],
             ['workcenter_id', 'state', 'duration_expected'], ['workcenter_id', 'state'],
-            lazy=False)
+            lazy=False, label=False)
         for res_group in res:
             result[res_group['workcenter_id'][0]][res_group['state']] = res_group['__count']
             if res_group['state'] in ('pending', 'ready', 'progress'):
@@ -109,7 +109,7 @@ class MrpWorkcenter(models.Model):
             ('workcenter_id', 'in', self.ids),
             ('date_end', '!=', False),
             ('loss_type', '!=', 'productive')],
-            ['duration', 'workcenter_id'], ['workcenter_id'], lazy=False)
+            ['duration', 'workcenter_id'], ['workcenter_id'], lazy=False, label=False)
         count_data = dict((item['workcenter_id'][0], item['duration']) for item in data)
         for workcenter in self:
             workcenter.blocked_time = count_data.get(workcenter.id, 0.0) / 60.0
@@ -122,7 +122,7 @@ class MrpWorkcenter(models.Model):
             ('workcenter_id', 'in', self.ids),
             ('date_end', '!=', False),
             ('loss_type', '=', 'productive')],
-            ['duration', 'workcenter_id'], ['workcenter_id'], lazy=False)
+            ['duration', 'workcenter_id'], ['workcenter_id'], lazy=False, label=False)
         count_data = dict((item['workcenter_id'][0], item['duration']) for item in data)
         for workcenter in self:
             workcenter.productive_time = count_data.get(workcenter.id, 0.0) / 60.0
@@ -140,7 +140,7 @@ class MrpWorkcenter(models.Model):
         wo_data = self.env['mrp.workorder'].read_group([
             ('date_start', '>=', fields.Datetime.to_string(datetime.datetime.now() - relativedelta.relativedelta(months=1))),
             ('workcenter_id', 'in', self.ids),
-            ('state', '=', 'done')], ['duration_expected', 'workcenter_id', 'duration'], ['workcenter_id'], lazy=False)
+            ('state', '=', 'done')], ['duration_expected', 'workcenter_id', 'duration'], ['workcenter_id'], lazy=False, label=False)
         duration_expected = dict((data['workcenter_id'][0], data['duration_expected']) for data in wo_data)
         duration = dict((data['workcenter_id'][0], data['duration']) for data in wo_data)
         for workcenter in self:

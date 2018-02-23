@@ -25,7 +25,7 @@ class CrmTeam(models.Model):
             payment_data = self.env['payment.transaction'].read_group([
                 ('state', 'in', ['authorized', 'pending']),
                 ('sale_order_id.team_id', '=', team.id)
-            ], ['amount', 'currency_id', 'state'], ['state', 'currency_id'], lazy=False)
+            ], ['amount', 'currency_id', 'state'], ['state', 'currency_id'], lazy=False, label=False)
             for datum in payment_data:
                 datum_currency = self.env['res.currency'].browse(datum['currency_id'][0])
                 if datum['state'] == 'authorized':

@@ -42,7 +42,7 @@ class CrmTeam(models.Model):
             quotation_data = self.env['sale.report'].read_group([
                 ('team_id', 'in', non_website_teams.ids),
                 ('state', 'in', ['draft', 'sent']),
-            ], ['price_total', 'team_id', 'name'], ['team_id', 'name'], lazy=False)
+            ], ['price_total', 'team_id', 'name'], ['team_id', 'name'], lazy=False, label=False)
             for datum in quotation_data:
                 self.browse(datum['team_id'][0]).quotations_amount += datum['price_total']
                 self.browse(datum['team_id'][0]).quotations_count += 1
@@ -52,7 +52,7 @@ class CrmTeam(models.Model):
         sale_order_data = self.env['sale.order'].read_group([
             ('team_id', 'in', self.ids),
             ('order_line.qty_to_invoice', '>', 0),
-        ], ['team_id'], ['team_id'])
+        ], ['team_id'], ['team_id'], label=False)
         for datum in sale_order_data:
             self.browse(datum['team_id'][0]).invoiced = datum['team_id_count']
 
@@ -64,7 +64,7 @@ class CrmTeam(models.Model):
             ('date', '<=', date.today()),
             ('date', '>=', date.today().replace(day=1)),
             ('type', 'in', ['out_invoice', 'out_refund']),
-        ], ['amount_untaxed_signed', 'team_id'], ['team_id'])
+        ], ['amount_untaxed_signed', 'team_id'], ['team_id'], label=False)
         for datum in invoice_data:
             self.browse(datum['team_id'][0]).invoiced = datum['amount_untaxed_signed']
 

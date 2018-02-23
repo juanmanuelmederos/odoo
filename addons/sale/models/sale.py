@@ -1205,7 +1205,7 @@ class SaleOrderLine(models.Model):
         domain = self._analytic_compute_delivered_quantity_domain()
         data = self.env['account.analytic.line'].read_group(
             domain,
-            ['so_line', 'unit_amount', 'product_uom_id'], ['product_uom_id', 'so_line'], lazy=False
+            ['so_line', 'unit_amount', 'product_uom_id'], ['product_uom_id', 'so_line'], lazy=False, label=False
         )
         # Force recompute for the "unlink last line" case: if remove the last AAL link to the SO, the read_group
         # will give no value for the qty of the SOL, so we need to reset it to 0.0

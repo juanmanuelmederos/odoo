@@ -14,7 +14,7 @@ class res_partner(models.Model):
     @api.depends('payment_token_ids')
     def _compute_payment_token_count(self):
         payment_data = self.env['payment.token'].read_group([
-            ('partner_id', 'in', self.ids)], ['partner_id'], ['partner_id'])
+            ('partner_id', 'in', self.ids)], ['partner_id'], ['partner_id'], label=False)
         mapped_data = dict([(payment['partner_id'][0], payment['partner_id_count']) for payment in payment_data])
         for partner in self:
             partner.payment_token_count = mapped_data.get(partner.id, 0)

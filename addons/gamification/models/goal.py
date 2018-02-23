@@ -320,7 +320,7 @@ class Goal(models.Model):
                             users = Obj.search(subquery_domain)
                             user_values = [{'id': user.id, 'id_count': 1} for user in users]
                         else:
-                            user_values = Obj.read_group(subquery_domain, fields=[field_name], groupby=[field_name])
+                            user_values = Obj.read_group(subquery_domain, fields=[field_name], groupby=[field_name], label=False)
                         # user_values has format of read_group: [{'partner_id': 42, 'partner_id_count': 3},...]
                         for goal in [g for g in goals if g.id in query_goals]:
                             for user_value in user_values:

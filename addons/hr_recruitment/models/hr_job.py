@@ -49,7 +49,7 @@ class Job(models.Model):
 
     @api.multi
     def _compute_application_count(self):
-        read_group_result = self.env['hr.applicant'].read_group([('job_id', 'in', self.ids)], ['job_id'], ['job_id'])
+        read_group_result = self.env['hr.applicant'].read_group([('job_id', 'in', self.ids)], ['job_id'], ['job_id'], label=False)
         result = dict((data['job_id'][0], data['job_id_count']) for data in read_group_result)
         for job in self:
             job.application_count = result.get(job.id, 0)

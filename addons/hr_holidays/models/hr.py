@@ -31,15 +31,15 @@ class Department(models.Model):
         leave_data = Holiday.read_group(
             [('department_id', 'in', self.ids),
              ('state', '=', 'confirm'), ('type', '=', 'remove')],
-            ['department_id'], ['department_id'])
+            ['department_id'], ['department_id'], label=False)
         allocation_data = Holiday.read_group(
             [('department_id', 'in', self.ids),
              ('state', '=', 'confirm'), ('type', '=', 'add')],
-            ['department_id'], ['department_id'])
+            ['department_id'], ['department_id'], label=False)
         absence_data = Holiday.read_group(
             [('department_id', 'in', self.ids), ('state', 'not in', ['cancel', 'refuse']),
              ('date_from', '<=', today_end), ('date_to', '>=', today_start), ('type', '=', 'remove')],
-            ['department_id'], ['department_id'])
+            ['department_id'], ['department_id'], label=False)
 
         res_leave = dict((data['department_id'][0], data['department_id_count']) for data in leave_data)
         res_allocation = dict((data['department_id'][0], data['department_id_count']) for data in allocation_data)
@@ -52,7 +52,7 @@ class Department(models.Model):
 
     @api.multi
     def _compute_total_employee(self):
-        emp_data = self.env['hr.employee'].read_group([('department_id', 'in', self.ids)], ['department_id'], ['department_id'])
+        emp_data = self.env['hr.employee'].read_group([('department_id', 'in', self.ids)], ['department_id'], ['department_id'], label=False)
         result = dict((data['department_id'][0], data['department_id_count']) for data in emp_data)
         for department in self:
             department.total_employee = result.get(department.id, 0)
@@ -169,7 +169,7 @@ class Employee(models.Model):
             ('employee_id', 'in', self.ids),
             ('holiday_status_id.limit', '=', False),
             ('state', '=', 'validate')
-        ], fields=['number_of_days', 'employee_id'], groupby=['employee_id'])
+        ], fields=['number_of_days', 'employee_id'], groupby=['employee_id'], label=False)
         mapping = dict([(leave['employee_id'][0], leave['number_of_days']) for leave in leaves])
         for employee in self:
             employee.leaves_count = mapping.get(employee.id)
@@ -194,7 +194,7 @@ class Employee(models.Model):
             ('date_from', '<=', today_end),
             ('date_to', '>=', today_start),
             ('type', '=', 'remove')
-        ], ['employee_id'], ['employee_id'])
+        ], ['employee_id'], ['employee_id'], label=False)
         result = dict.fromkeys(self.ids, False)
         for item in data:
             if item['employee_id_count'] >= 1:

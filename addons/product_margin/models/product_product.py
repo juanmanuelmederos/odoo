@@ -47,11 +47,11 @@ class ProductProduct(models.Model):
         help="Expected margin * 100 / Expected Sale")
 
     @api.model
-    def read_group(self, domain, fields, groupby, offset=0, limit=None, orderby=False, lazy=True):
+    def read_group(self, domain, fields, groupby, offset=0, limit=None, orderby=False, lazy=True, label=True):
         """
             Inherit read_group to calculate the sum of the non-stored fields, as it is not automatically done anymore through the XML.
         """
-        res = super(ProductProduct, self).read_group(domain, fields, groupby, offset=offset, limit=limit, orderby=orderby, lazy=lazy)
+        res = super(ProductProduct, self).read_group(domain, fields, groupby, offset=offset, limit=limit, orderby=orderby, lazy=lazy, label=label)
         fields_list = ['turnover', 'sale_avg_price', 'sale_purchase_price', 'sale_num_invoiced', 'purchase_num_invoiced',
                        'sales_gap', 'purchase_gap', 'total_cost', 'sale_expected', 'normal_cost', 'total_margin',
                        'expected_margin', 'total_margin_rate', 'expected_margin_rate']

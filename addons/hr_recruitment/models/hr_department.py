@@ -17,7 +17,7 @@ class HrDepartment(models.Model):
     def _compute_new_applicant_count(self):
         applicant_data = self.env['hr.applicant'].read_group(
             [('department_id', 'in', self.ids), ('stage_id.sequence', '<=', '1')],
-            ['department_id'], ['department_id'])
+            ['department_id'], ['department_id'], label=False)
         result = dict((data['department_id'][0], data['department_id_count']) for data in applicant_data)
         for department in self:
             department.new_applicant_count = result.get(department.id, 0)
@@ -26,7 +26,7 @@ class HrDepartment(models.Model):
     def _compute_recruitment_stats(self):
         job_data = self.env['hr.job'].read_group(
             [('department_id', 'in', self.ids)],
-            ['no_of_hired_employee', 'no_of_recruitment', 'department_id'], ['department_id'])
+            ['no_of_hired_employee', 'no_of_recruitment', 'department_id'], ['department_id'], label=False)
         new_emp = dict((data['department_id'][0], data['no_of_hired_employee']) for data in job_data)
         expected_emp = dict((data['department_id'][0], data['no_of_recruitment']) for data in job_data)
         for department in self:

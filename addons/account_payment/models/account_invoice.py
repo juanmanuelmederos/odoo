@@ -17,7 +17,7 @@ class AccountInvoice(models.Model):
     def _compute_payment_tx_count(self):
         tx_data = self.env['payment.transaction'].read_group(
             [('account_invoice_id', 'in', self.ids)],
-            ['account_invoice_id'], ['account_invoice_id']
+            ['account_invoice_id'], ['account_invoice_id'], label=False
         )
         mapped_data = dict([(m['account_invoice_id'][0], m['account_invoice_id_count']) for m in tx_data])
         for invoice in self:

@@ -76,7 +76,7 @@ class Note(models.Model):
         return self.create({'memo': name}).name_get()[0]
 
     @api.model
-    def read_group(self, domain, fields, groupby, offset=0, limit=None, orderby=False, lazy=True):
+    def read_group(self, domain, fields, groupby, offset=0, limit=None, orderby=False, lazy=True, label=True):
         if groupby and groupby[0] == "stage_id":
             stages = self.env['note.stage'].search([('user_id', '=', self.env.uid)])
             if stages:  # if the user has some stages
@@ -118,7 +118,7 @@ class Note(models.Model):
                 else:
                     result = []
             return result
-        return super(Note, self).read_group(domain, fields, groupby, offset=offset, limit=limit, orderby=orderby, lazy=lazy)
+        return super(Note, self).read_group(domain, fields, groupby, offset=offset, limit=limit, orderby=orderby, lazy=lazy, label=label)
 
     @api.multi
     def action_close(self):

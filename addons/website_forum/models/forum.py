@@ -327,7 +327,7 @@ class Post(models.Model):
     @api.multi
     @api.depends('vote_ids.vote')
     def _get_vote_count(self):
-        read_group_res = self.env['forum.post.vote'].read_group([('post_id', 'in', self._ids)], ['post_id', 'vote'], ['post_id', 'vote'], lazy=False)
+        read_group_res = self.env['forum.post.vote'].read_group([('post_id', 'in', self._ids)], ['post_id', 'vote'], ['post_id', 'vote'], lazy=False, label=False)
         result = dict.fromkeys(self._ids, 0)
         for data in read_group_res:
             result[data['post_id'][0]] += data['__count'] * int(data['vote'])

@@ -14,7 +14,7 @@ class ProductProduct(models.Model):
             ('state', 'in', ['sale', 'done']),
             ('product_id', 'in', self.ids),
         ]
-        for group in self.env['sale.report'].read_group(domain, ['product_id', 'product_uom_qty'], ['product_id']):
+        for group in self.env['sale.report'].read_group(domain, ['product_id', 'product_uom_qty'], ['product_id'], label=False):
             r[group['product_id'][0]] = group['product_uom_qty']
         for product in self:
             product.sales_count = r.get(product.id, 0)

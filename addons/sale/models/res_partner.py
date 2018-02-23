@@ -15,7 +15,7 @@ class ResPartner(models.Model):
 
     def _compute_sale_order_count(self):
         sale_data = self.env['sale.order'].read_group(domain=[('partner_id', 'child_of', self.ids)],
-                                                      fields=['partner_id'], groupby=['partner_id'])
+                                                      fields=['partner_id'], groupby=['partner_id'], label=False)
         # read to keep the child/parent relation while aggregating the read_group result in the loop
         partner_child_ids = self.read(['child_ids'])
         mapped_data = dict([(m['partner_id'][0], m['partner_id_count']) for m in sale_data])

@@ -1544,10 +1544,10 @@ class Meeting(models.Model):
         return super(Meeting, records).export_data(fields_to_export, raw_data)
 
     @api.model
-    def read_group(self, domain, fields, groupby, offset=0, limit=None, orderby=False, lazy=True):
+    def read_group(self, domain, fields, groupby, offset=0, limit=None, orderby=False, lazy=True, label=True):
         if 'date' in groupby:
             raise UserError(_('Group by date is not supported, use the calendar view instead.'))
-        return super(Meeting, self.with_context(virtual_id=False)).read_group(domain, fields, groupby, offset=offset, limit=limit, orderby=orderby, lazy=lazy)
+        return super(Meeting, self.with_context(virtual_id=False)).read_group(domain, fields, groupby, offset=offset, limit=limit, orderby=orderby, lazy=lazy, label=label)
 
     @api.multi
     def read(self, fields=None, load='_classic_read'):

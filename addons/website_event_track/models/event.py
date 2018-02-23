@@ -37,14 +37,14 @@ class Event(models.Model):
 
     @api.multi
     def _compute_track_count(self):
-        data = self.env['event.track'].read_group([('stage_id.is_cancel', '!=', True)], ['event_id'], ['event_id'])
+        data = self.env['event.track'].read_group([('stage_id.is_cancel', '!=', True)], ['event_id'], ['event_id'], label=False)
         result = dict((data['event_id'][0], data['event_id_count']) for data in data)
         for event in self:
             event.track_count = result.get(event.id, 0)
 
     @api.multi
     def _compute_sponsor_count(self):
-        data = self.env['event.sponsor'].read_group([], ['event_id'], ['event_id'])
+        data = self.env['event.sponsor'].read_group([], ['event_id'], ['event_id'], label=False)
         result = dict((data['event_id'][0], data['event_id_count']) for data in data)
         for event in self:
             event.sponsor_count = result.get(event.id, 0)

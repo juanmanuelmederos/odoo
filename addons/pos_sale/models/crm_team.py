@@ -51,7 +51,7 @@ class CrmTeam(models.Model):
                         ('config_id', 'in', self.pos_config_ids.ids),
                         ('state', 'in', ['paid', 'done', 'invoiced'])],
                     fields=['config_id', 'price_total'],
-                    groupby=['config_id']
+                    groupby=['config_id'], label=False
                 )
                 appended_config_ids = set()
                 for data_point in order_data:
@@ -68,7 +68,7 @@ class CrmTeam(models.Model):
                         ('config_id', 'in', self.pos_config_ids.ids),
                         ('state', 'in', ['paid', 'done', 'invoiced'])],
                     fields=['user_id', 'price_total'],
-                    groupby=['user_id']
+                    groupby=['user_id'], label=False
                 )
                 for data_point in order_data:
                     result.append({'x_value': data_point.get('user_id')[0], 'y_value': data_point.get('price_total')})

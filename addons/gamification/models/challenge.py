@@ -622,7 +622,7 @@ class Challenge(models.Model):
                     ('challenge_id', '=', challenge.id),
                     ('end_date', '=', end_date),
                     ('state', '=', 'reached')
-                ], fields=['user_id'], groupby=['user_id'])
+                ], fields=['user_id'], groupby=['user_id'], label=False)
                 for reach_goals_user in reached_goals:
                     if reach_goals_user['user_id_count'] == len(challenge.line_ids):
                         # the user has succeeded every assigned goal

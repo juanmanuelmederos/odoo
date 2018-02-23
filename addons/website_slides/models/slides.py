@@ -74,7 +74,7 @@ class Channel(models.Model):
         res = self.env['slide.slide'].read_group(
             [('website_published', '=', True), ('channel_id', 'in', self.ids)],
             ['channel_id', 'slide_type'], ['channel_id', 'slide_type'],
-            lazy=False)
+            lazy=False, label=False)
         for res_group in res:
             result[res_group['channel_id'][0]][res_group['slide_type']] = result[res_group['channel_id'][0]].get(res_group['slide_type'], 0) + res_group['__count']
         for record in self:
@@ -203,7 +203,7 @@ class Category(models.Model):
         res = self.env['slide.slide'].read_group(
             [('website_published', '=', True), ('category_id', 'in', self.ids)],
             ['category_id', 'slide_type'], ['category_id', 'slide_type'],
-            lazy=False)
+            lazy=False, label=False)
         for res_group in res:
             result[res_group['category_id'][0]][res_group['slide_type']] = result[res_group['category_id'][0]].get(res_group['slide_type'], 0) + res_group['__count']
         for record in self:

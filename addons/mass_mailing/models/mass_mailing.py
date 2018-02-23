@@ -235,7 +235,7 @@ class MassMailingCampaign(models.Model):
     def _compute_total_mailings(self):
         campaign_data = self.env['mail.mass_mailing'].read_group(
             [('mass_mailing_campaign_id', 'in', self.ids)],
-            ['mass_mailing_campaign_id'], ['mass_mailing_campaign_id'])
+            ['mass_mailing_campaign_id'], ['mass_mailing_campaign_id'], label=False)
         mapped_data = dict([(c['mass_mailing_campaign_id'][0], c['mass_mailing_campaign_id_count']) for c in campaign_data])
         for campaign in self:
             campaign.total_mailings = mapped_data.get(campaign.id, 0)
@@ -252,7 +252,7 @@ class MassMailingCampaign(models.Model):
         return res
 
     @api.model
-    def read_group(self, domain, fields, groupby, offset=0, limit=None, orderby=False, lazy=True):
+    def read_group(self, domain, fields, groupby, offset=0, limit=None, orderby=False, lazy=True, label=True):
         """ Override read_group to always display all states. """
         if groupby and groupby[0] == "stage_id":
             # Default result structure
@@ -265,7 +265,7 @@ class MassMailingCampaign(models.Model):
                 'state_count': 0,
             } for state_value, state_name in states]
             # Get standard results
-            read_group_res = super(MassMailingCampaign, self).read_group(domain, fields, groupby, offset=offset, limit=limit, orderby=orderby)
+            read_group_res = super(MassMailingCampaign, self).read_group(domain, fields, groupby, offset=offset, limit=limit, orderby=orderby, label=label)
             # Update standard results with default results
             result = []
             for state_value, state_name in states:
@@ -276,7 +276,7 @@ class MassMailingCampaign(models.Model):
                 result.append(res[0])
             return result
         else:
-            return super(MassMailingCampaign, self).read_group(domain, fields, groupby, offset=offset, limit=limit, orderby=orderby)
+            return super(MassMailingCampaign, self).read_group(domain, fields, groupby, offset=offset, limit=limit, orderby=orderby, label=label)
 
 
 class MassMailing(models.Model):
@@ -477,7 +477,7 @@ class MassMailing(models.Model):
         return super(MassMailing, self).copy(default=default)
 
     @api.model
-    def read_group(self, domain, fields, groupby, offset=0, limit=None, orderby=False, lazy=True):
+    def read_group(self, domain, fields, groupby, offset=0, limit=None, orderby=False, lazy=True, label=True):
         """ Override read_group to always display all states. """
         if groupby and groupby[0] == "state":
             # Default result structure
@@ -489,7 +489,7 @@ class MassMailing(models.Model):
                 'state_count': 0,
             } for state_value, state_name in states]
             # Get standard results
-            read_group_res = super(MassMailing, self).read_group(domain, fields, groupby, offset=offset, limit=limit, orderby=orderby)
+            read_group_res = super(MassMailing, self).read_group(domain, fields, groupby, offset=offset, limit=limit, orderby=orderby, label=label)
             # Update standard results with default results
             result = []
             for state_value, state_name in states:
@@ -500,7 +500,7 @@ class MassMailing(models.Model):
                 result.append(res[0])
             return result
         else:
-            return super(MassMailing, self).read_group(domain, fields, groupby, offset=offset, limit=limit, orderby=orderby)
+            return super(MassMailing, self).read_group(domain, fields, groupby, offset=offset, limit=limit, orderby=orderby, label=label)
 
     def update_opt_out(self, email, res_ids, value):
         model = self.env[self.mailing_model_real].with_context(active_test=False)

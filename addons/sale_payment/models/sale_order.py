@@ -15,7 +15,7 @@ class SaleOrder(models.Model):
         compute='_compute_payment_transaction_count')
 
     def _compute_payment_transaction_count(self):
-        transaction_data = self.env['payment.transaction'].read_group([('sale_order_id', 'in', self.ids)], ['sale_order_id'], ['sale_order_id'])
+        transaction_data = self.env['payment.transaction'].read_group([('sale_order_id', 'in', self.ids)], ['sale_order_id'], ['sale_order_id'], label=False)
         mapped_data = dict([(m['sale_order_id'][0], m['sale_order_id_count']) for m in transaction_data])
         for order in self:
             order.payment_transaction_count = mapped_data.get(order.id, 0)

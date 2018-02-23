@@ -44,7 +44,7 @@ class Team(models.Model):
             ('team_id', 'in', self.ids),
             ('type', '=', 'lead'),
             ('user_id', '=', False),
-        ], ['team_id'], ['team_id'])
+        ], ['team_id'], ['team_id'], label=False)
         counts = {datum['team_id'][0]: datum['team_id_count'] for datum in leads_data}
         for team in self:
             team.unassigned_leads_count = counts.get(team.id, 0)
@@ -54,7 +54,7 @@ class Team(models.Model):
             ('team_id', 'in', self.ids),
             ('probability', '<', 100),
             ('type', '=', 'opportunity'),
-        ], ['planned_revenue', 'probability', 'team_id'], ['team_id'])
+        ], ['planned_revenue', 'probability', 'team_id'], ['team_id'], label=False)
         counts = {datum['team_id'][0]: datum['team_id_count'] for datum in opportunity_data}
         amounts = {datum['team_id'][0]: (datum['planned_revenue'] * datum['probability'] / 100) for datum in opportunity_data}
         for team in self:

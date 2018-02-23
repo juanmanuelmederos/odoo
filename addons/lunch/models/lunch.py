@@ -112,7 +112,7 @@ class LunchOrder(models.Model):
     @api.depends('user_id')
     def _compute_cash_move_balance(self):
         domain = [('user_id', '=', self.user_id.id)]
-        lunch_cash = self.env['lunch.cashmove'].read_group(domain, ['amount', 'user_id'], ['user_id'])
+        lunch_cash = self.env['lunch.cashmove'].read_group(domain, ['amount', 'user_id'], ['user_id'], label=False)
         if len(lunch_cash):
             self.cash_move_balance = lunch_cash[0]['amount']
         self.balance_visible = (self.user_id == self.env.user) or self.user_has_groups('lunch.group_lunch_manager')

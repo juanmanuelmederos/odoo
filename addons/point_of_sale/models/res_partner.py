@@ -14,7 +14,7 @@ class ResPartner(models.Model):
     )
 
     def _compute_pos_order(self):
-        partners_data = self.env['pos.order'].read_group([('partner_id', 'in', self.ids)], ['partner_id'], ['partner_id'])
+        partners_data = self.env['pos.order'].read_group([('partner_id', 'in', self.ids)], ['partner_id'], ['partner_id'], label=False)
         mapped_data = dict([(partner['partner_id'][0], partner['partner_id_count']) for partner in partners_data])
         for partner in self:
             partner.pos_order_count = mapped_data.get(partner.id, 0)

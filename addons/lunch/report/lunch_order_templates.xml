@@ -25,7 +25,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <t t-foreach="docs.read_group([('id', 'in', docs.ids)],['user_id'],['user_id'])" t-as="o">
+                                <t t-foreach="docs.read_group([('id', 'in', docs.ids)],['user_id'],['user_id'], label=False)" t-as="o">
                                     <t t-set="user" t-value="user.browse(o['user_id'][0])"/>
                                     <t t-set="lines" t-value="docs.search([('user_id', '=', user.id), ('id', 'in', docs.ids)])"/>
                                     <tr>

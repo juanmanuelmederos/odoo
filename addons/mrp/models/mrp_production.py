@@ -191,7 +191,7 @@ class MrpProduction(models.Model):
     @api.multi
     @api.depends('workorder_ids')
     def _compute_workorder_count(self):
-        data = self.env['mrp.workorder'].read_group([('production_id', 'in', self.ids)], ['production_id'], ['production_id'])
+        data = self.env['mrp.workorder'].read_group([('production_id', 'in', self.ids)], ['production_id'], ['production_id'], label=False)
         count_data = dict((item['production_id'][0], item['production_id_count']) for item in data)
         for production in self:
             production.workorder_count = count_data.get(production.id, 0)
@@ -201,7 +201,7 @@ class MrpProduction(models.Model):
     def _compute_workorder_done_count(self):
         data = self.env['mrp.workorder'].read_group([
             ('production_id', 'in', self.ids),
-            ('state', '=', 'done')], ['production_id'], ['production_id'])
+            ('state', '=', 'done')], ['production_id'], ['production_id'], label=False)
         count_data = dict((item['production_id'][0], item['production_id_count']) for item in data)
         for production in self:
             production.workorder_done_count = count_data.get(production.id, 0)
@@ -268,7 +268,7 @@ class MrpProduction(models.Model):
 
     @api.multi
     def _compute_scrap_move_count(self):
-        data = self.env['stock.scrap'].read_group([('production_id', 'in', self.ids)], ['production_id'], ['production_id'])
+        data = self.env['stock.scrap'].read_group([('production_id', 'in', self.ids)], ['production_id'], ['production_id'], label=False)
         count_data = dict((item['production_id'][0], item['production_id_count']) for item in data)
         for production in self:
             production.scrap_count = count_data.get(production.id, 0)
