@@ -14,7 +14,7 @@ class HrEmployee(models.Model):
         read_group_result = self.env['hr.applicant'].read_group(
             [('emp_id', 'in', self.ids), ('job_id.state', '=', 'recruit')],
             ['emp_id'], ['emp_id'], label=False)
-        result = dict((data['emp_id'], data['emp_id_count'] > 0) for data in read_group_result)
+        result = dict((data['emp_id'][0], data['emp_id_count'] > 0) for data in read_group_result)
         for record in self:
             record.newly_hired_employee = result.get(record.id, False)
 
