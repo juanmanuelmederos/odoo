@@ -339,6 +339,8 @@ class MaintenanceRequest(models.Model):
         request = super(MaintenanceRequest, self).create(vals)
         if request.owner_user_id or request.technician_user_id:
             request._add_followers()
+        if request.technician_user_id:
+            request._message_auto_subscribe_notify(request.technician_user_id.partner_id.ids)
         if request.equipment_id and not request.maintenance_team_id:
             request.maintenance_team_id = request.equipment_id.maintenance_team_id
         return request
@@ -354,7 +356,43 @@ class MaintenanceRequest(models.Model):
             self._add_followers()
         if self.stage_id.done and 'stage_id' in vals:
             self.write({'close_date': fields.Date.today()})
+        if vals.get('technician_user_id'):
+            technician_user_id = self.technician_user_id
+            self._message_auto_subscribe_notify(technician_user_id.partner_id.ids)
         return res
+
+    @api.multi
+    def _message_auto_subscribe_notify(self, partner_ids):
+        if not partner_ids:
+            return
+
+        if self.env.context.get('mail_auto_subscribe_no_notify'):
+            return
+
+        if 'active_domain' in self.env.context:
+            ctx = dict(self.env.context)
+            ctx.pop('active_domain')
+            self = self.with_context(ctx)
+
+        template = self.env.ref('mail.message_responsible_assigned')
+
+        for record in self:
+            values = {
+                'object': record,
+            }
+        template_msg = template.render(values, engine='ir.qweb')
+        template_msg = self.env['mail.thread']._replace_local_links(template_msg)
+
+        record.message_notify(
+                subject='You have been assigned to %s' % record.display_name,
+                body=template_msg,
+                partner_ids=[(4, pid) for pid in partner_ids],
+                record_name=record.display_name,
+                notif_layout='mail.mail_notification_light',
+                notif_values={
+                    'model_description': record._description.lower(),
+                }
+            )
 
     def _add_followers(self):
         for request in self:
