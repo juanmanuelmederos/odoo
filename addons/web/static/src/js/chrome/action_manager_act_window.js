@@ -23,6 +23,7 @@ ActionManager.include({
         execute_action: '_onExecuteAction',
         search: '_onSearch',
         switch_view: '_onSwitchView',
+        navigation_move: '_onNavigationMove',
     }),
 
     //--------------------------------------------------------------------------
@@ -714,6 +715,20 @@ ActionManager.include({
             var options = {on_close: ev.data.on_closed};
             return self.doAction(action, options).then(ev.data.on_success, ev.data.on_fail);
         });
+    },
+    /**
+     * @private
+     */
+    _onNavigationMove : function(event) {
+        switch(event.data.direction) {
+            case 'down' :
+                console.log("go dooooown");
+                var currentController = this.getCurrentController().widget;
+                currentController.giveFocus();
+
+                event.stopPropagation();
+                break;
+        }
     },
     /**
      * Called when there is a change in the search view, so the current action's

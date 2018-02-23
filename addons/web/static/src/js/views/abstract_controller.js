@@ -102,7 +102,12 @@ var AbstractController = AbstractAction.extend(ControlPanelMixin, {
         }
         return this._super.apply(this, arguments);
     },
-
+    /**
+     * Gives the focus to the renderer
+     */
+    giveFocus:function(){
+        this.renderer.giveFocus();
+    },
     //--------------------------------------------------------------------------
     // Public
     //--------------------------------------------------------------------------

@@ -248,6 +248,12 @@ var SearchView = Widget.extend({
                     }
                     e.preventDefault();
                     break;
+                case $.ui.keyCode.DOWN:
+                    if (!this.autocomplete.is_expanded()) {
+                        e.preventDefault();
+                        this.trigger_up('navigation_move', {direction: 'down'});
+                        break;
+                    }
             }
         },
     },
