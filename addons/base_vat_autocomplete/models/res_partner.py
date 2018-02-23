@@ -34,10 +34,11 @@ class ResPartner(models.Model):
         for partner in self:
             if not partner.vat:
                 return {}
-            if len(partner.vat) > 5 and partner.vat[:2].lower() in eu_country_codes:
+
+            if len(partner.vat) > 5 and partner.vat[:2].upper() in eu_country_codes:
                 try:
                     partner_vat = partner.compact_vat_number(partner.vat)
-                    result = partner.vies_vat_check(partner_vat[:2], partner_vat[2:], except_to_simple_check=False)
+                    result = partner.vies_vat_check(partner_vat[:2], partner_vat[2:])
                 except:
                     # Avoid blocking the client when the service is unreachable/unavailable
                     return {}
