@@ -13,6 +13,7 @@ class ReportAgedPartnerBalance(models.AbstractModel):
     _name = 'report.account.report_agedpartnerbalance'
 
     def _get_partner_move_lines(self, account_type, date_from, target_move, period_length):
+        ctx = self._context
         periods = {}
         start = datetime.strptime(date_from, "%Y-%m-%d")
         for i in range(5)[::-1]:
@@ -26,6 +27,7 @@ class ReportAgedPartnerBalance(models.AbstractModel):
 
         res = []
         total = []
+        partner_clause = ''
         cr = self.env.cr
         company_ids = self.env.context.get('company_ids', (self.env.user.company_id.id,))
         move_state = ['draft', 'posted']
@@ -41,6 +43,13 @@ class ReportAgedPartnerBalance(models.AbstractModel):
         if reconciled_after_date:
             reconciliation_clause = '(l.reconciled IS FALSE OR l.id IN %s)'
             arg_list += (tuple(reconciled_after_date),)
+        if ctx.get('res_partners'):
+            partner_clause = 'AND (l.partner_id IN %s)'
+            arg_list += (tuple(ctx['res_partners'].ids),)
+        if ctx.get('res_partner_categories'):
+            partner_clause += 'AND (l.id IN %s)'
+            aml_partner_ids = self.env['account.move.line'].search([('partner_id.category_id', 'in', ctx['res_partner_categories'].ids)]).ids
+            arg_list += (tuple(aml_partner_ids or [0]),)
         arg_list += (date_from, tuple(company_ids))
         query = '''
             SELECT DISTINCT l.partner_id, UPPER(res_partner.name)
@@ -49,7 +58,7 @@ class ReportAgedPartnerBalance(models.AbstractModel):
                 AND (l.move_id = am.id)
                 AND (am.state IN %s)
                 AND (account_account.internal_type IN %s)
-                AND ''' + reconciliation_clause + '''
+                AND ''' + reconciliation_clause + partner_clause + '''
                 AND (l.date <= %s)
                 AND l.company_id IN %s
             ORDER BY UPPER(res_partner.name)'''
