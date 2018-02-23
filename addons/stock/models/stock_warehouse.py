@@ -140,7 +140,7 @@ class Warehouse(models.Model):
 
         if 'default_resupply_wh_id' in vals:
             if vals.get('default_resupply_wh_id') and any(vals['default_resupply_wh_id'] == warehouse.id for warehouse in warehouses):
-                raise UserError(_('The default resupply warehouse should be different than the warehouse itself!'))
+                raise UserError(_('The default resupply warehouse should be different than itself.'))
             for warehouse in warehouses.filtered(lambda wh: wh.default_resupply_wh_id):
                 # remove the existing resupplying route on the warehouse
                 to_remove_routes = Route.search([('supplied_wh_id', '=', warehouse.id), ('supplier_wh_id', '=', warehouse.default_resupply_wh_id.id)])

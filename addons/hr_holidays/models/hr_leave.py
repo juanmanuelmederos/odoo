@@ -344,9 +344,9 @@ class HolidaysRequest(models.Model):
     def action_draft(self):
         for holiday in self:
             if not holiday.can_reset:
-                raise UserError(_('Only an HR Manager or the concerned employee can reset to draft.'))
+                raise UserError(_('Only an HR Manager or the concerned employee can reset the leave request to draft.'))
             if holiday.state not in ['confirm', 'refuse']:
-                raise UserError(_('Leave request state must be "Refused" or "To Approve" in order to reset to Draft.'))
+                raise UserError(_('Leave request state must be "Refused" or "To Approve" in order to be reset to draft.'))
             holiday.write({
                 'state': 'draft',
                 'first_approver_id': False,
@@ -382,7 +382,7 @@ class HolidaysRequest(models.Model):
               and not self.env.user.has_group('hr_holidays.group_hr_holidays_manager'):
                 raise UserError(_('You must be %s manager to approve this leave') % (holiday.employee_id.name))
             elif validation_type == 'hr' and not self.env.user.has_group('hr_holidays.group_hr_holidays_manager'):
-                raise UserError(_('You must be a Human Resource Manager to approve this Leave'))
+                raise UserError(_('You must be a Human Resource Manager to approve this leave'))
 
         self.filtered(lambda hol: hol.validation_type == 'both').write({'state': 'validate1', 'first_approver_id': current_employee.id})
         self.filtered(lambda hol: not hol.validation_type == 'both').action_validate()

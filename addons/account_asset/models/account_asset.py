@@ -128,7 +128,7 @@ class AccountAssetAsset(models.Model):
     def unlink(self):
         for asset in self:
             if asset.state in ['open', 'close']:
-                raise UserError(_('You cannot delete a document is in %s state.') % (asset.state,))
+                raise UserError(_('You cannot delete a document that is in %s state.') % (asset.state,))
             for depreciation_line in asset.depreciation_line_ids:
                 if depreciation_line.move_id:
                     raise UserError(_('You cannot delete a document that contains posted entries.'))
@@ -500,7 +500,7 @@ class AccountAssetDepreciationLine(models.Model):
         created_moves = self.env['account.move']
         for line in self:
             if line.move_id:
-                raise UserError(_('This depreciation is already linked to a journal entry! Please post or delete it.'))
+                raise UserError(_('This depreciation is already linked to a journal entry. Please post or delete it.'))
             move_vals = self._prepare_move(line)
             move = self.env['account.move'].create(move_vals)
             line.write({'move_id': move.id, 'move_check': True})

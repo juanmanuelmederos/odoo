@@ -86,7 +86,7 @@ class Project(models.Model):
         analytic_accounts_to_delete = self.env['account.analytic.account']
         for project in self:
             if project.tasks:
-                raise UserError(_('You cannot delete a project containing tasks. You can either delete all the project\'s tasks and then delete the project or simply deactivate the project.'))
+                raise UserError(_('You cannot delete a project containing tasks. You can either archive it or first delete all of its tasks.'))
             if project.analytic_account_id and not project.analytic_account_id.line_ids:
                 analytic_accounts_to_delete |= project.analytic_account_id
         res = super(Project, self).unlink()

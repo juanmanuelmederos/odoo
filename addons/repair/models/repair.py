@@ -227,7 +227,7 @@ class Repair(models.Model):
         @return: True
         """
         if self.filtered(lambda repair: repair.state != 'draft'):
-            raise UserError(_("Can only confirm draft repairs."))
+            raise UserError(_("Only draft repairs can be confirmed."))
         before_repair = self.filtered(lambda repair: repair.invoice_method == 'b4repair')
         before_repair.write({'state': '2binvoiced'})
         to_confirm = self - before_repair
@@ -241,7 +241,7 @@ class Repair(models.Model):
         if self.filtered(lambda repair: repair.state == 'done'):
             raise UserError(_("Cannot cancel completed repairs."))
         if any(repair.invoiced for repair in self):
-            raise UserError(_('Repair order is already invoiced.'))
+            raise UserError(_('The repair order is already invoiced.'))
         self.mapped('operations').write({'state': 'cancel'})
         return self.write({'state': 'cancel'})
 
@@ -290,7 +290,7 @@ class Repair(models.Model):
         Invoice = self.env['account.invoice']
         for repair in self.filtered(lambda repair: repair.state not in ('draft', 'cancel') and not repair.invoice_id):
             if not repair.partner_id.id and not repair.partner_invoice_id.id:
-                raise UserError(_('You have to select a Partner Invoice Address in the repair form!'))
+                raise UserError(_('You have to select an invoice address in the repair form.'))
             comment = repair.quotation_notes
             if repair.invoice_method != 'none':
                 if group and repair.partner_invoice_id.id in invoices_group:
@@ -349,7 +349,7 @@ class Repair(models.Model):
                     else:
                         name = fee.name
                     if not fee.product_id:
-                        raise UserError(_('No product defined on Fees!'))
+                        raise UserError(_('No product defined on fees.'))
 
                     if fee.product_id.property_account_income_id:
                         account_id = fee.product_id.property_account_income_id.id

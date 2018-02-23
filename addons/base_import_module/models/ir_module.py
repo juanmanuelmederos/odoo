@@ -45,7 +45,7 @@ class IrModule(models.Model):
                 )
             raise UserError(err)
         elif 'web_studio' not in installed_mods and _is_studio_custom(path):
-            raise UserError(_("Studio customizations require Studio"))
+            raise UserError(_("Studio customizations require the Odoo Studio app."))
 
         mod = known_mods_names.get(module)
         if mod:
@@ -103,7 +103,7 @@ class IrModule(models.Model):
         if not module_file:
             raise Exception(_("No file sent."))
         if not zipfile.is_zipfile(module_file):
-            raise UserError(_('File is not a zip file!'))
+            raise UserError(_('Only zip files are supported.'))
 
         success = []
         errors = dict()

@@ -95,7 +95,7 @@ class ProductUoM(models.Model):
         self.ensure_one()
         if self.category_id.id != to_unit.category_id.id:
             if self._context.get('raise-exception', True):
-                raise UserError(_('Conversion from Product UoM %s to Default UoM %s is not possible as they both belong to different Category!.') % (self.name, to_unit.name))
+                raise UserError(_('Conversion from Product UoM %s to Default UoM %s is not possible as they both belong to different Category.') % (self.name, to_unit.name))
             else:
                 return qty
         amount = qty / self.factor

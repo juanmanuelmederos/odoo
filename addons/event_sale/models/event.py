@@ -154,7 +154,7 @@ class EventTicket(models.Model):
     @api.constrains('event_type_id', 'event_id')
     def _constrains_event(self):
         if any(ticket.event_type_id and ticket.event_id for ticket in self):
-            raise UserError(_('Ticket should belong to either event category or event but not both'))
+            raise UserError(_('Ticket cannot belong to both the event category and the event itself.'))
 
     @api.onchange('product_id')
     def _onchange_product_id(self):

@@ -387,7 +387,7 @@ class PurchaseOrder(models.Model):
                     raise UserError(_('Unable to cancel purchase order %s as some receptions have already been done.') % (order.name))
             for inv in order.invoice_ids:
                 if inv and inv.state not in ('cancel', 'draft'):
-                    raise UserError(_("Unable to cancel this purchase order. You must first cancel related vendor bills."))
+                    raise UserError(_("Unable to cancel this purchase order. You must first cancel the related vendor bills."))
 
             # If the product is MTO, change the procure_method of the the closest move to purchase to MTS.
             # The purpose is to link the po that the user will manually generate to the existing moves's chain.

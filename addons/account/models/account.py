@@ -113,7 +113,7 @@ class AccountAccount(models.Model):
         opening_move = self.company_id.account_opening_move_id
 
         if not opening_move:
-            raise UserError(_("No opening move defined !"))
+            raise UserError(_("You must first define an opening move."))
 
         if opening_move.state == 'draft':
             # check whether we should create a new move line or modify an existing one
@@ -252,7 +252,7 @@ class AccountAccount(models.Model):
             ('matched_credit_ids', '!=', False),
         ])
         if partial_lines_count > 0:
-            raise UserError(_('You cannot switch an account to not allow the reconciliation'
+            raise UserError(_('You cannot switch an account to prevent the reconciliation'
                               'if some partial reconciliations are still pending.'))
         query = """
             UPDATE account_move_line
@@ -279,7 +279,7 @@ class AccountAccount(models.Model):
     @api.multi
     def unlink(self):
         if self.env['account.move.line'].search([('account_id', 'in', self.ids)], limit=1):
-            raise UserError(_('You cannot do that on an account that contains journal items.'))
+            raise UserError(_('You cannot perform this action on an account that contains journal items.'))
         #Checking whether the account is set as a property to any Partner or not
         values = ['account.account,%s' % (account_id,) for account_id in self.ids]
         partner_prop_acc = self.env['ir.property'].search([('value_reference', 'in', values)], limit=1)

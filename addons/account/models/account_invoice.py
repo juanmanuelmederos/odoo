@@ -528,7 +528,7 @@ class AccountInvoice(models.Model):
                     if field not in vals and invoice[field]:
                         vals[field] = invoice._fields[field].convert_to_write(invoice[field], invoice)
         if not vals.get('account_id',False):
-            raise UserError(_('Configuration error!\nCould not find any account to create the invoice, are you sure you have a chart of account installed?'))
+            raise UserError(_('No account was found to create the invoice, be sure you have installed a chart of account.'))
 
         invoice = super(AccountInvoice, self.with_context(mail_create_nolog=True)).create(vals)
 

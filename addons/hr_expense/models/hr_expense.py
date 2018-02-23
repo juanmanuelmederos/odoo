@@ -115,7 +115,7 @@ class HrExpense(models.Model):
     @api.onchange('product_uom_id')
     def _onchange_product_uom_id(self):
         if self.product_id and self.product_uom_id.category_id != self.product_id.uom_id.category_id:
-            raise UserError(_('Selected Unit of Measure does not belong to the same category as the product Unit of Measure'))
+            raise UserError(_('Selected Unit of Measure does not belong to the same category as the product Unit of Measure.'))
 
     # ----------------------------------------
     # ORM Overrides
@@ -163,7 +163,7 @@ class HrExpense(models.Model):
         if any(expense.state != 'draft' for expense in self):
             raise UserError(_("You cannot report twice the same line!"))
         if len(self.mapped('employee_id')) != 1:
-            raise UserError(_("You cannot report expenses for different employees in the same report!"))
+            raise UserError(_("You cannot report expenses for different employees in the same report."))
         return {
             'name': _('New Expense Report'),
             'type': 'ir.actions.act_window',

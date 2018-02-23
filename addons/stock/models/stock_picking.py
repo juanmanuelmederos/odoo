@@ -673,7 +673,7 @@ class Picking(models.Model):
     def button_validate(self):
         self.ensure_one()
         if not self.move_lines and not self.move_line_ids:
-            raise UserError(_('Please add some lines to move'))
+            raise UserError(_('Please add some items to move.'))
 
         # If no lots when needed, raise error
         picking_type = self.picking_type_id
@@ -1004,7 +1004,7 @@ class Picking(models.Model):
 
                 operation_ids.write({'result_package_id': package.id})
             else:
-                raise UserError(_('Please process some quantities to put in the pack first!'))
+                raise UserError(_('You must first set the quantity you will put in the pack.'))
         return package
 
     def put_in_pack(self):
