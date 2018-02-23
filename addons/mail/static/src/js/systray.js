@@ -4,7 +4,6 @@ odoo.define('mail.systray', function (require) {
 var config = require('web.config');
 var core = require('web.core');
 var datepicker = require('web.datepicker');
-var framework = require('web.framework');
 var session = require('web.session');
 var SystrayMenu = require('web.SystrayMenu');
 var Widget = require('web.Widget');
@@ -175,9 +174,9 @@ var ActivityMenu = Widget.extend({
         this._updateActivityPreview();
         return this._super();
     },
-
+    //--------------------------------------------------
     // Private
-
+    //--------------------------------------------------
     /**
      * Make RPC and get current user's activity details
      * @private
@@ -260,10 +259,31 @@ var ActivityMenu = Widget.extend({
             this.$el.toggleClass('o_no_notification', !this.activityCounter);
         }
     },
-
-
+    /**
+     * Save the reminder to database using datepicker date and field as note
+     * @private
+     */
+    _saveReminder: function () {
+        var note = this.$('.o_reminder_input').val().trim();
+        if (!note) {
+            return;
+        }
+        var values = {'note': note};
+        var reminderDateTime = this.reminderDateTimeWidget.getValue();
+        if (reminderDateTime) {
+            values = _.extend(values, {'date_deadline': reminderDateTime});
+        }
+        this.$('.o_reminder_show').removeClass('hidden');
+        this.$('.o_reminder').addClass('hidden');
+        this._rpc({
+            model: 'mail.activity',
+            method: 'create',
+            args: [values]
+        }).then(this._updateActivityPreview.bind(this));
+    },
+    //------------------------------------------------------------
     // Handlers
-
+    //-----------------------------------------------------------
     /**
      * Redirect to particular model view
      * @private
@@ -313,10 +333,13 @@ var ActivityMenu = Widget.extend({
      */
     _onAddReminderClick: function (event) {
         event.stopPropagation();
+        if (!this.reminderDateTimeWidget){
+            this.reminderDateTimeWidget = new datepicker.DateWidget(this, {useCurrent: true});
+            this.reminderDateTimeWidget.appendTo(this.$('.o_reminder_datetime'));
+        }
         this.$('.o_reminder_show, .o_reminder').toggleClass('hidden');
         this.$('.o_reminder_input').val('').focus();
-        this.reminderDateTimeWidget = new datepicker.DateWidget(this, {useCurrent: true});
-        this.reminderDateTimeWidget.appendTo(this.$('.o_reminder_datetime'));
+      
     },
     /**
      * When focusing on input for new quick reminder systerm tray must be open.
@@ -347,22 +370,7 @@ var ActivityMenu = Widget.extend({
      * @param {MouseEvent} event
      */
     _onReminderSaveClick: function (event) {
-        var note = this.$('.o_reminder_input').val().trim();
-        if (!note) {
-            return;
-        }
-        var values = {'note': note};
-        var reminderDateTime = this.reminderDateTimeWidget.getValue();
-        if (reminderDateTime) {
-            values = _.extend(values, {'date_deadline': reminderDateTime});
-        }
-        this.$('.o_reminder_show').removeClass('hidden');
-        this.$('.o_reminder').addClass('hidden');
-        this._rpc({
-            model: 'mail.activity',
-            method: 'create',
-            args: [values]
-        }).then(this._updateActivityPreview.bind(this));
+        this._saveReminder();
     },
     /**
      * Handling Enter key for quick create reminder.
@@ -372,7 +380,7 @@ var ActivityMenu = Widget.extend({
      */
     _onReminderInputKeyDown: function (event) {
         if (event.which === $.ui.keyCode.ENTER) {
-            this._onReminderSaveClick(event);
+            this._saveReminder();
         }
     },
 });

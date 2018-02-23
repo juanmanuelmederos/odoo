@@ -80,7 +80,7 @@ QUnit.test('activity menu widget: menu with no records', function (assert) {
 });
 
 QUnit.test('activity menu widget: activity menu with 4 records', function (assert) {
-    assert.expect(22);
+    assert.expect(10);
     var self = this;
     var activityMenu = new systray.ActivityMenu();
     testUtils.addMockEnvironment(activityMenu, {
@@ -140,7 +140,36 @@ QUnit.test('activity menu widget: activity menu with 4 records', function (asser
     };
     activityMenu.$('.dropdown-toggle').click();
     activityMenu.$(".o_mail_navbar_dropdown_channels > div[data-model_name='Issue']").click();
+    
+    activityMenu.destroy();
+});
 
+QUnit.test('activity menu widget: reminder menu with 4 records', function (assert) {
+    assert.expect(12);
+    var self = this;
+    var activityMenu = new systray.ActivityMenu();
+    testUtils.addMockEnvironment(activityMenu, {
+        services: this.services,
+        mockRPC: function (route, args) {
+            if (args.method === 'activity_user_count') {
+                return $.when(self.data['mail.activity.menu']['records']);
+            }
+            if (args.method === "create") {
+                assert.deepEqual(args.args, [{'note': 'New Reminder'}], 'Create reminder should get proper value');
+                _.each(self.data['mail.activity.menu'].records, function (record) {
+                    if (record.model === "mail.activity") {
+                        record.today_count += 1;
+                        record.total_count += 1;
+                    }
+                });
+                return $.when();
+            }
+            return this._super(route, args);
+        },
+    });
+    activityMenu.appendTo($('#qunit-fixture'));
+
+    var context = {};
     // Test case for reminders
     testUtils.intercept(activityMenu, 'do_action', function(event) {
         assert.deepEqual(event.data.options.additional_context, context, "reminder wrong context value");
