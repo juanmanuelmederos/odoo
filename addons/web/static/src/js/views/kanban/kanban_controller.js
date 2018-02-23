@@ -29,7 +29,7 @@ var KanbanController = BasicController.extend({
         kanban_load_more: '_onLoadMore',
         kanban_load_records: '_onLoadColumnRecords',
         column_toggle_fold: '_onToggleColumn',
-        kanban_column_records_active_status: '_onToggleActiveRecords',
+        kanban_column_records_toggle_active: '_onToggleActiveRecords',
     }),
     /**
      * @override

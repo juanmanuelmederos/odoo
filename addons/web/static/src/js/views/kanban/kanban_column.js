@@ -363,22 +363,9 @@ var KanbanColumn = Widget.extend({
      */
     _onArchiveRecords: function (event) {
         event.preventDefault();
-        var buttons = [
-            {
-                text: _t("Ok"),
-                classes: 'btn-primary',
-                close: true,
-                click: this.trigger_up.bind(this, 'kanban_column_records_active_status', {archive: true}),
-            },
-            {text: _t("Cancel"), close: true}
-        ];
-        new Dialog(this, {
-            size: 'medium',
-            buttons: buttons,
-            $content: $('<div>', {
-                text: _t("Are you sure that you want to archive all the records from this column ?")
-            }),
-        }).open();
+        Dialog.confirm(this, _t("Are you sure that you want to archive all the records from this column?"), {
+            confirm_callback: this.trigger_up.bind(this, 'kanban_column_records_toggle_active', {archive: true}),
+        });
     },
     /**
      * @private
@@ -386,7 +373,7 @@ var KanbanColumn = Widget.extend({
      */
     _onUnarchiveRecords: function (event) {
         event.preventDefault();
-        this.trigger_up('kanban_column_records_active_status', {archive: false});
+        this.trigger_up('kanban_column_records_toggle_active', {archive: false});
     }
 });
 
