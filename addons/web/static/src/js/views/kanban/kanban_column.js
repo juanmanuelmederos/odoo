@@ -96,7 +96,6 @@ var KanbanColumn = Widget.extend({
         }
         this.$header.find('.o_kanban_header_title').tooltip();
 
-        var oldMousePosX, oldMousePosY, count = 0;
         var sortable = new Sortable(this.el, {
             group: { name: ".o_kanban_group", pull: ['clone']},
             ghostClass: "oe_kanban_card_ghost",
@@ -105,6 +104,9 @@ var KanbanColumn = Widget.extend({
             draggable: ".o_kanban_record",
             filter: ".o_updating",
             delay: config.device.isMobile ? 200 : 0,
+            forceFallback: true,
+            fallbackClass: "o_kanban_record_clone",
+            scroll: $('o_kanban_view')[0],
             scrollFn: function(offsetX, offsetY, originalEvent, touchEvt, hoverTargetEl) {
                 if(offsetX != 0 ) {
                     if(config.device.isMobile){
@@ -117,35 +119,11 @@ var KanbanColumn = Widget.extend({
                     }
                 }
             },
-            onStart: function (event) {
-                self.$el.addClass('o_kanban_hover');
-                if(!config.device.isMobile){
-                    $(event.item).clone().addClass('o_kanban_record_clone').css({
-                        'width': $(event.item).outerWidth() + 'px',
-                        'opacity': '1',
-                        'pointerEvents': 'none',
-                        'top': event.item.offsetTop,
-                        'left': event.item.offsetLeft,
-                        'will-change': "",
-                    }).appendTo(self.$el);;
-                }
-            },
             onMove: function (event) {
                 $('.o_kanban_hover').removeClass('o_kanban_hover');
                 $(event.to).addClass('o_kanban_hover');
             },
-            onEnd: function () {
-                if($('.o_kanban_record_clone') && !config.device.isMobile) {
-                    $('.o_kanban_record_clone').remove();
-                }
-            },
             onSort: function (event) {
-                // we need to remove clone because when we sort card in same stage or from one to another
-                // at that time onSort is called first and after onEnd so need to remove o_kanban_record_clone first 
-                // because it gives traceback
-                if($('.o_kanban_record_clone') && !config.device.isMobile) {
-                    $('.o_kanban_record_clone').remove();
-                }
                 var record = $(event.item).data('record');
                 var index = self.records.indexOf(record);
                 if (record) {
@@ -162,20 +140,6 @@ var KanbanColumn = Widget.extend({
                     }
                 }
             },
-        });
-        self.$('.o_kanban_record').on('mousedown', function (e) {
-            if (!config.device.isMobile) {
-                oldMousePosX = e.originalEvent.clientX;
-                oldMousePosY = e.originalEvent.clientY;
-            }
-        });
-        self.$('.o_kanban_record').on('drag', function (e) {
-            var left = self.$('.o_kanban_record_clone')[0].offsetLeft + (e.originalEvent.clientX - oldMousePosX)
-            var top = self.$('.o_kanban_record_clone')[0].offsetTop + (e.originalEvent.clientY - oldMousePosY)
-            $('.o_kanban_record_clone').css('left', left);
-            $('.o_kanban_record_clone').css('top', top);
-            oldMousePosX = e.originalEvent.clientX;
-            oldMousePosY = e.originalEvent.clientY;
         });
         this.$el.click(function (event) {
             if (self.folded) {
