@@ -1563,7 +1563,7 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
     @api.model
     def _read_group_fill_results(self, domain, groupby, remaining_groupbys,
                                  aggregated_fields, count_field,
-                                 read_group_result, read_group_order=None):
+                                 read_group_result, read_group_order=None, label=True):
         """Helper method for filling in empty groups for all possible values of
            the field being grouped by"""
         field = self._fields[groupby]
@@ -1587,7 +1587,8 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
                 order = tools.reverse_order(order)
             groups = getattr(self, field.group_expand)(groups, domain, order)
             groups = groups.sudo()
-            values = groups.name_get()
+            # trick: using an empty label does not change the format of results
+            values = groups.name_get() if label else [(group.id, "") for group in groups]
             value2key = lambda value: value and value[0]
 
         else:
@@ -1811,7 +1812,7 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
         return data
 
     @api.model
-    def read_group(self, domain, fields, groupby, offset=0, limit=None, orderby=False, lazy=True):
+    def read_group(self, domain, fields, groupby, offset=0, limit=None, orderby=False, lazy=True, label=True):
         """
         Get the list of records in list view grouped by the given ``groupby`` fields
 
@@ -1831,6 +1832,7 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
         :param bool lazy: if true, the results are only grouped by the first groupby and the 
                 remaining groupbys are put in the __context key.  If false, all the groupbys are
                 done in one call.
+        :param bool label: when false, the many2one fields are given an empty label
         :return: list of dictionaries(one dictionary for each record) containing:
 
                     * the values of fields grouped by the fields in ``groupby`` argument
@@ -1840,7 +1842,8 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
         :raise AccessError: * if user has no read rights on the requested object
                             * if user tries to bypass access rules for read on the requested object
         """
-        result = self._read_group_raw(domain, fields, groupby, offset=offset, limit=limit, orderby=orderby, lazy=lazy)
+        result = self._read_group_raw(domain, fields, groupby, offset=offset, limit=limit,
+                                      orderby=orderby, lazy=lazy, label=label)
 
         groupby = [groupby] if isinstance(groupby, pycompat.string_types) else list(OrderedSet(groupby))
         dt = [
@@ -1861,7 +1864,7 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
         return result
 
     @api.model
-    def _read_group_raw(self, domain, fields, groupby, offset=0, limit=None, orderby=False, lazy=True):
+    def _read_group_raw(self, domain, fields, groupby, offset=0, limit=None, orderby=False, lazy=True, label=True):
         self.check_access_rights('read')
         query = self._where_calc(domain)
         fields = fields or [f.name for f in self._fields.values() if f.store]
@@ -1936,7 +1939,7 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
         if not groupby_fields:
             return fetched_data
 
-        self._read_group_resolve_many2one_fields(fetched_data, annotated_groupbys)
+        self._read_group_resolve_many2one_fields(fetched_data, annotated_groupbys, label)
 
         data = ({k: self._read_group_prepare_data(k,v, groupby_dict) for k,v in r.items()} for r in fetched_data)
         result = [self._read_group_format_result(d, annotated_groupbys, groupby, domain) for d in data]
@@ -1948,15 +1951,17 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
             result = self._read_group_fill_results(
                 domain, groupby_fields[0], groupby[len(annotated_groupbys):],
                 aggregated_fields, count_field, result, read_group_order=order,
+                label=label,
             )
         return result
 
-    def _read_group_resolve_many2one_fields(self, data, fields):
+    def _read_group_resolve_many2one_fields(self, data, fields, label=True):
         many2onefields = {field['field'] for field in fields if field['type'] == 'many2one'}
         for field in many2onefields:
             ids_set = {d[field] for d in data if d[field]}
             m2o_records = self.env[self._fields[field].comodel_name].browse(ids_set)
-            data_dict = dict(m2o_records.name_get())
+            # trick: using an empty label does not change the format of results
+            data_dict = dict(m2o_records.name_get()) if label else dict.fromkeys(ids_set, "")
             for d in data:
                 d[field] = (d[field], data_dict[d[field]]) if d[field] else False
 
