@@ -6,7 +6,7 @@
             <field name="inherit_id" ref="product.product_template_form_view"/>
             <field name="arch" type="xml">
                 <group name="email_template_and_project" position="attributes">
-                    <attribute name="string">Email</attribute>
+                    <attribute name="string">Automatic Email at Invoice</attribute>
                     <attribute name="attrs"></attribute>
                 </group>
                 <group name="email_template_and_project" position="inside">
