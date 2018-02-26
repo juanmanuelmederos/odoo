@@ -159,11 +159,6 @@ class Partner(models.Model):
                 raise ValidationError(_('Error ! You cannot create recursive associated members.'))
             level -= 1
 
-    @api.model
-    def _cron_update_membership(self):
-        # used to recompute 'membership_state'; should no longer be necessary
-        pass
-
     @api.multi
     def create_membership_invoice(self, product_id=None, datas=None):
         """ Create Customer Invoice of Membership for partners.
