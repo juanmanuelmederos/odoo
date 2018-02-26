@@ -342,7 +342,7 @@ class SaleOrderLine(models.Model):
             try:
                 self.env['procurement.group'].run(line.product_id, product_qty, procurement_uom, line.order_id.partner_shipping_id.property_stock_customer, line.name, line.order_id.name, values)
             except UserError as error:
-                errors.append(error.name)
+                errors.append(error.args[0])
         if errors:
             raise UserError('\n'.join(errors))
         return True

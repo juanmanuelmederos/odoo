@@ -7,7 +7,7 @@ import psycopg2
 from odoo.addons import decimal_precision as dp
 
 from odoo import api, fields, models, tools, _
-from odoo.exceptions import ValidationError, RedirectWarning, except_orm
+from odoo.exceptions import ValidationError, RedirectWarning
 from odoo.tools import pycompat
 
 
@@ -461,7 +461,7 @@ class ProductTemplate(models.Model):
                     with self._cr.savepoint(), tools.mute_logger('odoo.sql_db'):
                         variant.unlink()
                 # We catch all kind of exception to be sure that the operation doesn't fail.
-                except (psycopg2.Error, except_orm):
+                except (psycopg2.Error, Exception):
                     variant.write({'active': False})
                     pass
         return True

@@ -4,7 +4,6 @@ import warnings
 from lxml import etree
 
 from odoo.tools import pycompat
-from ..exceptions import except_orm
 from ..models import (
     MetaModel,
     BaseModel,

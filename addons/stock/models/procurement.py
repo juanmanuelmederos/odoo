@@ -254,7 +254,7 @@ class ProcurementGroup(models.Model):
                     origin = (move.group_id and (move.group_id.name + ":") or "") + (move.rule_id and move.rule_id.name or move.origin or move.picking_id.name or "/")
                     self.run(move.product_id, move.product_uom_qty, move.product_uom, move.location_id, move.rule_id and move.rule_id.name or "/", origin, values)
             except UserError as error:
-                self.env['procurement.rule']._log_next_activity(move.product_id, error.name)
+                self.env['procurement.rule']._log_next_activity(move.product_id, error.args[0])
         if use_new_cursor:
             self._cr.commit()
 
@@ -373,7 +373,7 @@ class ProcurementGroup(models.Model):
                                             self.env['procurement.group'].run(orderpoint.product_id, qty_rounded, orderpoint.product_uom, orderpoint.location_id,
                                                                               orderpoint.name, orderpoint.name, values)
                                     except UserError as error:
-                                        self.env['procurement.rule']._log_next_activity(orderpoint.product_id, error.name)
+                                        self.env['procurement.rule']._log_next_activity(orderpoint.product_id, error.args[0])
                                     self._procurement_from_orderpoint_post_process([orderpoint.id])
                                 if use_new_cursor:
                                     cr.commit()

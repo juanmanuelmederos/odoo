@@ -3,7 +3,7 @@
 #
 from datetime import date, datetime
 
-from odoo.exceptions import AccessError, UserError, except_orm
+from odoo.exceptions import AccessError, UserError
 from odoo.tests import common
 from odoo.tools import mute_logger, float_repr, pycompat
 
