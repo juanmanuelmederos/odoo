@@ -1619,7 +1619,7 @@ class AccountInvoiceLine(models.Model):
         if not part:
             warning = {
                     'title': _('Warning!'),
-                    'message': _('You must first select a partner!'),
+                    'message': _('You must first select a partner.'),
                 }
             return {'warning': warning}
 
@@ -1685,7 +1685,7 @@ class AccountInvoiceLine(models.Model):
             if self.product_id.uom_id.category_id.id != self.uom_id.category_id.id:
                 warning = {
                     'title': _('Warning!'),
-                    'message': _('The selected unit of measure is not compatible with the unit of measure of the product.'),
+                    'message': _('The selected unit of measure has to be in the same category as the product unit of measure.'),
                 }
                 self.uom_id = self.product_id.uom_id.id
         if warning:

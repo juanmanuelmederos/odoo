@@ -169,7 +169,7 @@ class Repair(models.Model):
         if not self.product_id or not self.product_uom:
             return res
         if self.product_uom.category_id != self.product_id.uom_id.category_id:
-            res['warning'] = {'title': _('Warning'), 'message': _('The Product Unit of Measure you chose has a different category than in the product form.')}
+            res['warning'] = {'title': _('Warning'), 'message': _('The product unit of measure you chose has a different category than the product unit of measure.')}
             self.product_uom = self.product_id.uom_id.id
         return res
 
@@ -581,14 +581,14 @@ class RepairLine(models.Model):
             warning = False
             if not pricelist:
                 warning = {
-                    'title': _('No Pricelist!'),
+                    'title': _('No pricelist found.'),
                     'message':
                         _('You have to select a pricelist in the Repair form !\n Please set one before choosing a product.')}
             else:
                 price = pricelist.get_product_price(self.product_id, self.product_uom_qty, partner)
                 if price is False:
                     warning = {
-                        'title': _('No valid pricelist line found !'),
+                        'title': _('No valid pricelist line found.'),
                         'message':
                             _("Couldn't find a pricelist line matching this product and quantity.\nYou have to change either the product, the quantity or the pricelist.")}
                 else:
@@ -639,14 +639,14 @@ class RepairFee(models.Model):
         warning = False
         if not pricelist:
             warning = {
-                'title': _('No Pricelist!'),
+                'title': _('No pricelist found.'),
                 'message':
                     _('You have to select a pricelist in the Repair form !\n Please set one before choosing a product.')}
         else:
             price = pricelist.get_product_price(self.product_id, self.product_uom_qty, partner)
             if price is False:
                 warning = {
-                    'title': _('No valid pricelist line found !'),
+                    'title': _('No valid pricelist line found.'),
                     'message':
                         _("Couldn't find a pricelist line matching this product and quantity.\nYou have to change either the product, the quantity or the pricelist.")}
             else:
