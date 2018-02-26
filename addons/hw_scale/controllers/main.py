@@ -52,7 +52,38 @@ ScaleProtocol = namedtuple(
     'ScaleProtocol',
     "name baudrate bytesize stopbits parity timeout writeTimeout weightRegexp statusRegexp "
     "statusParse commandTerminator outputTerminator commandDelay weightDelay newWeightDelay commandSupport "
-    "weightCommand zeroCommand tareCommand clearCommand emptyAnswerValid autoResetWeight")
+    "weightCommand zeroCommand tareCommand clearCommand emptyAnswerValid autoResetWeight maxConnectionTry")
+
+# The WeightOnlyProtocol with standard baudrate & bytesize : Scale with this protocol gives us continuous output of
+# Only Weight without sending any command to scale, output doesn't require to be parsed. We will identify
+# each new weight with outputTerminator.
+# Tested Scales: 1.) PointDigi Scale, Yes Yes Technologies (https://www.yesyestechnologies.com/007.php)
+#                2.) Essae Bench-scale (http://www.essae.com/ds-450ss-bench-scale)
+WeightOnlyProtocol = ScaleProtocol(
+    name='Weight Only Protocol',
+    baudrate=9600,
+    bytesize=serial.EIGHTBITS,
+    stopbits=serial.STOPBITS_ONE,
+    parity=serial.PARITY_NONE,
+    timeout=1,
+    writeTimeout=1,
+    weightRegexp=None,
+    statusRegexp=None,
+    statusParse=None,
+    commandDelay=0,
+    weightDelay=0,
+    newWeightDelay=0,
+    commandTerminator='',
+    outputTerminator='\r',
+    commandSupport=False,
+    weightCommand='',
+    zeroCommand='',
+    tareCommand='',
+    clearCommand=None,
+    emptyAnswerValid=False,
+    autoResetWeight=False,
+    maxConnectionTry=3,
+)
 
 # 8217 Mettler-Toledo (Weight-only) Protocol, as described in the scale's Service Manual.
 #    e.g. here: https://www.manualslib.com/manual/861274/Mettler-Toledo-Viva.html?page=51#manual
@@ -83,36 +114,7 @@ Toledo8217Protocol = ScaleProtocol(
     clearCommand='C',
     emptyAnswerValid=False,
     autoResetWeight=False,
-)
-
-# The WeightOnlyProtocol with standard baudrate & bytesize : Scale with this protocol gives us continuous output of
-# Only Weight without sending any command to scale, output doesn't require to be parsed. We will identify
-# each new weight with outputTerminator.
-# Tested Scales: 1.) PointDigi Scale, Yes Yes Technologies (https://www.yesyestechnologies.com/007.php)
-#                2.) Essae Bench-scale (http://www.essae.com/ds-450ss-bench-scale)
-WeightOnlyProtocol = ScaleProtocol(
-    name='Weight Only Protocol',
-    baudrate=9600,
-    bytesize=serial.EIGHTBITS,
-    stopbits=serial.STOPBITS_ONE,
-    parity=serial.PARITY_NONE,
-    timeout=1,
-    writeTimeout=1,
-    weightRegexp=None,
-    statusRegexp=None,
-    statusParse=None,
-    commandDelay=0,
-    weightDelay=0,
-    newWeightDelay=0,
-    commandTerminator='',
-    outputTerminator='\r',
-    commandSupport=False,
-    weightCommand='',
-    zeroCommand='',
-    tareCommand='',
-    clearCommand=None,
-    emptyAnswerValid=False,
-    autoResetWeight=False,
+    maxConnectionTry=1,
 )
 
 # The ADAM scales have their own RS232 protocol, usually documented in the scale's manual
@@ -144,6 +146,7 @@ ADAMEquipmentProtocol = ScaleProtocol(
     clearCommand=None, # No clear command -> Tare again
     emptyAnswerValid=True, # AZExtra does not answer unless a new non-zero weight has been detected
     autoResetWeight=True,  # AZExtra will not return 0 after removing products
+    maxConnectionTry=1,
 )
 
 
@@ -262,33 +265,34 @@ class Scale(Thread):
                         continue
                     path = self.input_dir + device
                     for protocol in SCALE_PROTOCOLS:
-                        _logger.info('Probing %s with protocol %s', path, protocol)
-                        connection = serial.Serial(path,
-                                                   baudrate=protocol.baudrate,
-                                                   bytesize=protocol.bytesize,
-                                                   stopbits=protocol.stopbits,
-                                                   parity=protocol.parity,
-                                                   timeout=1,      # longer timeouts for probing
-                                                   writeTimeout=1) # longer timeouts for probing
-                        if protocol.commandSupport:
-                            connection.write(protocol.weightCommand + protocol.commandTerminator)
-                            time.sleep(protocol.commandDelay)
-                        answer = self._get_raw_response(connection, protocol)
-                        weight, weight_info, status = self._parse_weight_answer(protocol, answer)
-                        if status:
-                            _logger.info('Probing %s: no valid answer to protocol %s', path, protocol.name)
-                        else:
-                            _logger.info('Probing %s: answer looks ok for protocol %s', path, protocol.name)
-                            self.path_to_scale = path
-                            self.protocol = protocol
-                            self.set_status(
-                                'connected',
-                                'Connected to %s with %s protocol' % (device, protocol.name)
-                            )
-                            connection.timeout = protocol.timeout
-                            connection.writeTimeout = protocol.writeTimeout
-                            hw_proxy.rs232_devices[path] = DRIVER_NAME
-                            return connection
+                        for tryCounter in range(protocol.maxConnectionTry):
+                            _logger.info('Try No:%s | Probing %s with protocol %s', tryCounter+1, path, protocol)
+                            connection = serial.Serial(path,
+                                                       baudrate=protocol.baudrate,
+                                                       bytesize=protocol.bytesize,
+                                                       stopbits=protocol.stopbits,
+                                                       parity=protocol.parity,
+                                                       timeout=1,      # longer timeouts for probing
+                                                       writeTimeout=1) # longer timeouts for probing
+                            if protocol.commandSupport:
+                                connection.write(protocol.weightCommand + protocol.commandTerminator)
+                                time.sleep(protocol.commandDelay)
+                            answer = self._get_raw_response(connection, protocol)
+                            weight, weight_info, status = self._parse_weight_answer(protocol, answer)
+                            if status:
+                                _logger.info('Probing %s: no valid answer to protocol %s', path, protocol.name)
+                            else:
+                                _logger.info('Probing %s: answer looks ok for protocol %s', path, protocol.name)
+                                self.path_to_scale = path
+                                self.protocol = protocol
+                                self.set_status(
+                                    'connected',
+                                    'Connected to %s with %s protocol' % (device, protocol.name)
+                                )
+                                connection.timeout = protocol.timeout
+                                connection.writeTimeout = protocol.writeTimeout
+                                hw_proxy.rs232_devices[path] = DRIVER_NAME
+                                return connection
 
                 self.set_status('disconnected', 'No supported RS-232 scale found')
             except Exception as e:
