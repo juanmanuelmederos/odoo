@@ -433,6 +433,7 @@ var StatementModel = BasicModel.extend({
             model: 'account.reconciliation.widget',
             method: 'get_bank_statement_line_data',
             args: [ids, excluded_ids],
+            context: self.context,
         })
         .then(self._formatLine.bind(self));
     },
@@ -1084,6 +1085,7 @@ var StatementModel = BasicModel.extend({
                 model: 'account.reconciliation.widget',
                 method: 'get_move_lines_for_bank_statement_line',
                 args: [line.id, line.st_line.partner_id, excluded_ids, filter, offset, limit],
+                context: this.context,
             })
             .then(this._formatMoveLine.bind(this, handle));
     },
