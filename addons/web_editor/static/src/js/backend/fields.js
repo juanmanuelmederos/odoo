@@ -83,26 +83,34 @@ var FieldTextHtmlSimple = basic_fields.DebouncedField.extend(TranslatableFieldMi
     // Private
     //--------------------------------------------------------------------------
 
+    /**
+     * Return the domain for attachments used in media dialog.
+     * We look for attachments related to the current document. If there is a value for the model
+     * field, it is used to search attachments, and the attachments from the current document are
+     * filtered to display only user-created documents.
+     * In the case of a wizard such as mail, we have the documents uploaded and those of the model
+     *
+     * @private
+     * @returns {Array} "ir.attachment" odoo domain.
+     */
     _getAttachmentsDomain: function () {
         var domain = ['|', ['id', 'in', _.pluck(this.attachments, 'id')]];
         if (this.recordData.model) {
             domain = domain.concat([
+                '|',
                 '&',
                 '&',
                 ['res_model', '=', this.model],
                 ['res_id', '=', this.res_id|0],
-                ['create_uid', '=', session.uid]]);
+                ['create_uid', '=', session.uid],
+                '&',
+                ['res_model', '=', this.recordData.model],
+                ['res_id', '=', this.recordData.res_id|0]]);
         } else {
             domain = domain.concat([
                 '&',
                 ['res_model', '=', this.model],
                 ['res_id', '=', this.res_id|0]]);
-        }
-        if (this.recordData.model) {
-            domain = ['|'].concat(domain).concat([
-                '&',
-                ['res_model', '=', this.recordData.model],
-                ['res_id', '=', this.recordData.res_id|0]]);
         }
         return domain;
     },
@@ -133,9 +141,14 @@ var FieldTextHtmlSimple = basic_fields.DebouncedField.extend(TranslatableFieldMi
             onChange: this._doDebouncedAction.bind(this),
         };
 
-        var fieldNameAttachment = _.first(_.find(_.pairs(this.recordData), function (value) {
-            return _.isObject(value[1]) && value[1].model === "ir.attachment";
-        }));
+        var fieldNameAttachment =_.chain(this.recordData)
+            .pairs()
+            .find(function (value) {
+                return _.isObject(value[1]) && value[1].model === "ir.attachment";
+            })
+            .first()
+            .value();
+
         if (fieldNameAttachment) {
             this.fieldNameAttachment = fieldNameAttachment;
             this.attachments = [];
@@ -160,6 +173,12 @@ var FieldTextHtmlSimple = basic_fields.DebouncedField.extend(TranslatableFieldMi
         }
         return this.$content.html();
     },
+    /**
+     * Tigger_up 'field_changed' add record into the "ir.attachment" field found in the view.
+     * This method is called when an image is uploaded by the media dialog.
+     *
+     * @private
+     */
     _onImageUpload: function (data) {
         var self = this;
         var attachments = _.filter(data[2], function (attachment) {
