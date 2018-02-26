@@ -428,11 +428,11 @@ class SaleOrder(models.Model):
                     references[invoice] = references[invoice] | order
 
         if not invoices:
-            raise UserError(_('There is no invoiceable line.'))
+            raise UserError(_('There is no invoiceable line. If a product has a Delivered quantities invoicing policy, please make sure that a quantity has been delivered.'))
 
         for invoice in invoices.values():
             if not invoice.invoice_line_ids:
-                raise UserError(_('There is no invoiceable line.'))
+                raise UserError(_('There is no invoiceable line. If a product has a Delivered quantities invoicing policy, please make sure that a quantity has been delivered.'))
             # If invoice is negative, do a refund invoice instead
             if invoice.amount_untaxed < 0:
                 invoice.type = 'out_refund'
