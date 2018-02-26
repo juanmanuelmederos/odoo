@@ -33,9 +33,17 @@ var PosBaseWidget = Widget.extend({
         amount = this.format_currency_no_symbol(amount,precision);
 
         if (currency.position === 'after') {
-            return amount + ' ' + (currency.symbol || '');
+            if (currency.is_space === true) {
+                return amount + ' ' + (currency.symbol || '');
+            } else {
+                return amount + (currency.symbol || '');
+            }
         } else {
-            return (currency.symbol || '') + ' ' + amount;
+            if (currency.is_space === true) {
+                return (currency.symbol || '') + ' ' + amount;
+            } else {
+                return (currency.symbol || '') + amount;
+            }
         }
     },
     format_currency_no_symbol: function(amount, precision) {
