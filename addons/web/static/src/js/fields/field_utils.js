@@ -315,9 +315,17 @@ function formatMonetary(value, field, options) {
         return formatted_value;
     }
     if (currency.position === "after") {
-        return formatted_value += '&nbsp;' + currency.symbol;
+        if (this.currency.is_space === true) {
+            return formatted_value += '&nbsp;' + currency.symbol;
+        } else {
+            return formatted_value += currency.symbol;
+        }
     } else {
-        return currency.symbol + '&nbsp;' + formatted_value;
+        if (this.currency.is_space === true) {
+            return currency.symbol + '&nbsp;' + formatted_value;
+        } else {
+            return currency.symbol + formatted_value;
+        }
     }
 }
 

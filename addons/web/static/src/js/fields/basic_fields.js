@@ -619,9 +619,17 @@ var FieldMonetary = InputField.extend({
             // Prepare and add the currency symbol
             var $currencySymbol = $('<span>', {text: this.currency.symbol});
             if (this.currency.position === "after") {
-                this.$el.append($currencySymbol);
+                if (this.currency.is_space === true) {
+                    this.$el.append('&nbsp;' + $currencySymbol);
+                } else {
+                    this.$el.append($currencySymbol);
+                }
             } else {
-                this.$el.prepend($currencySymbol);
+                if (this.currency.is_space === true) {
+                    this.$el.prepend($currencySymbol + '&nbsp;');
+                } else {
+                    this.$el.prepend($currencySymbol);
+                }
             }
         }
     },
