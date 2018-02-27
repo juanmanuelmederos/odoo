@@ -11,7 +11,6 @@
     """,
 
     'author': "Odoo S.A.",
-    'website': "https://wwww.odoo.com",
 
     'category': 'Uncategorized',
     'version': '0.1',
