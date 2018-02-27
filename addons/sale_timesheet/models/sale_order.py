@@ -227,6 +227,7 @@ class SaleOrderLine(models.Model):
             'analytic_account_id': account.id,
             'partner_id': self.order_id.partner_id.id,
             'sale_line_id': self.id,
+            'billable_type': 'task_rate',
         }
         if self.product_id.project_template_id:
             values['name'] = "%s - %s" % (values['name'], self.product_id.project_template_id.name)
@@ -256,6 +257,7 @@ class SaleOrderLine(models.Model):
             'sale_line_id': self.id,
             'company_id': self.company_id.id,
             'user_id': False,  # force non assigned task, as created as sudo()
+            'billable_type': 'task_rate',
         }
 
     @api.multi

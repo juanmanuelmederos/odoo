@@ -9,6 +9,18 @@ class Project(models.Model):
     _inherit = 'project.project'
 
     sale_line_id = fields.Many2one('sale.order.line', 'Sales Order Line', domain=[('is_expense', '=', False)], readonly=True, help="Sale order line from which the project has been created. Used for tracability.")
+    billable_type = fields.Selection([
+        ('task_rate', 'At Task Rate'),
+        ('no', 'No Billable')
+    ], string="Billable Type", default='no', required=True, help='Billable type implies:\n'
+        ' - At task rate: each time spend on a task is billed at task rate.\n'
+        ' - No Billable: track time without invoicing it')
+
+    @api.constrains('billable_type', 'sale_line_id')
+    def _check_billable_type(self):
+        for project in self:
+            if not project.sale_line_id and project.billable_type != 'no':
+                raise ValidationError(_("A billable project should be linked to a Sales Order Item."))
 
     @api.multi
     def action_view_timesheet(self):
@@ -63,13 +75,19 @@ class ProjectTask(models.Model):
             partner = project.sale_line_id.order_partner_id
         return partner
 
+    @api.model
     def _default_sale_line_id(self):
         if 'default_project_id' in self.env.context:
             project = self.env['project.project'].browse(self.env.context['default_project_id'])
-            return project.sale_line_id
+            if project.billable_type != 'no':
+                return project.sale_line_id
 
     sale_line_id = fields.Many2one('sale.order.line', 'Sales Order Item', default=_default_sale_line_id, domain="[('is_service', '=', True), ('order_partner_id', '=', partner_id), ('is_expense', '=', False)]")
     sale_order_id = fields.Many2one('sale.order', 'Sales Order', related='sale_line_id.order_id', store=True, readonly=True)
+    billable_type = fields.Selection([
+        ('task_rate', 'At Task Rate'),
+        ('no', 'No Billable')
+    ], string="Billable Type", default='no', required=True, readonly=True)
 
     @api.onchange('project_id')
     def _onchange_project(self):
@@ -88,18 +106,33 @@ class ProjectTask(models.Model):
                 if not task.sale_line_id.is_service or task.sale_line_id.is_expense:
                     raise ValidationError(_("The Sales order line should be one selling a service, and no coming from expense."))
 
+    @api.multi
+    @api.constrains('billable_type', 'sale_line_id')
+    def _check_billable_type(self):
+        for task in self:
+            if task.sale_line_id and task.billable_type == 'no':
+                raise ValidationError(_("A billable task should be linked to a sale order item."))
+
     @api.model
     def create(self, values):
-        # sub task has the same so line than their parent
+        # sub task has the same so line and billable type as their parent
         if 'parent_id' in values and values['parent_id']:
-                values['sale_line_id'] = self.env['project.task'].browse(values['parent_id']).sudo().sale_line_id.id
+            parent_task_sudo = self.env['project.task'].browse(values['parent_id']).sudo()
+            values['sale_line_id'] = parent_task_sudo.sale_line_id.id
+            values['billable_type'] = parent_task_sudo.billable_type
+        # determine billable type from the project
+        if not values.get('billable_type'):
+            values['billable_type'] = self.env['project.project'].browse(values['project_id']).billable_type
         return super(ProjectTask, self).create(values)
 
     @api.multi
     def write(self, values):
+        """ NOTE: changing task from project does not modify its billable type. """
         # sub task has the same so line than their parent
         if 'parent_id' in values and values['parent_id']:
-            values['sale_line_id'] = self.env['project.task'].browse(values['parent_id']).sudo().sale_line_id.id
+            parent_task_sudo = self.env['project.task'].browse(values['parent_id']).sudo()
+            values['sale_line_id'] = parent_task_sudo.sale_line_id.id
+            values['billable_type'] = parent_task_sudo.billable_type
 
         result = super(ProjectTask, self).write(values)
         # reassign SO line on related timesheet lines
@@ -118,7 +151,7 @@ class ProjectTask(models.Model):
     @api.multi
     def _subtask_implied_fields(self):
         fields_list = super(ProjectTask, self)._subtask_implied_fields()
-        fields_list += ['sale_line_id']
+        fields_list += ['sale_line_id', 'billable_type']
         return fields_list
 
     @api.multi
