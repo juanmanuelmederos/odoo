@@ -504,30 +504,28 @@ var BasicComposer = Widget.extend({
         this.mention_manager.prependTo(this.$('.o_composer'));
 
         // Drag-Drop files
-        // Allowing html to detect dragenter and dragleave for display
-        // Drop area when user drag any external files to browser window.
-        var $root = $("html");
+        // Allowing body to detect dragenter and dragleave for display
+        var $root = $("body");
 
-        // On every dragenter chain created with parent child element and
-        // released at dragleave from bottom child to parent
-        // dragingToElement counter will make sure that all drag leaved outof window
-        this.dragingToElement = 0;
-        $root.on("dragenter", function (event) {
-            self.dragingToElement++;
-        });
+        // On every dragenter chain created with parent child element and released at dragleave from bottom child to parent
+        // used setTimeout to avoid extra mouseleave event(to fix flickering issue)
+        var dragTimer;
         $root.on("dragleave", function (event) {
-            self.dragingToElement--;
-            if (self.dragingToElement === 0) {
-                self.$(".o_file_drop_zone_container").addClass("hidden");
+            if (event.originalEvent.clientX === 0 && event.originalEvent.clientY === 0) {
+                dragTimer = setTimeout(function () {
+                    self.$(".o_file_drop_zone_container").addClass("hidden");
+                }, 100);
             }
         });
         $root.on("dragover", function (event) {
+            clearTimeout(dragTimer);
             self._onFileDragOver(event);
         });
         return this._super();
     },
 
     destroy: function () {
+        $("body").off('dragleave dragover');
         $(window).off(this.fileupload_id);
         return this._super.apply(this, arguments);
     },
