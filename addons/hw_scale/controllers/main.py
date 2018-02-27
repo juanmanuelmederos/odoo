@@ -51,7 +51,7 @@ def _toledo8217StatusParse(status):
 ScaleProtocol = namedtuple(
     'ScaleProtocol',
     "name baudrate bytesize stopbits parity timeout writeTimeout weightRegexp statusRegexp "
-    "statusParse commandTerminator outputTerminator commandDelay weightDelay newWeightDelay commandSupport "
+    "statusParse commandTerminator outputTerminator commandDelay weightDelay newWeightDelay "
     "weightCommand zeroCommand tareCommand clearCommand emptyAnswerValid autoResetWeight maxConnectionTry")
 
 # The WeightOnlyProtocol with standard baudrate & bytesize : Scale with this protocol gives us continuous output of
@@ -67,7 +67,7 @@ WeightOnlyProtocol = ScaleProtocol(
     parity=serial.PARITY_NONE,
     timeout=1,
     writeTimeout=1,
-    weightRegexp=None,
+    weightRegexp="\s*([0-9.]+)",
     statusRegexp=None,
     statusParse=None,
     commandDelay=0,
@@ -75,7 +75,6 @@ WeightOnlyProtocol = ScaleProtocol(
     newWeightDelay=0,
     commandTerminator='',
     outputTerminator='\r',
-    commandSupport=False,
     weightCommand='',
     zeroCommand='',
     tareCommand='',
@@ -107,7 +106,6 @@ Toledo8217Protocol = ScaleProtocol(
     newWeightDelay=0.2,
     commandTerminator='',
     outputTerminator=None,
-    commandSupport=True,
     weightCommand='W',
     zeroCommand='Z',
     tareCommand='T',
@@ -139,7 +137,6 @@ ADAMEquipmentProtocol = ScaleProtocol(
     newWeightDelay=5,  # AZExtra beeps every time you ask for a weight that was previously returned!
                        # Adding an extra delay gives the operator a chance to remove the products
                        # before the scale starts beeping. Could not find a way to disable the beeps.
-    commandSupport=True,
     weightCommand='P',
     zeroCommand='Z',
     tareCommand='T',
@@ -200,7 +197,7 @@ class Scale(Thread):
         answer = []
         while True:
             char = connection.read(1) # may return `bytes` or `str`
-            if not char or protocol.outputTerminator in char:
+            if not char or protocol.outputTerminator == char:
                 break
             else:
                 answer.append(char)
@@ -213,10 +210,6 @@ class Scale(Thread):
         weight, weight_info, status = None, None, None
         try:
             _logger.debug("Parsing weight [%r]", answer)
-            if not protocol.commandSupport:
-                # weight only protocol scale doesn't support sending command to scale
-                # And the responce from scale will be already Parsed.
-                return float(answer), 'ok', False
 
             if not answer and protocol.emptyAnswerValid:
                 # Some scales do not return the same value again, but we
@@ -274,7 +267,7 @@ class Scale(Thread):
                                                        parity=protocol.parity,
                                                        timeout=1,      # longer timeouts for probing
                                                        writeTimeout=1) # longer timeouts for probing
-                            if protocol.commandSupport:
+                            if protocol.weightCommand:
                                 connection.write(protocol.weightCommand + protocol.commandTerminator)
                                 time.sleep(protocol.commandDelay)
                             answer = self._get_raw_response(connection, protocol)
@@ -316,7 +309,7 @@ class Scale(Thread):
         with self.scalelock:
             p = self.protocol
             try:
-                if p.commandSupport:
+                if p.weightCommand:
                     self.device.write(p.weightCommand + p.commandTerminator)
                     time.sleep(p.commandDelay)
                 answer = self._get_raw_response(self.device, p)
@@ -338,7 +331,7 @@ class Scale(Thread):
 
     def set_zero(self):
         with self.scalelock:
-            if self.device and self.protocol.commandSupport:
+            if self.device and self.protocol.zeroCommand:
                 try:
                     self.device.write(self.protocol.zeroCommand + self.protocol.commandTerminator)
                     time.sleep(self.protocol.commandDelay)
@@ -351,7 +344,7 @@ class Scale(Thread):
 
     def set_tare(self):
         with self.scalelock:
-            if self.device and self.protocol.commandSupport:
+            if self.device and self.protocol.tareCommand:
                 try:
                     self.device.write(self.protocol.tareCommand + self.protocol.commandTerminator)
                     time.sleep(self.protocol.commandDelay)
@@ -364,7 +357,7 @@ class Scale(Thread):
 
     def clear_tare(self):
         with self.scalelock:
-            if self.device and self.protocol.commandSupport:
+            if self.device and self.protocol.clearCommand:
                 p = self.protocol
                 try:
                     # if the protocol has no clear, we can just tare again
