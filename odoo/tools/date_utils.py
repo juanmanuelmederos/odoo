@@ -32,10 +32,13 @@ def get_year(date):
 
 
 def get_fiscal_year(date, day, month):
-    date_to = type(date)(date.year, month, day)
+    max_day = calendar.monthrange(date.year, month)[1]
+    date_to = type(date)(date.year, month, min(day, max_day))
     if date <= date_to:
-        date_from = type(date)(date_to.year - 1, month, day) + relativedelta(days=1)
+        date_from = date_to - relativedelta(years=1)
+        date_from += relativedelta(days=1)
     else:
         date_from = date_to + relativedelta(days=1)
-        date_to = date_to.replace(year=date_to.year + 1)
+        max_day = calendar.monthrange(date_to.year + 1, date_to.month)[1]
+        date_to = type(date)(date.year + 1, month, min(day, max_day))
     return date_from, date_to
