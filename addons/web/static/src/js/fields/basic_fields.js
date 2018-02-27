@@ -1587,6 +1587,7 @@ var StateSelectionWidget = AbstractField.extend({
      * @param {MouseEvent} ev
      */
     _setSelection: function (ev) {
+        ev.preventDefault();
         var li = $(ev.target).closest('li');
         if (li.length) {
             var value = String(li.data('value'));

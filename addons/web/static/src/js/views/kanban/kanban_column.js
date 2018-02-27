@@ -96,21 +96,23 @@ var KanbanColumn = Widget.extend({
         }
         this.$header.find('.o_kanban_header_title').tooltip();
 
+        var count = 0;
         var sortable = new Sortable(this.el, {
-            group: { name: ".o_kanban_group", pull: ['clone']},
+            group: { name: ".o_kanban_group" },
             ghostClass: "oe_kanban_card_ghost",
-            sort: true,
-            dragClass: 'o_kanban_dragged_record',
+            chosenClass: "o_kanban_record_chosen",
             draggable: ".o_kanban_record",
             filter: ".o_updating",
+            fallbackClass: "o_kanban_record_clone",
+            scroll: config.device.isMobile ? true  : $('.o_content')[0],
+            scrollSpeed: 20,
             delay: config.device.isMobile ? 200 : 0,
             forceFallback: true,
-            fallbackClass: "o_kanban_record_clone",
-            scroll: $('o_kanban_view')[0],
-            scrollFn: function(offsetX, offsetY, originalEvent, touchEvt, hoverTargetEl) {
-                if(offsetX != 0 ) {
-                    if(config.device.isMobile){
-                        count += 1 // this method called when try to change the stage
+            scrollFn: (config.device.isMobile) ? function(offsetX, offsetY, originalEvent, touchEvt, hoverTargetEl) {
+                // this method called when try to change the stage
+                if(offsetX != 0) { // what to do in vertical scroll
+                    if(config.device.isMobile) {
+                        count += 1;
                         if (count > 30) {
                             var swipeTo = offsetX > 0 ? 'left' : 'right';
                             self.trigger_up("kanban_column_swipe_" + swipeTo);
@@ -118,12 +120,16 @@ var KanbanColumn = Widget.extend({
                         }
                     }
                 }
-            },
+                else if(offsetY != 0) {
+                    self.$el.scrollTop(self.$el.scrollTop() + offsetY);
+                }
+            } : false,
             onMove: function (event) {
                 $('.o_kanban_hover').removeClass('o_kanban_hover');
                 $(event.to).addClass('o_kanban_hover');
             },
             onSort: function (event) {
+                $('.o_kanban_view').off('mousemove');
                 var record = $(event.item).data('record');
                 var index = self.records.indexOf(record);
                 if (record) {
@@ -146,6 +152,7 @@ var KanbanColumn = Widget.extend({
                 self._onToggleFold(event);
             }
         });
+
         if (this.barOptions) {
             this.$el.addClass('o_kanban_has_progressbar');
             this.progressBar = new KanbanColumnProgressBar(this, this.barOptions, this.data);
