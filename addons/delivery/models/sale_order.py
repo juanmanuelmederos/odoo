@@ -67,9 +67,12 @@ class SaleOrder(models.Model):
     def action_view_sale_advance_payment_inv(self):
         res = super(SaleOrder, self).action_view_sale_advance_payment_inv()
         visible_options = res['context']['visibility']
-        if 'unbilled' in visible_options and not self.order_line.filtered(lambda line: line.invoice_status == 'no' and not line.is_delivery):
+        order_line = self.order_line.filtered(lambda line: line.invoice_status == 'no' and not line.is_delivery)
+        if 'unbilled' in visible_options and not order_line:
             visible_options.remove('unbilled')
-            res['context']['visibility'] = visible_options
+        if 'delivered' in visible_options and order_line and all(line.product_id.invoice_policy == 'delivery' for line in order_line):
+            visible_options.remove('delivered')
+        res['context']['visibility'] = visible_options
         return res
 
     @api.multi
@@ -120,14 +123,12 @@ class SaleOrder(models.Model):
         sol = SaleOrderLine.sudo().create(values)
         return sol
 
-    @api.depends('state', 'order_line.invoice_status')
     def _get_invoiced(self):
         super(SaleOrder, self)._get_invoiced()
         for order in self:
-            result = order.order_line.filtered(lambda x: not x.is_delivery)
-            if not any([line.product_id.invoice_policy == 'order' for line in result]):
-                for line in order.order_line.filtered(lambda x: x.state not in ('sale', 'done') or x.is_delivery):
-                    line.invoice_status = 'no'
+            order_line = order.order_line.filtered(lambda x: not x.is_delivery and not x.is_downpayment)
+            if all(line.product_id.invoice_policy == 'delivery' and line.invoice_status == 'no' for line in order_line):
+                order.invoice_status = 'no'
 
 
 class SaleOrderLine(models.Model):
