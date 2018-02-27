@@ -44,7 +44,7 @@ class ProductTemplate(models.Model):
             'domain': [('state', 'in', ['sale', 'done']), ('product_id.product_tmpl_id', '=', self.id)],
         }
 
-    sales_count = fields.Integer(compute='_sales_count', string='# Sales')
+    sales_count = fields.Integer(compute='_sales_count', string='# Sales', help="Sales in past 365 days")
     invoice_policy = fields.Selection(
         [('order', 'Ordered quantities'),
          ('delivery', 'Delivered quantities'),

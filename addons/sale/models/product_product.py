@@ -20,4 +20,4 @@ class ProductProduct(models.Model):
             product.sales_count = r.get(product.id, 0)
         return r
 
-    sales_count = fields.Integer(compute='_sales_count', string='# Sales')
+    sales_count = fields.Integer(compute='_sales_count', string='# Sales', help="Sales in past 365 days")

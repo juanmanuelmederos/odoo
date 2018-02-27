@@ -1122,7 +1122,7 @@ class ProductTemplate(models.Model):
         help="This account is used in automated inventory valuation to "\
             "record the price difference between a purchase order and its related vendor bill "\
             "when validating this vendor bill.")
-    purchase_count = fields.Integer(compute='_purchase_count', string='# Purchases')
+    purchase_count = fields.Integer(compute='_purchase_count', string='# Purchases', help="Purchase in last 365 days")
     purchase_method = fields.Selection([
         ('purchase', 'On ordered quantities'),
         ('receive', 'On received quantities'),
@@ -1148,7 +1148,7 @@ class ProductProduct(models.Model):
         for product in self:
             product.purchase_count = len(PurchaseOrderLines.filtered(lambda r: r.product_id == product).mapped('order_id'))
 
-    purchase_count = fields.Integer(compute='_purchase_count', string='# Purchases')
+    purchase_count = fields.Integer(compute='_purchase_count', string='# Purchases', help="Purchase in last 365 days")
 
 
 class ProductCategory(models.Model):

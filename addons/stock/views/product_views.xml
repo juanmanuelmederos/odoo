@@ -241,7 +241,7 @@
                             name="action_open_quants"
                             attrs="{'invisible':[('type', '!=', 'product')]}"
                             class="oe_stat_button" icon="fa-building-o">
-                            <field name="qty_available" widget="statinfo" string="On Hand"/>
+                            <field name="qty_available" widget="statinfo" string="UOM On Hand"/>
                         </button>
                         <button type="action"
                             name="%(stock.action_stock_level_forecast_report_template)d"
@@ -253,7 +253,7 @@
                                         (-<field name="outgoing_qty" widget="statinfo" nolabel="1"/>+<field name="incoming_qty" widget="statinfo" nolabel="1"/>)
                                     </span>
                                 </span>
-                                <span class="o_stat_text">Forecasted</span>
+                                <span class="o_stat_text">UOM Forecasted</span>
                             </div>
                         </button>
                         <button string="Product Moves" type="object"
