@@ -270,11 +270,12 @@ var FormRenderer = BasicRenderer.extend({
 
         $el.on('keydown', function(e) {
             if (e.which === $.ui.keyCode.TAB) {
-                e.preventDefault();
-                $(e.target).trigger('click');
+                //TODO : block on tab if btn-primary + show popup
+                console.info("TAB was pressed on", e.target.innerText);
+               
             } else if (e.which == $.ui.keyCode.ESCAPE) {
-                console.info("escape was pressed on", e.target.innerText)
-                //e.preventDefault();           
+                //TODO : do "cancel or discard" action + show popup
+                console.info("escape was pressed on", e.target.innerText);
             }
         });
     },

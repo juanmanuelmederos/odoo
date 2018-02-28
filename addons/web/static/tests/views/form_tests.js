@@ -6763,32 +6763,6 @@ QUnit.module('Views', {
         form.destroy();
     });
 
-    QUnit.test('Edit and Save buttons do their action on TAB', function (assert) {
-        assert.expect(2);
-
-        var form = createView({
-            View: FormView,
-            model: 'partner',
-            data: this.data,
-            arch: '<form>' +
-                    '<div class="oe_title">' +
-                        '<field name="display_name"/>' +
-                    '</div>' +
-                '</form>',
-            res_id: 1,
-        });
-
-        // focus on the edit button and hit TAB, it should trigger the EDIT
-        form.$buttons.find('.o_form_button_edit').focus().trigger($.Event('keydown', {which: $.ui.keyCode.TAB}));
-        assert.ok(form.$buttons.find('.o_form_button_save:visible')[0], "the button save should be visible");
-
-        // focus on the save button and hit TAB, it should trigger the save   
-        form.$buttons.find('.o_form_button_save').focus().trigger($.Event('keydown', {which: $.ui.keyCode.TAB}));
-        assert.ok(form.$buttons.find('.o_form_button_edit')[0], "the button edit should now be visible");
-
-        form.destroy();
-    });
-
     QUnit.module('FormViewTABFormButtons');
 
     QUnit.test('In Edition mode, after navigating to the last field, the default button when pressing TAB is SAVE', function (assert) {
