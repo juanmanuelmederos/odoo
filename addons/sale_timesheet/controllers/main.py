@@ -2,6 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 import babel
 from dateutil.relativedelta import relativedelta
+import simplejson as json
 
 from odoo import http, fields, _
 from odoo.http import request
@@ -21,6 +22,7 @@ class SaleTimesheetController(http.Controller):
         values = self._prepare_plan_values(projects)
         view = request.env.ref('sale_timesheet.timesheet_plan')
         return {
+            'actions': self._prepare_plan_actions(projects),
             'html_content': view.render(values)
         }
 
@@ -267,6 +269,17 @@ class SaleTimesheetController(http.Controller):
     # --------------------------------------------------
     # Actions: Stat buttons, ...
     # --------------------------------------------------
+
+    def _prepare_plan_actions(self, projects):
+        actions = []
+        if len(projects) == 1 and not projects.sale_line_id and not projects.tasks.mapped('sale_line_id'):
+            actions.append({
+                'label': _("Create a Sale Order"),
+                'type': 'action',
+                'action_id': 'sale_timesheet.project_project_action_multi_create_sale_order',
+                'context': json.dumps({'active_id': projects.id}),
+            })
+        return actions
 
     def _plan_get_stat_button(self, projects):
         stat_buttons = []

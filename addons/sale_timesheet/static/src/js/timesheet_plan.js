@@ -107,6 +107,19 @@ var PlanAction = Widget.extend(ControlPanelMixin, {
         this.$el.html(dom);
     },
     /**
+     * Set or Update the Action button in the Control Panel
+     * @param {array} buttons
+     * @private
+     */
+    _updateControlButtons(buttons){
+        if (this.$buttons) {
+            this.$buttons.off().destroy();
+        }
+        this.$buttons = $(QWeb.render("project.plan.ControlButtons", {buttons: buttons}));
+        this.update_cp();
+        this.$buttons.on('click', '.o_timesheet_plan_btn_action', this._onClickControlButton.bind(this));
+    },
+    /**
      * Call controller to get the html content
      * @private
      * @returns {Deferred}
@@ -118,6 +131,7 @@ var PlanAction = Widget.extend(ControlPanelMixin, {
             params: {domain: domain},
         }).then(function(result){
             self._refreshPlan(result['html_content']);
+            self._updateControlButtons(result['actions']);
         });
     },
 
@@ -174,6 +188,22 @@ var PlanAction = Widget.extend(ControlPanelMixin, {
         this.do_action(action, {
             additional_context: context
         });
+    },
+    /**
+     * Call the action of the action button from control panel, based on the data attribute on the button DOM
+     *
+     * @param {MouseEvent} event
+     * @private
+     */
+    _onClickControlButton: function (event) {
+        var $target = $(event.target);
+        var action_id = $target.data('action-id');
+        var context = $target.data('context');
+
+        return this.do_action(action_id, {
+            'additional_context': context,
+        });
+
     },
     _onRedirect: function (event) {
         event.preventDefault();
