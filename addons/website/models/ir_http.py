@@ -15,11 +15,11 @@ from odoo import api, models
 from odoo import SUPERUSER_ID
 from odoo.http import request
 from odoo.tools import config
-from odoo.exceptions import QWebException
 from odoo.tools.safe_eval import safe_eval
 from odoo.osv.expression import FALSE_DOMAIN
 
 from odoo.addons.http_routing.models.ir_http import ModelConverter, _guess_mimetype
+from odoo.addons.base.models.qweb import QWebException
 
 logger = logging.getLogger(__name__)
 
@@ -194,10 +194,8 @@ class Http(models.AbstractModel):
             if code == 500:
                 logger.error("500 Internal Server Error:\n\n%s", values['traceback'])
                 if 'qweb_exception' in values:
-                    view = request.env["ir.ui.view"]
-                    views = view._views_get(exception.qweb['template'])
-                    to_reset = views.filtered(lambda view: view.model_data_id.noupdate is True and view.arch_fs)
-                    values['views'] = to_reset
+                    IrUiView = request.env["ir.ui.view"]
+                    values['views'] = IrUiView._views_get(exception.qweb['template'])
             elif code == 403:
                 logger.warn("403 Forbidden:\n\n%s", values['traceback'])
 
