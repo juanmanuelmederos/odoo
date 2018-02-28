@@ -174,6 +174,11 @@ class AccountAnalyticLine(models.Model):
     company_id = fields.Many2one('res.company', string='Company', required=True, readonly=True, default=lambda self: self.env.user.company_id)
     currency_id = fields.Many2one(related="company_id.currency_id", string="Currency", readonly=True, store=True)
     group_id = fields.Many2one('account.analytic.group', related='account_id.group_id', store=True, readonly=True)
+    origin = fields.Selection([
+        ('manual', 'Manual'),
+        ('expense', 'Expense'),
+        ('invoice', 'Invoice'),
+    ], string="Origin", default='manual', required=True)
 
     @api.multi
     @api.constrains('company_id', 'account_id')

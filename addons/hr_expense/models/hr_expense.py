@@ -375,7 +375,7 @@ class HrExpense(models.Model):
 
         # post the moves
         for move in move_group_by_sheet.values():
-            move.post()
+            move.post(analytic_origin='expense')
 
         return move_group_by_sheet
 
@@ -591,7 +591,7 @@ class HrExpenseSheet(models.Model):
         MailFollowers = self.env['mail.followers']
         for partner in users.mapped('partner_id'):
             values['message_follower_ids'] += MailFollowers._add_follower_command(self._name, [], {partner.id: None}, {})[0]
-        
+
         if values.get('user_id') and values.get('user_id') != employee.user_id.id:
             resp_partner = self.env['res.users'].browse(values['user_id'])
             values['message_follower_ids'] += MailFollowers._add_follower_command(self._name, [], {resp_partner.partner_id.id: None}, {})[0]
