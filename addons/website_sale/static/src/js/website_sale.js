@@ -96,6 +96,8 @@ odoo.define('website_sale.website_sale', function (require) {
             var attribute_value_ids = product_dom.data("attribute_value_ids");
             if(_.isString(attribute_value_ids)) {
                 attribute_value_ids = JSON.parse(attribute_value_ids.replace(/'/g, '"'));
+                /* we must have an object inside .data so it can be modified below */
+                product_dom.data("attribute_value_ids", attribute_value_ids);
             }
             _.each(attribute_value_ids, function(entry) {
                 product_ids.push(entry[0]);});

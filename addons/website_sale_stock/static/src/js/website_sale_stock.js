@@ -39,7 +39,12 @@ $('.oe_website_sale').each(function() {
     $(oe_website_sale).on('change', 'ul[data-attribute_value_ids]', function(event) {
         var $ul = $(event.target).closest('.js_add_cart_variants');
         var $parent = $ul.closest('.js_product');
-        var variant_ids = JSON.parse($ul.data("attribute_value_ids").replace(/'/g, '"'));
+        var variant_ids = $ul.data("attribute_value_ids");
+        if(_.isString(attribute_value_ids)) {
+            variant_ids = JSON.parse(attribute_value_ids.replace(/'/g, '"'));
+            /* we must have an object inside .data so it can be modified below */
+            product_dom.data("attribute_value_ids", variant_ids);
+        }
         var values = [];
         $parent.find('input.js_variant_change:checked, select.js_variant_change').each(function() {
             values.push(+$(this).val());

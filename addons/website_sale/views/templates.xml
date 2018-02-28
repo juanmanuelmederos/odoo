@@ -456,7 +456,7 @@
                             <h1 itemprop="name" t-field="product.name">Product Name</h1>
                             <span itemprop="url" style="display:none;" t-esc="'%sshop/product/%s' % (request.httprequest.url_root, slug(product))"/>
                             <t t-set="attribute_value_ids" t-value="get_attribute_value_ids(product)"/>
-                            <form action="/shop/cart/update" class="js_add_cart_variants" t-att-data-attribute_value_ids="attribute_value_ids" method="POST">
+                            <form action="/shop/cart/update" class="js_add_cart_variants" t-att-data-attribute_value_ids="json.dumps(attribute_value_ids)" method="POST">
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()" />
                                 <div class="js_product" t-if="product.product_variant_ids">
                                     <t t-placeholder="select">
@@ -613,7 +613,7 @@
 
     <template id="variants">
       <t t-set="attribute_value_ids" t-value="get_attribute_value_ids(product)"/>
-      <ul t-attf-class="list-unstyled js_add_cart_variants #{ul_class}" t-att-data-attribute_value_ids="attribute_value_ids">
+      <ul t-attf-class="list-unstyled js_add_cart_variants #{ul_class}" t-att-data-attribute_value_ids="json.dumps(attribute_value_ids)">
         <t t-foreach="product.attribute_line_ids.sorted(key=lambda x: x.attribute_id.sequence)" t-as="variant_id">
           <li t-if="len(variant_id.value_ids) > 1">
 
