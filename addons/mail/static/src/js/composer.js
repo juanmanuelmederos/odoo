@@ -767,7 +767,7 @@ var BasicComposer = Widget.extend({
             var action = $form.attr("action");
             var data = new FormData($form[0]);
             _.each(files, function(file) {
-                data.set("ufile", file, file.name);
+                data.append("ufile", file, file.name);
                 $.ajax({
                     url: action,
                     type: "POST",
