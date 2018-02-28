@@ -5,7 +5,6 @@ var DocumentViewer = require('mail.DocumentViewer');
 var utils = require('mail.utils');
 
 var config = require('web.config');
-var ajax = require('web.ajax');
 var core = require('web.core');
 var data = require('web.data');
 var session = require('web.session');
@@ -508,17 +507,12 @@ var BasicComposer = Widget.extend({
         var $root = $("body");
 
         // On every dragenter chain created with parent child element and released at dragleave from bottom child to parent
-        // used setTimeout to avoid extra mouseleave event(to fix flickering issue)
-        var dragTimer;
         $root.on("dragleave", function (event) {
             if (event.originalEvent.clientX === 0 && event.originalEvent.clientY === 0) {
-                dragTimer = setTimeout(function () {
-                    self.$(".o_file_drop_zone_container").addClass("hidden");
-                }, 100);
+                self.$(".o_file_drop_zone_container").addClass("hidden");
             }
         });
         $root.on("dragover", function (event) {
-            clearTimeout(dragTimer);
             self._onFileDragOver(event);
         });
         return this._super();
