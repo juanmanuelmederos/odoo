@@ -430,6 +430,11 @@ class date(datetimelib.date):
         """
         return self.strftime(dateformat or self.dateformat)
 
+    @classmethod
+    def today(cls, tz=None):
+        """ Get today datetime """
+        return cls.from_date(datetimelib.datetime.now(tz=tz or utc_timezone))
+
     dateformat = property(get_dateformat, set_dateformat)
 
 class datetime(datetimelib.datetime, date):
@@ -738,9 +743,9 @@ class datetime(datetimelib.datetime, date):
         return self.to_utc().strftime("%Y%m%d%H%M%S")
 
     @classmethod
-    def today(cls):
+    def today(cls, tz=None):
         """ Get today datetime """
-        return cls.from_date(datetimelib.date.today()).replace(tzinfo=utc_timezone)
+        return cls.from_date(datetimelib.datetime.now(tz=tz or utc_timezone))
 
     dateformat = property(get_dateformat, set_dateformat)
 
@@ -837,9 +842,9 @@ class DatetimeContext(object):
         return datetime.now(with_microsecond)
 
     @classmethod
-    def today(cls):
+    def today(cls, tz=None):
         """ Get current day """
-        return datetime.today()
+        return datetime.today(tz=tz or utc_timezone)
 
     @classmethod
     def utcnow(cls, with_microsecond=False):

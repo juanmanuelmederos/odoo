@@ -7,7 +7,7 @@ try:
 except ImportError:
     from mock import patch
 
-from odoo.fields import Datetime
+from odoo.fields import Date
 from odoo.tools.datetime import datetime, date
 from odoo.tests import tagged
 
@@ -44,67 +44,67 @@ class TestTheoreticalAmount(TestAccountBudgetCommon):
             'planned_amount': -364,
         })
 
-        self.patcher = patch('odoo.addons.account_budget.models.account_budget.fields.Datetime', wraps=Datetime)
-        self.mock_datetime = self.patcher.start()
+        self.patcher = patch('odoo.addons.account_budget.models.account_budget.fields.Date', wraps=Date)
+        self.mock_date = self.patcher.start()
 
     def test_01(self):
         """Start"""
         date = datetime(2014, 1, 1)
-        self.mock_datetime.now.return_value = date
-        self.assertAlmostEqual(self.line.theoritical_amount)
+        self.mock_date.today.return_value = date
+        self.assertAlmostEqual(self.line.theoritical_amount, 0)
 
     def test_02(self):
         """After 24 hours"""
         date = datetime(2014, 1, 2)
-        self.mock_datetime.now.return_value = date
+        self.mock_date.today.return_value = date
         self.assertAlmostEqual(self.line.theoritical_amount, -1)
 
     def test_03(self):
         """After 36 hours"""
         date = datetime(2014, 1, 2, 12)
-        self.mock_datetime.now.return_value = date
+        self.mock_date.today.return_value = date
         self.assertAlmostEqual(self.line.theoritical_amount, -1.5)
 
     def test_04(self):
         """After 48 hours"""
         date = datetime(2014, 1, 3)
-        self.mock_datetime.now.return_value = date
+        self.mock_date.today.return_value = date
         self.assertAlmostEqual(self.line.theoritical_amount, -2)
 
     def test_05(self):
         """After 10 days"""
         date = datetime(2014, 1, 11)
-        self.mock_datetime.now.return_value = date
+        self.mock_date.today.return_value = date
         self.assertAlmostEqual(self.line.theoritical_amount, -10)
 
     def test_06(self):
         """After 50 days"""
         date = datetime(2014, 2, 20)
-        self.mock_datetime.now.return_value = date
+        self.mock_date.today.return_value = date
         self.assertAlmostEqual(self.line.theoritical_amount, -50)
 
     def test_07(self):
         """After 182 days, exactly half of the budget line"""
         date = datetime(2014, 7, 2)
-        self.mock_datetime.now.return_value = date
+        self.mock_date.today.return_value = date
         self.assertAlmostEqual(self.line.theoritical_amount, -182)
 
     def test_08(self):
         """After 308 days at noon"""
         date = datetime(2014, 11, 5, 12)  # remember, remember
-        self.mock_datetime.now.return_value = date
+        self.mock_date.today.return_value = date
         self.assertAlmostEqual(self.line.theoritical_amount, -308.5)
 
     def test_09(self):
         """One day before"""
         date = datetime(2014, 12, 30)
-        self.mock_datetime.now.return_value = date
+        self.mock_date.today.return_value = date
         self.assertAlmostEqual(self.line.theoritical_amount, -363)
 
     def test_10(self):
         """At last"""
         date = datetime(2014, 12, 31)
-        self.mock_datetime.now.return_value = date
+        self.mock_date.today.return_value = date
         self.assertAlmostEqual(self.line.theoritical_amount, -364)
 
     def tearDown(self):
