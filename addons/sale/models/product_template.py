@@ -29,19 +29,20 @@ class ProductTemplate(models.Model):
     @api.multi
     def action_view_sales(self):
         self.ensure_one()
-        action = self.env.ref('sale.action_product_sale_list')
-        product_ids = self.with_context(active_test=False).product_variant_ids.ids
+        action = self.env.ref('sale.action_orders')
+        view_id = self.env.ref('sale.view_sale_order_graph').id
 
         return {
             'name': action.name,
             'help': action.help,
             'type': action.type,
+            'target': action.target,
+            'view_id': view_id,
+            'views': [(view_id, 'graph')],
             'view_type': action.view_type,
             'view_mode': action.view_mode,
-            'target': action.target,
-            'context': "{'default_product_id': " + str(product_ids[0]) + "}",
             'res_model': action.res_model,
-            'domain': [('state', 'in', ['sale', 'done']), ('product_id.product_tmpl_id', '=', self.id)],
+            'context': "{'group_by': ['date_order', 'state']}",
         }
 
     sales_count = fields.Integer(compute='_sales_count', string='# Sales', help="Sales in past 365 days")

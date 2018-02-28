@@ -41,11 +41,22 @@ class ProductTemplate(models.Model):
 
     @api.multi
     def action_view_mos(self):
-        product_ids = self.mapped('product_variant_ids').ids
-        action = self.env.ref('mrp.act_product_mrp_production').read()[0]
-        action['domain'] = [('product_id', 'in', product_ids)]
-        action['context'] = {}
-        return action
+        self.ensure_one()
+        action = self.env.ref('mrp.mrp_production_action')
+        view_id = self.env.ref('mrp.view_production_graph').id
+
+        return {
+            'name': action.name,
+            'help': action.help,
+            'type': action.type,
+            'target': action.target,
+            'view_id': view_id,
+            'views': [(view_id, 'graph')],
+            'view_type': action.view_type,
+            'view_mode': action.view_mode,
+            'res_model': action.res_model,
+            'context': "{'group_by': ['date_planned_start', 'state']}",
+        }
 
 
 class ProductProduct(models.Model):

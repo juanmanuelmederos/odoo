@@ -1133,6 +1133,25 @@ class ProductTemplate(models.Model):
     purchase_line_warn = fields.Selection(WARNING_MESSAGE, 'Purchase Order Line', help=WARNING_HELP, required=True, default="no-message")
     purchase_line_warn_msg = fields.Text('Message for Purchase Order Line')
 
+    @api.multi
+    def action_view_pos(self):
+        self.ensure_one()
+        action = self.env.ref('purchase.purchase_rfq')
+        view_id = self.env.ref('purchase.purchase_order_graph').id
+
+        return {
+            'name': action.name,
+            'help': action.help,
+            'type': action.type,
+            'target': action.target,
+            'view_id': view_id,
+            'views': [(view_id, 'graph')],
+            'view_type': action.view_type,
+            'view_mode': action.view_mode,
+            'res_model': action.res_model,
+            'context': "{'group_by': ['date_order', 'state']}",
+        }
+
 
 class ProductProduct(models.Model):
     _name = 'product.product'
