@@ -7,7 +7,7 @@ from odoo.osv import expression
 
 
 class AccountAnalyticLine(models.Model):
-    _inherit = 'account.analytic.line'
+    _inherit = 'timesheet.line'
 
     def _default_sale_line_domain(self):
         domain = super(AccountAnalyticLine, self)._default_sale_line_domain()

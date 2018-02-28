@@ -64,7 +64,7 @@ class TestSaleTimesheet(TestCommonSaleTimesheetNoChart):
         sale_order.action_invoice_create()
 
         # let's log some timesheets (on the project created by so_line_ordered_project_only)
-        self.env['account.analytic.line'].create({
+        self.env['timesheet.line'].create({
             'name': 'Test Line',
             'project_id': sale_order.project_project_id.id,
             'task_id': task_serv2.id,
@@ -74,7 +74,7 @@ class TestSaleTimesheet(TestCommonSaleTimesheetNoChart):
         self.assertEqual(so_line_ordered_global_project.qty_delivered, 10.5, 'Timesheet directly on project does not increase delivered quantity on so line')
         self.assertEqual(sale_order.invoice_status, 'invoiced', 'Sale Timesheet: "invoice on order" timesheets should not modify the invoice_status of the so')
 
-        self.env['account.analytic.line'].create({
+        self.env['timesheet.line'].create({
             'name': 'Test Line',
             'project_id': sale_order.project_project_id.id,
             'task_id': task_serv2.id,
@@ -84,7 +84,7 @@ class TestSaleTimesheet(TestCommonSaleTimesheetNoChart):
         self.assertEqual(so_line_ordered_global_project.qty_delivered, 50, 'Sale Timesheet: timesheet does not increase delivered quantity on so line')
         self.assertEqual(sale_order.invoice_status, 'invoiced', 'Sale Timesheet: "invoice on order" timesheets should not modify the invoice_status of the so')
 
-        self.env['account.analytic.line'].create({
+        self.env['timesheet.line'].create({
             'name': 'Test Line',
             'project_id': sale_order.project_project_id.id,
             'unit_amount': 10,
@@ -93,7 +93,7 @@ class TestSaleTimesheet(TestCommonSaleTimesheetNoChart):
         self.assertEqual(so_line_ordered_project_only.qty_delivered, 0.0, 'Timesheet directly on project does not increase delivered quantity on so line')
 
         # log timesheet on task in global project (higher than the initial ordrered qty)
-        self.env['account.analytic.line'].create({
+        self.env['timesheet.line'].create({
             'name': 'Test Line',
             'project_id': sale_order.project_project_id.id,
             'task_id': task_serv2.id,
@@ -170,7 +170,7 @@ class TestSaleTimesheet(TestCommonSaleTimesheetNoChart):
         self.assertEqual(sale_order.tasks_count, 2, "Two tasks (1 per SO line) should have been created on SO confirmation")
 
         # let's log some timesheets
-        self.env['account.analytic.line'].create({
+        self.env['timesheet.line'].create({
             'name': 'Test Line',
             'project_id': task_serv2.project_id.id,  # global project
             'task_id': task_serv2.id,
@@ -187,7 +187,7 @@ class TestSaleTimesheet(TestCommonSaleTimesheetNoChart):
         self.assertTrue(float_is_zero(invoice.amount_total - so_line_deliver_global_project.price_unit * 10.5, precision_digits=2), 'Sale: invoice generation on timesheets product is wrong')
 
         # log some timesheets again
-        self.env['account.analytic.line'].create({
+        self.env['timesheet.line'].create({
             'name': 'Test Line',
             'project_id': task_serv2.project_id.id,  # global project
             'task_id': task_serv2.id,
@@ -215,7 +215,7 @@ class TestSaleTimesheet(TestCommonSaleTimesheetNoChart):
         self.assertEqual(sale_order.project_project_id, task_serv3.project_id, "SO should not have create a second project, since so line 3 already create one project for the SO")
 
         # let's log some timesheets on the project
-        self.env['account.analytic.line'].create({
+        self.env['timesheet.line'].create({
             'name': 'Test Line',
             'project_id': sale_order.project_project_id.id,  # global project
             'unit_amount': 7,
@@ -257,7 +257,7 @@ class TestSaleTimesheet(TestCommonSaleTimesheetNoChart):
         self.assertEqual(sale_order.invoice_status, 'no', 'Sale Timesheet: manually product should not need to be invoiced on so confirmation')
 
         # let's log some timesheets (on task and project)
-        timesheet1 = self.env['account.analytic.line'].create({
+        timesheet1 = self.env['timesheet.line'].create({
             'name': 'Test Line',
             'project_id': self.project_global.id,  # global project
             'task_id': so_line_manual_global_project.task_id.id,
@@ -265,7 +265,7 @@ class TestSaleTimesheet(TestCommonSaleTimesheetNoChart):
             'employee_id': self.employee_manager.id,
         })
 
-        timesheet2 = self.env['account.analytic.line'].create({
+        timesheet2 = self.env['timesheet.line'].create({
             'name': 'Test Line',
             'project_id': sale_order.project_project_id.id,  # global project
             'unit_amount': 3,

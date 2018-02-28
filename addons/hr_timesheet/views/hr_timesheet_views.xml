@@ -16,8 +16,8 @@
             Timesheet line Views
         -->
         <record id="hr_timesheet_line_tree" model="ir.ui.view">
-            <field name="name">account.analytic.line.tree.hr_timesheet</field>
-            <field name="model">account.analytic.line</field>
+            <field name="name">timesheet.line.tree.hr_timesheet</field>
+            <field name="model">timesheet.line</field>
             <field name="arch" type="xml">
                 <tree editable="top" string="Timesheet Activities" import="false">
                     <field name="date"/>
@@ -30,8 +30,8 @@
         </record>
 
         <record id="timesheet_view_tree_user" model="ir.ui.view">
-            <field name="name">account.analytic.line.view.tree.with.user</field>
-            <field name="model">account.analytic.line</field>
+            <field name="name">timesheet.line.view.tree.with.user</field>
+            <field name="model">timesheet.line</field>
             <field name="inherit_id" ref="hr_timesheet_line_tree"/>
             <field name="mode">primary</field>
             <field name="priority">10</field>
@@ -44,8 +44,8 @@
         </record>
 
         <record id="view_hr_timesheet_line_pivot" model="ir.ui.view">
-            <field name="name">account.analytic.line.pivot</field>
-            <field name="model">account.analytic.line</field>
+            <field name="name">timesheet.line.pivot</field>
+            <field name="model">timesheet.line</field>
             <field name="arch" type="xml">
                 <pivot string="Timesheet">
                     <field name="employee_id" type="row"/>
@@ -56,8 +56,8 @@
         </record>
 
         <record id="hr_timesheet_line_form" model="ir.ui.view">
-            <field name="name">account.analytic.line.form</field>
-            <field name="model">account.analytic.line</field>
+            <field name="name">timesheet.line.form</field>
+            <field name="model">timesheet.line</field>
             <field name="priority">1</field>
             <field name="inherit_id" eval="False"/>
             <field name="arch" type="xml">
@@ -83,8 +83,8 @@
         </record>
 
         <record id="timesheet_view_form_user" model="ir.ui.view">
-            <field name="name">account.analytic.line.tree.with.user</field>
-            <field name="model">account.analytic.line</field>
+            <field name="name">timesheet.line.tree.with.user</field>
+            <field name="model">timesheet.line</field>
             <field name="inherit_id" ref="hr_timesheet.hr_timesheet_line_form"/>
             <field name="mode">primary</field>
             <field name="priority">10</field>
@@ -97,8 +97,8 @@
         </record>
 
         <record id="timesheet_view_calendar" model="ir.ui.view">
-            <field name="name">account.analytic.line.calendar</field>
-            <field name="model">account.analytic.line</field>
+            <field name="name">timesheet.line.calendar</field>
+            <field name="model">timesheet.line</field>
             <field name="arch" type="xml">
                 <calendar string="Timesheets" date_start="date" color="employee_id">
                     <field name="name"/>
@@ -108,8 +108,8 @@
         </record>
 
         <record id="hr_timesheet_line_search" model="ir.ui.view">
-            <field name="name">account.analytic.line.search</field>
-            <field name="model">account.analytic.line</field>
+            <field name="name">timesheet.line.search</field>
+            <field name="model">timesheet.line</field>
             <field name="arch" type="xml">
                 <search string="Timesheet">
                     <field name="date"/>
@@ -141,8 +141,8 @@
             </field>
         </record>
         <record id="view_kanban_account_analytic_line" model="ir.ui.view">
-            <field name="name">account.analytic.line.kanban</field>
-            <field name="model">account.analytic.line</field>
+            <field name="name">timesheet.line.kanban</field>
+            <field name="model">timesheet.line</field>
             <field name="arch" type="xml">
                 <kanban class="o_kanban_mobile">
                     <field name="date"/>
@@ -189,7 +189,7 @@
         -->
         <record id="act_hr_timesheet_line" model="ir.actions.act_window">
             <field name="name">My Timesheets</field>
-            <field name="res_model">account.analytic.line</field>
+            <field name="res_model">timesheet.line</field>
             <field name="view_mode">tree,form</field>
             <field name="domain">[('project_id', '!=', False), ('user_id', '=', uid)]</field>
             <field name="context">{"search_default_week":1}</field>
@@ -240,7 +240,7 @@
 
         <record id="timesheet_action_all" model="ir.actions.act_window">
             <field name="name">All Timesheets</field>
-            <field name="res_model">account.analytic.line</field>
+            <field name="res_model">timesheet.line</field>
             <field name="search_view_id" ref="hr_timesheet_line_search"/>
             <field name="domain">[('project_id', '!=', False)]</field>
             <field name="context">{

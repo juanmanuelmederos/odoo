@@ -26,7 +26,7 @@ class SaleOrder(models.Model):
     def _compute_timesheet_ids(self):
         for order in self:
             if order.analytic_account_id:
-                order.timesheet_ids = self.env['account.analytic.line'].search(
+                order.timesheet_ids = self.env['timesheet.line'].search(
                     [('so_line', 'in', order.order_line.ids),
                         ('amount', '<=', 0.0),
                         ('project_id', '!=', False)])
@@ -164,7 +164,7 @@ class SaleOrderLine(models.Model):
     @api.multi
     def _timesheet_compute_delivered_quantity_domain(self):
         """ Hook for validated timesheet in addionnal module """
-        return [('project_id', '!=', False)]
+        return [('origin', '=', 'timesheet')]
 
     @api.multi
     @api.depends('product_id.type')

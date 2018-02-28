@@ -5,7 +5,7 @@ from odoo import api, fields, models
 
 
 class AccountAnalyticLine(models.Model):
-    _inherit = 'account.analytic.line'
+    _inherit = 'timesheet.line'
 
     @api.model
     def default_get(self, field_list):
@@ -51,6 +51,7 @@ class AccountAnalyticLine(models.Model):
         if vals.get('employee_id') and not vals.get('user_id'):
             employee = self.env['hr.employee'].browse(vals['employee_id'])
             vals['user_id'] = employee.user_id.id
+            vals['resource_id'] = employee.resource_id.id  # TODO JEM: clean this, as employee_id may be removed since we use resource_id
         # compute employee only for timesheet lines, makes no sense for other lines
         if not vals.get('employee_id') and vals.get('project_id'):
             if vals.get('user_id'):

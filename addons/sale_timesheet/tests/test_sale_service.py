@@ -48,7 +48,7 @@ class TestSaleService(TestCommonSaleTimesheetNoChart):
         self.assertEqual(task.email_from, self.sale_order.partner_id.email, 'Sale Service: Task Email should be the same as the SO customer Email')
 
         # log timesheet on task
-        self.env['account.analytic.line'].create({
+        self.env['timesheet.line'].create({
             'name': 'Test Line',
             'project_id': project.id,
             'task_id': task.id,
@@ -104,7 +104,7 @@ class TestSaleService(TestCommonSaleTimesheetNoChart):
         task = self.env['project.task'].search([('sale_line_id', '=', sale_order_line.id)])
 
         # let's log some timesheets
-        self.env['account.analytic.line'].create({
+        self.env['timesheet.line'].create({
             'name': 'Test Line',
             'project_id': self.sale_order.project_project_id.id,
             'task_id': task.id,
@@ -113,7 +113,7 @@ class TestSaleService(TestCommonSaleTimesheetNoChart):
         })
         self.assertEqual(self.sale_order.order_line.qty_delivered, 2, 'Sale: uom conversion of timesheets is wrong')
 
-        self.env['account.analytic.line'].create({
+        self.env['timesheet.line'].create({
             'name': 'Test Line',
             'project_id': self.sale_order.project_project_id.id,
             'task_id': task.id,
@@ -138,15 +138,15 @@ class TestSaleService(TestCommonSaleTimesheetNoChart):
         task_serv2 = self.env['project.task'].search([('sale_line_id', '=', so_line_deliver_global_project.id)])
 
         # let's log some timesheets (on the project created by so_line_ordered_project_only)
-        timesheets = self.env['account.analytic.line']
-        timesheets |= self.env['account.analytic.line'].create({
+        timesheets = self.env['timesheet.line']
+        timesheets |= self.env['timesheet.line'].create({
             'name': 'Test Line',
             'project_id': task_serv2.project_id.id,
             'task_id': task_serv2.id,
             'unit_amount': 4,
             'employee_id': self.employee_user.id,
         })
-        timesheets |= self.env['account.analytic.line'].create({
+        timesheets |= self.env['timesheet.line'].create({
             'name': 'Test Line',
             'project_id': task_serv2.project_id.id,
             'task_id': task_serv2.id,
@@ -194,7 +194,7 @@ class TestSaleService(TestCommonSaleTimesheetNoChart):
         task_serv2 = self.env['project.task'].search([('sale_line_id', '=', so_line_deliver_new_task_project.id)])
 
         # add a timesheet
-        timesheet1 = self.env['account.analytic.line'].create({
+        timesheet1 = self.env['timesheet.line'].create({
             'name': 'Test Line',
             'project_id': task_serv2.project_id.id,
             'task_id': task_serv2.id,
@@ -208,14 +208,14 @@ class TestSaleService(TestCommonSaleTimesheetNoChart):
         self.assertEqual(so_line_deliver_new_task_project.qty_delivered, 0.0, 'Delivered quantity should be reset to zero, since there is no more timesheet.')
 
         # log 2 new timesheets
-        timesheet2 = self.env['account.analytic.line'].create({
+        timesheet2 = self.env['timesheet.line'].create({
             'name': 'Test Line 2',
             'project_id': task_serv2.project_id.id,
             'task_id': task_serv2.id,
             'unit_amount': 4,
             'employee_id': self.employee_user.id,
         })
-        timesheet3 = self.env['account.analytic.line'].create({
+        timesheet3 = self.env['timesheet.line'].create({
             'name': 'Test Line 3',
             'project_id': task_serv2.project_id.id,
             'task_id': task_serv2.id,

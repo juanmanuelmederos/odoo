@@ -20,7 +20,7 @@ class Task(models.Model):
     total_hours_spent = fields.Float("Total Hours", compute='_compute_progress_hours', store=True, help="Computed as: Time Spent + Sub-tasks Hours.")
     progress = fields.Float("Progress", compute='_compute_progress_hours', store=True, group_operator="avg", help="Display progress of current task. In case if the total spent hours exceeds planned hours then the progress bar may go above 100%")
     subtask_effective_hours = fields.Float("Sub-tasks Hours Spent", compute='_compute_subtask_effective_hours', store=True, help="Sum of actually spent hours on the subtask(s)", oldname='children_hours')
-    timesheet_ids = fields.One2many('account.analytic.line', 'task_id', 'Timesheets')
+    timesheet_ids = fields.One2many('timesheet.line', 'task_id', 'Timesheets')
 
     @api.depends('timesheet_ids.unit_amount')
     def _compute_effective_hours(self):

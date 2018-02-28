@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <!-- Buttons of the Control Panel -->
+    <t t-name="project.plan.ControlButtons">
+    	<div class="o_timesheet_plan_control_buttons">
+	    	<t t-foreach="buttons" t-as="button">
+	            <button type="button" class="btn btn-primary btn-sm hidden-xs o_timesheet_plan_btn_action" t-att-data-action-id="button['action_id']" t-att-data-context="button['context']" t-att-title="button['label']">
+	            	<t t-esc="button['label']"/>
+	            </button>
+	        </t>
+	    </div>
+    </t>
+
+</templates>

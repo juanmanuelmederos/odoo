@@ -115,19 +115,19 @@ class TestSaleTimesheet(TestSale):
         task_delivered = self.env['project.task'].search([('sale_line_id', '=', sale_order_line_delivered.id)])
         task_ordered = self.env['project.task'].search([('sale_line_id', '=', sale_order_line_ordered.id)])
 
-        timesheet1 = self.env['account.analytic.line'].create({
+        timesheet1 = self.env['timesheet.line'].create({
             'name': 'ts 1',
             'unit_amount': 5,
             'task_id': task_delivered.id,
             'project_id': task_delivered.project_id.id,
         })
-        timesheet2 = self.env['account.analytic.line'].create({
+        timesheet2 = self.env['timesheet.line'].create({
             'name': 'ts 2',
             'unit_amount': 2,
             'task_id': task_delivered.id,
             'project_id': task_delivered.project_id.id,
         })
-        timesheet3 = self.env['account.analytic.line'].create({
+        timesheet3 = self.env['timesheet.line'].create({
             'name': 'ts 3',
             'unit_amount': 3,
             'task_id': task_ordered.id,
@@ -241,25 +241,25 @@ class TestSaleTimesheet(TestSale):
         task_delivered = self.env['project.task'].search([('sale_line_id', '=', sale_order_line_delivered.id)])
         task_ordered = self.env['project.task'].search([('sale_line_id', '=', sale_order_line_ordered.id)])
 
-        timesheet1 = self.env['account.analytic.line'].create({
+        timesheet1 = self.env['timesheet.line'].create({
             'name': 'ts 1',
             'unit_amount': 5,
             'task_id': task_delivered.id,
             'project_id': task_delivered.project_id.id,
         })
-        timesheet2 = self.env['account.analytic.line'].create({
+        timesheet2 = self.env['timesheet.line'].create({
             'name': 'ts 2',
             'unit_amount': 2,
             'task_id': task_delivered.id,
             'project_id': task_delivered.project_id.id,
         })
-        timesheet3 = self.env['account.analytic.line'].create({
+        timesheet3 = self.env['timesheet.line'].create({
             'name': 'ts 3',
             'unit_amount': 3,
             'task_id': task_ordered.id,
             'project_id': task_ordered.project_id.id,
         })
-        timesheet4 = self.env['account.analytic.line'].create({
+        timesheet4 = self.env['timesheet.line'].create({
             'name': 'ts 4',
             'unit_amount': 6,
             'task_id': task_ordered.id,

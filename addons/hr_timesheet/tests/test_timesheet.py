@@ -74,7 +74,7 @@ class TestTimesheet(TestCommonTimesheet):
 
     def test_log_timesheet(self):
         """ Test when log timesheet : check analytic account, user and employee are correctly set. """
-        Timesheet = self.env['account.analytic.line']
+        Timesheet = self.env['timesheet.line']
         # employee 1 log some timesheet on task 1
         timesheet1 = Timesheet.sudo(self.user_employee.id).create({
             'project_id': self.project_customer.id,
@@ -118,7 +118,7 @@ class TestTimesheet(TestCommonTimesheet):
     def test_log_access_rights(self):
         """ Test access rights : user can update its own timesheets only, and manager can change all """
         # employee 1 log some timesheet on task 1
-        Timesheet = self.env['account.analytic.line']
+        Timesheet = self.env['timesheet.line']
         timesheet1 = Timesheet.sudo(self.user_employee.id).create({
             'project_id': self.project_customer.id,
             'task_id': self.task1.id,
@@ -140,7 +140,7 @@ class TestTimesheet(TestCommonTimesheet):
 
     def test_transfert_project(self):
         """ Test transfert task with timesheet to another project """
-        Timesheet = self.env['account.analytic.line']
+        Timesheet = self.env['timesheet.line']
         # create a second project
         self.project_customer2 = self.env['project.project'].create({
             'name': 'Project NUMBER DEUX',
