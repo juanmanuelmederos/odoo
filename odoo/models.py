@@ -3031,11 +3031,13 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
                 for key in new_vals:
                     self._fields[key].determine_inverse(self)
                 self.modified(set(new_vals) - set(old_vals))
-                # check Python constraints for inversed fields
-                self._validate_fields(set(new_vals) - set(old_vals))
-                # recompute new-style fields
-                if self.env.recompute and self._context.get('recompute', True):
-                    self.recompute()
+
+            # check Python constraints
+            self._validate_fields(set(old_vals) | set(new_vals))
+
+            # recompute new-style fields
+            if self.env.recompute and self._context.get('recompute', True):
+                self.recompute()
 
         return True
 
@@ -3173,9 +3175,6 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
         if unknown_fields:
             _logger.warning('No such field(s) in model %s: %s.', self._name, ', '.join(unknown_fields))
 
-        # check Python constraints
-        self._validate_fields(vals)
-
         # TODO: use _order to set dest at the right position and not first node of parent
         # We can't defer parent_store computation because the stored function
         # fields that are computer may refer (directly or indirectly) to
@@ -3301,8 +3300,10 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
             for key in new_vals:
                 self._fields[key].determine_inverse(record)
             record.modified(set(new_vals) - set(old_vals))
-            # check Python constraints for inversed fields
-            record._validate_fields(set(new_vals) - set(old_vals))
+
+            # check Python constraints
+            record._validate_fields(self._fields)
+
             # recompute new-style fields
             if self.env.recompute and self._context.get('recompute', True):
                 self.recompute()
@@ -3442,9 +3443,6 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
 
             # for recomputing new-style fields
             self.modified(upd_todo)
-
-            # check Python constraints
-            self._validate_fields(vals)
 
             if self.env.recompute and self._context.get('recompute', True):
                 # recompute new-style fields
@@ -4825,9 +4823,12 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
                     target = recs.browse(ids)
                     try:
                         target._write(dict(vals))
+                        target._validate_fields(vals)
                     except MissingError:
                         # retry without missing records
-                        target.exists()._write(dict(vals))
+                        target = target.exists()
+                        target._write(dict(vals))
+                        target._validate_fields(vals)
 
             # mark computed fields as done
             for f in fs:
