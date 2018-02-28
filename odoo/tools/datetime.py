@@ -844,7 +844,7 @@ class DatetimeContext(object):
     @classmethod
     def today(cls, tz=None):
         """ Get current day """
-        return date.today(tz=tz or utc_timezone)
+        return datetime.today(tz=tz or utc_timezone)
 
     @classmethod
     def utcnow(cls, with_microsecond=False):
