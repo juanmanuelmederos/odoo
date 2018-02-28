@@ -294,7 +294,7 @@ class date(datetimelib.date):
     @classmethod
     def from_date(cls, new):
         """ Create an instance from date """
-        dateformat = getattr(new, 'dateformat', DEFAULT_SERVER_DATETIME_FORMAT)
+        dateformat = getattr(new, 'dateformat', DEFAULT_SERVER_DATE_FORMAT)
         return cls(new.year, new.month, new.day, dateformat=dateformat)
 
     @classmethod
@@ -558,6 +558,12 @@ class datetime(datetimelib.datetime, date):
     def get_dateformat(self):
         """ Get date format """
         return getattr(self, '_dateformat', DEFAULT_SERVER_DATETIME_FORMAT)
+
+    @classmethod
+    def from_date(cls, new):
+        """ Create an instance from date """
+        dateformat = getattr(new, 'dateformat', DEFAULT_SERVER_DATETIME_FORMAT)
+        return cls(new.year, new.month, new.day, dateformat=dateformat)
 
     @classmethod
     def from_datetime(cls, new, with_microsecond=False):
