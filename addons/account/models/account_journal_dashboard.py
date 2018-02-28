@@ -5,7 +5,7 @@ from babel.dates import format_datetime, format_date
 from odoo import models, api, _, fields
 from odoo.release import version
 from odoo.tools.misc import formatLang
-from odoo.tools.datetime import date, timedelta, datetime
+from odoo.tools.datetime import date as datelib, timedelta, datetime
 
 class account_journal(models.Model):
     _inherit = "account.journal"
@@ -51,7 +51,7 @@ class account_journal(models.Model):
         self.ensure_one()
         BankStatement = self.env['account.bank.statement']
         data = []
-        today = date.today()
+        today = datelib.today()
         last_month = today + timedelta(days=-30)
         locale = self._context.get('lang') or 'en_US'
 
@@ -77,7 +77,7 @@ class account_journal(models.Model):
                         """
         self.env.cr.execute(query, (self.id, last_month, today))
         for val in self.env.cr.dictfetchall():
-            date = date.from_string(val['date'])
+            date = datelib.from_string(val['date'])
             if val['date'] != str(today):  # make sure the last point in the graph is today
                 data[:0] = [build_graph_data(date, amount)]
             amount -= val['amount']
