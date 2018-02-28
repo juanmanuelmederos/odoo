@@ -155,8 +155,8 @@ var LivechatButton = Widget.extend({
                 self.send_welcome_message();
                 self.render_messages();
 
-                this.busBus.add_channel(channel.uuid);
-                this.busBus.start_polling();
+                self.busBus.add_channel(channel.uuid);
+                self.busBus.start_polling();
 
                 utils.set_cookie('im_livechat_session', JSON.stringify(channel), 60*60);
                 utils.set_cookie('im_livechat_auto_popup', JSON.stringify(false), 60*60);
@@ -315,7 +315,7 @@ var Feedback = Widget.extend({
 
         // only display textearea if bad smiley selected
         var close_chat = false;
-        if (this.rating === 0) {
+        if (this.rating !== 10) {
             this.$('.o_livechat_rating_reason').show();
         } else {
             this.$('.o_livechat_rating_reason').hide();
@@ -343,7 +343,13 @@ var Feedback = Widget.extend({
         };
         return session.rpc('/im_livechat/feedback', args).then(function () {
             if (options.close) {
-                var content = _.str.sprintf(_t("Rating: :rating_%d"), self.rating);
+                var rating_to_emoji = {
+                    "10":"😊",
+                    "5":"😐",
+                    "1":"😞"
+                };
+                var emoji = rating_to_emoji[self.rating] || "??" ;
+                var content = _.str.sprintf(_t("Rating: %s"), emoji);
                 if (options.reason) {
                     content += " \n" + options.reason;
                 }
