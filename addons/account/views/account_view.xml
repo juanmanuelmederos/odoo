@@ -1432,6 +1432,7 @@
                         <field name="state" widget="statusbar"/>
                     </header>
                     <sheet>
+                        <field name="tax_type_domain" invisible="1"/>
                         <field name="id" invisible="1"/>
                         <div class="oe_button_box">
                             <button name="action_view_reverse_entry"
@@ -1482,6 +1483,8 @@
                                     <field name="debit" sum="Total Debit"/>
                                     <field name="credit" sum="Total Credit"/>
                                     <field name="tax_ids" string="Taxes Applied" widget="many2many_tags"
+                                           domain="[('type_tax_use', '=?', parent.tax_type_domain)]"
+                                           context="{'append_type_to_tax_name': not parent.tax_type_domain}"
                                            options="{'no_create': True}"/>
                                     <field name="date_maturity" required="0" invisible="context.get('view_no_maturity', False)"/>
                                     <field name="recompute_tax_line" invisible="1" readonly="1"/>

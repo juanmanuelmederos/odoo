@@ -115,6 +115,11 @@ class AccountMove(models.Model):
     auto_reverse = fields.Boolean(string='Reverse Automatically', default=False, help='If this checkbox is ticked, this entry will be automatically reversed at the reversal date you defined.')
     reverse_date = fields.Date(string='Reversal Date', help='Date of the reverse accounting entry.')
     reverse_entry_id = fields.Many2one('account.move', String="Reverse entry", store=True, readonly=True)
+    tax_type_domain = fields.Char(store=False, help='Technical field used to have a dynamic taxes domain on the form view.')
+
+    @api.onchange('journal_id')
+    def _onchange_journal_id(self):
+        self.tax_type_domain = self.journal_id.type if self.journal_id.type in ('sale', 'purchase') else None
 
     @api.onchange('line_ids')
     def _onchange_line_ids(self):
