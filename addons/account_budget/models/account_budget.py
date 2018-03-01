@@ -125,8 +125,8 @@ class CrossoveredBudgetLines(models.Model):
             # Used for the report
 
             if self.env.context.get('wizard_date_from') and self.env.context.get('wizard_date_to'):
-                date_from = fields.Date.from_string(self.env.context.get('wizard_date_from'))
-                date_to = fields.Date.from_string(self.env.context.get('wizard_date_to'))
+                date_from = self.env.context.get('wizard_date_from').date()
+                date_to = self.env.context.get('wizard_date_to').date()
                 if date_from < line.date_from:
                     date_from = line.date_from
                 elif date_from > line.date_to:
