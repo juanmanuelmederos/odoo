@@ -116,6 +116,9 @@ class AccountReconciliation(models.AbstractModel):
             partner_id = st_line.partner_id.id
 
         domain = self._domain_move_lines_for_reconciliation(st_line, aml_accounts, partner_id, excluded_ids=excluded_ids, search_str=search_str)
+        # Domain for fiscal_year_date selection
+        if st_line.company_id.account_opening_date:
+            domain = expression.AND([domain, [('date_maturity', '>=', st_line.company_id.account_opening_date)]])
         aml_recs = self.env['account.move.line'].search(domain, offset=offset, limit=limit, order="date_maturity desc, id desc")
         target_currency = st_line.currency_id or st_line.journal_id.currency_id or st_line.journal_id.company_id.currency_id
         return self._prepare_move_lines(aml_recs, target_currency=target_currency, target_date=st_line.date)
@@ -168,6 +171,9 @@ class AccountReconciliation(models.AbstractModel):
         if bank_statements:
             sql_query += ' AND stl.statement_id IN %s'
             params += (tuple(bank_statements.ids),)
+            if bank_statements.company_id.account_opening_date:
+                sql_query += ' AND stl.date >= %s'
+                params += (bank_statements.company_id.account_opening_date,)
         else:
             sql_query += ' AND stl.company_id = %s'
             params += [self.env.user.company_id.id]
