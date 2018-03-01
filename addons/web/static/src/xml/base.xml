@@ -412,6 +412,14 @@
         </button>
     </div>
 </t>
+<t t-name="SaveCancelButton.tooltip">
+    <div class="oe_tooltip_string">
+        <div class="tooltip-inner">
+            Hit ENTER to SAVE<br/>
+            Hit ESCAPE to DISCARD
+        </div>
+    </div>
+</t>
 <form t-name="FormView.set_default">
     <t t-set="args" t-value="widget.args"/>
     <table style="width: 100%">

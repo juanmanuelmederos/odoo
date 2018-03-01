@@ -6825,44 +6825,6 @@ QUnit.module('Views', {
         form.destroy();
     });
 
-    QUnit.test('In READ mode, primary buttons of the form can be activated with TAB', function (assert) {
-        assert.expect(2);
-
-        var rpcCount = 0;
-        var form = createView({
-            View: FormView,
-            model: 'partner',
-            data: this.data,
-            arch: '<form string="Partners">' +
-                    '<field name="state" invisible="1"/>' +
-                    '<header>' +
-                        '<button name="post" class="oe_highlight" string="Confirm" type="object"/>' +
-                        '<button name="post" class="oe_highlight" string="Confirm2" type="object"/>' +
-                    '</header>' +
-                    '<sheet>' +
-                        '<group>' +
-                            '<div class="oe_title">' +
-                                '<field name="display_name"/>' +
-                            '</div>' +
-                        '</group>' +
-                    '</sheet>' +
-                '</form>',
-            res_id: 2,
-        });
-        
-        testUtils.intercept(form, 'execute_action', function (event) {
-            assert.strictEqual(event.data.action_data.string,"Confirm","The button clicked should have been 'Confirm'");
-            rpcCount++;
-            event.data.on_success();
-            event.data.on_closed();
-        });
-        rpcCount = 0;
-        
-        $(document.activeElement).trigger($.Event('keydown', {which: $.ui.keyCode.TAB}));
-        assert.strictEqual(rpcCount, 1, "should have done 1 rpc");
-        form.destroy();
-    })
-
     QUnit.test('In READ mode, the default button when pressing TAB is EDIT when there is no primary button on the form', function (assert) {
         assert.expect(1);
 
@@ -6948,6 +6910,139 @@ QUnit.module('Views', {
         assert.strictEqual(form.$('input[name="foo"]')[0], document.activeElement, "foo is required, so hitting TAB on foo should keep the focus on foo");
         form.destroy();
     });
+
+    QUnit.test('display tooltips for save and discard buttons', function (assert) {
+        assert.expect(1);
+
+        var form = createView({
+            View: FormView,
+            model: 'partner',
+            data: this.data,
+            arch: '<form string="Partners">' +
+                    '<field name="foo" />'+
+                '</form>',
+        });
+
+        form.$buttons.find('.o_form_buttons_edit').tooltip('show',false);
+        assert.strictEqual($('.tooltip .oe_tooltip_string').length, 1,
+            "should have rendered a tooltip");
+        form.destroy();
+    });
+    QUnit.test('if the focus is on the save button, hitting ENTER should save', function (assert) {
+        assert.expect(1);
+
+        var form = createView({
+            View: FormView,
+            model: 'partner',
+            data: this.data,
+            arch: '<form string="Partners">' +
+                    '<field name="foo" />'+
+                '</form>',
+            viewOptions: {
+                mode: 'edit',
+            },            
+            mockRPC: function (route, args) {
+                if (args.method === 'create') {
+                    assert.ok(true, "should call the /create route");
+                }
+                return this._super(route, args);
+            },
+        });
+
+        form.$buttons.find('.o_form_button_save')
+                     .focus()
+                     .trigger($.Event('keydown', {which: $.ui.keyCode.ENTER}));
+        form.destroy();
+    });
+    QUnit.test('if the focus is on the discard button, hitting ENTER should save', function (assert) {
+        assert.expect(1);
+
+        var form = createView({
+            View: FormView,
+            model: 'partner',
+            data: this.data,
+            arch: '<form string="Partners">' +
+                    '<field name="foo" />'+
+                '</form>',
+            viewOptions: {
+                mode: 'edit',
+            },            
+            mockRPC: function (route, args) {
+                if (args.method === 'create') {
+                    assert.ok(true, "should call the /create route");
+                }
+                return this._super(route, args);
+            },
+        });
+
+        form.$buttons.find('.o_form_button_cancel')
+                     .focus()
+                     .trigger($.Event('keydown', {which: $.ui.keyCode.ENTER}));
+        form.destroy();
+    });
+    QUnit.test('if the focus is on the save button, hitting ESCAPE should discard', function (assert) {
+        assert.expect(1);
+
+        var form = createView({
+            View: FormView,
+            model: 'partner',
+            data: this.data,
+            arch: '<form string="Partners">' +
+                    '<field name="foo" />'+
+                '</form>',
+            viewOptions: {
+                mode: 'edit',
+            },            
+            mockRPC: function (route, args) {
+                if (args.method === 'default_get') {
+                    assert.ok(true, "should call the /create route");
+                }
+                return this._super(route, args);
+            },
+        });
+
+        form.$buttons.find('.o_form_button_save')
+                     .focus()
+                     .trigger($.Event('keydown', {which: $.ui.keyCode.ESCAPE}));
+        form.destroy();
+    });
+    QUnit.test('if the focus is on the discard button, hitting ESCAPE should discard', function (assert) {
+        assert.expect(1);
+
+        var form = createView({
+            View: FormView,
+            model: 'partner',
+            data: this.data,
+            arch: '<form string="Partners">' +
+                    '<field name="foo" />'+
+                '</form>',
+            viewOptions: {
+                mode: 'edit',
+            },            
+            mockRPC: function (route, args) {
+                if (args.method === 'default_get') {
+                    assert.ok(true, "should call the /create route");
+                }
+                return this._super(route, args);
+            },
+        });
+
+        form.$buttons.find('.o_form_button_cancel')
+                     .focus()
+                     .trigger($.Event('keydown', {which: $.ui.keyCode.ESCAPE}));
+        form.destroy();
+    });
+
+    QUnit.test('if the focus is on the save button, hitting TAB should not move to the next button', function (assert) {
+        assert.expect(1);
+        /*
+        this test has only one purpose: to say that it is normal that the focus stays within a button primary even after the TAB key has been pressed.
+        It is not possible here to execute the default action of the TAB on a button : https://stackoverflow.com/questions/32428993/why-doesnt-simulating-a-tab-keypress-move-focus-to-the-next-input-field
+        so writing a test that will always succeed is not useful.
+         */
+        assert.ok("Behavior can't be tested");
+    });
+
 });
 
 });

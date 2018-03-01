@@ -137,6 +137,7 @@ var FormController = BasicController.extend({
             this.$buttons.on('click', '.o_form_button_create', this._onCreate.bind(this));
             this.$buttons.on('click', '.o_form_button_save', this._onSave.bind(this));
             this.$buttons.on('click', '.o_form_button_cancel', this._onDiscard.bind(this));
+            this._assignSaveCancelKeyboardBehavior(this.$buttons.find('.o_form_buttons_edit'));
             this._updateButtons();
         }
         this.$buttons.appendTo($node);
@@ -229,6 +230,39 @@ var FormController = BasicController.extend({
     //--------------------------------------------------------------------------
     // Private
     //--------------------------------------------------------------------------
+    /**
+     * Assign on the buttons save and discard additionnal behavior to facilitate the work of the users doing input only using the keyboard
+     * 
+     * @param {jQueryElement} $saveCancelButtonContainer  The div containing the save and cancel buttons
+     */
+    _assignSaveCancelKeyboardBehavior:function($saveCancelButtonContainer) {
+        var self = this;
+        $saveCancelButtonContainer.tooltip({
+            delay: {show: 200, hide:0},
+            title: function(){
+                return qweb.render('SaveCancelButton.tooltip');
+            },
+            trigger: 'focus',
+        });
+
+        $saveCancelButtonContainer.children().on('keydown',function(e){
+            switch(e.which) {
+                case $.ui.keyCode.ENTER:
+                    e.preventDefault();
+                    self.saveRecord.apply(self);
+                    break;
+                case $.ui.keyCode.ESCAPE:
+                    e.preventDefault();
+                    self._discardChanges.apply(self);
+                    break;
+                case $.ui.keyCode.TAB:
+                    if (!e.shiftKey && e.target.classList.contains("btn-primary")) {
+                        e.preventDefault();
+                    }
+                    break;
+            }
+        });
+    },
     /**
      * When a save operation has been confirmed from the model, this method is
      * called.
