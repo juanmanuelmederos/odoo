@@ -722,10 +722,8 @@ ActionManager.include({
     _onNavigationMove : function(event) {
         switch(event.data.direction) {
             case 'down' :
-                console.log("go dooooown");
                 var currentController = this.getCurrentController().widget;
                 currentController.giveFocus();
-
                 event.stopPropagation();
                 break;
         }
