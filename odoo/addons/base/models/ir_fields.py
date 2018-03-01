@@ -201,7 +201,7 @@ class IrFieldsConverter(models.AbstractModel):
     def _str_to_date(self, model, field, value):
         try:
             parsed_value = fields.Date.from_string(value)
-            return fields.Date.to_string(parsed_value), []
+            return parsed_value, []
         except ValueError:
             raise self._format_import_error(
                 ValueError,
@@ -232,8 +232,9 @@ class IrFieldsConverter(models.AbstractModel):
 
     @api.model
     def _str_to_datetime(self, model, field, value):
+        input_tz = self._input_tz()# Apply input tz to the parsed naive datetime
         try:
-            parsed_value = fields.Datetime.from_string(value)
+            parsed_value = fields.Datetime.from_string(value, tzinfo=input_tz)
         except ValueError:
             raise self._format_import_error(
                 ValueError,
@@ -242,10 +243,8 @@ class IrFieldsConverter(models.AbstractModel):
                 {'moreinfo': _(u"Use the format '%s'") % u"2012-12-31 23:59:59"}
             )
 
-        input_tz = self._input_tz()# Apply input tz to the parsed naive datetime
-        dt = parsed_value.astimezone(input_tz)
         # And convert to UTC before reformatting for writing
-        return fields.Datetime.to_string(dt.to_utc()), []
+        return parsed_value.to_utc(), []
 
     @api.model
     def _get_translations(self, types, src):
