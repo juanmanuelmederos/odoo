@@ -161,46 +161,6 @@ class AccountMove(models.Model):
             #unmark the line
             line.recompute_tax_line = False
 
-            #drop/create/modify tax lines
-            #for tax in self.env['account.tax'].browse(parsed_key['tax_ids']) | line.tax_ids:
-            #    #there should be only one or zero tax_line
-            #    tax_line = _find_existing_tax_line(self.line_ids, tax, line)
-            #    balance = sum([l.balance for l in _get_lines_to_sum(self.line_ids, tax, parsed_key)])
-            #    taxes_vals = tax.compute_all(balance,
-            #        currency=line.company_currency_id, product=line.product_id, partner=line.partner_id)
-            #    if tax_line:
-            #        if tax_line.tax_line_id not in line.tax_ids:
-            #            #remove tax line
-            #            self.line_ids -= tax_line
-            #        else:
-            #            if taxes_vals.get('taxes'):
-            #                amount = taxes_vals['taxes'][0]['amount']
-            #                if amount > 0:
-            #                    tax_line.debit = amount
-            #                else:
-            #                    tax_line.credit = amount
-
-            #    elif tax in line.tax_ids:
-            #        #create new tax line
-            #        for tax_vals in taxes_vals['taxes']:
-            #            name = tax_vals['name']
-            #            tax_rec = self.env['account.tax'].browse([tax_vals['id']])
-            #            line_vals = {
-            #                'account_id': (tax_rec.tax_exigibility == 'on_payment' and tax_rec.cash_basis_account) and tax_rec.cash_basis_account.id or tax_rec.account_id.id,
-            #                'name': name,
-            #                'tax_line_id': tax_vals['id'],
-            #                'partner_id': line.partner_id.id,
-            #                'debit': tax_vals['amount'] > 0 and tax_vals['amount'] or 0.0,
-            #                'credit': tax_vals['amount'] < 0 and -tax_vals['amount'] or 0.0,
-            #                'analytic_account_id': line.analytic_account_id.id if tax_rec.analytic else False,
-            #                'analytic_tag_ids': line.analytic_tag_ids.ids if tax_rec.analytic else False,
-            #                'move_id': self.id,
-            #                'tax_exigible': tax_rec.tax_exigibility == 'on_invoice',
-            #                'company_id': self.company_id.id,
-            #            }
-            #            self.env['account.move.line'].new(line_vals)
-
-
             #drop/modify tax line(s)
             for tax in self.env['account.tax'].browse(parsed_key['tax_ids']):
                 tax_line = _find_existing_tax_line(self.line_ids, tax, parsed_key['tag_ids'], parsed_key['analytic_account_id'])
