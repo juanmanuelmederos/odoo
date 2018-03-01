@@ -23,5 +23,5 @@ class TimesheetLine(models.Model):
     @api.constrains('resource_id')
     def _check_resource_type(self):
         for timesheet in self:
-            if timesheet.resource_id != 'user':
+            if timesheet.resource_id.resource_type != 'user':
                 raise ValidationError(_('The resource of a timesheet must be a user.'))
