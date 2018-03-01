@@ -272,13 +272,30 @@ class SaleTimesheetController(http.Controller):
 
     def _prepare_plan_actions(self, projects):
         actions = []
-        if len(projects) == 1 and not projects.sale_line_id and not projects.tasks.mapped('sale_line_id'):
-            actions.append({
-                'label': _("Create a Sale Order"),
-                'type': 'action',
-                'action_id': 'sale_timesheet.project_project_action_multi_create_sale_order',
-                'context': json.dumps({'active_id': projects.id}),
-            })
+        if len(projects) == 1:
+            if not projects.sale_line_id and not projects.tasks.mapped('sale_line_id'):
+                actions.append({
+                    'label': _("Create a Sale Order"),
+                    'type': 'action',
+                    'action_id': 'sale_timesheet.project_project_action_multi_create_sale_order',
+                    'context': json.dumps({'active_id': projects.id}),
+                })
+            sale_orders = projects.tasks.mapped('sale_line_id.order_id').filtered(lambda so: so.invoice_status == 'to invoice')
+            if sale_orders:
+                if len(sale_orders) == 1:
+                    actions.append({
+                        'label': _("Create Invoice"),
+                        'type': 'action',
+                        'action_id': 'sale.action_view_sale_advance_payment_inv',
+                        'context': json.dumps({'active_ids': projects.sale_line_id.order_id.ids}),
+                    })
+                else:
+                    actions.append({
+                        'label': _("Create Invoice"),
+                        'type': 'action',
+                        'action_id': 'sale_timesheet.project_project_action_multi_create_invoice',
+                        'context': json.dumps({'active_id': projects.id}),
+                    })
         return actions
 
     def _plan_get_stat_button(self, projects):
