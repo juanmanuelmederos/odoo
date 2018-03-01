@@ -52,13 +52,19 @@ class AccountAnalyticLine(models.Model):
             employee = self.env['hr.employee'].browse(vals['employee_id'])
             vals['user_id'] = employee.user_id.id
             vals['resource_id'] = employee.resource_id.id  # TODO JEM: clean this, as employee_id may be removed since we use resource_id
+        if vals.get('user_id') and not vals.get('employee_id'):
+            employee = self.env['hr.employee'].search([('user_id', '=', vals.get('user_id'))], limit=1)
+            vals['employee_id'] = employee.id
+            vals['resource_id'] = employee.resource_id.id  # TODO JEM: clean this, as employee_id may be removed since we use resource_id
         # compute employee only for timesheet lines, makes no sense for other lines
         if not vals.get('employee_id') and vals.get('project_id'):
             if vals.get('user_id'):
                 ts_user_id = vals['user_id']
             else:
                 ts_user_id = self._default_user()
-            vals['employee_id'] = self.env['hr.employee'].search([('user_id', '=', ts_user_id)], limit=1).id
+            employee = self.env['hr.employee'].search([('user_id', '=', ts_user_id)], limit=1)
+            vals['employee_id'] = employee.id
+            vals['resource_id'] = employee.resource_id.id  # TODO JEM: clean this, as employee_id may be removed since we use resource_id
         # force customer partner, from the task or the project
         if (vals.get('project_id') or vals.get('task_id')) and not vals.get('partner_id'):
             partner_id = False
