@@ -18,7 +18,9 @@ var _t = core._t;
  **/
 var Dialog = Widget.extend({
     xmlDependencies: ['/web/static/src/xml/dialog.xml'],
-
+    custom_events: _.extend({}, Widget.prototype.custom_events, {
+        focus_control_button: '_onFocusControlButton',
+    }),
     /**
      * @param {Widget} parent
      * @param {Object} [options]
@@ -126,6 +128,16 @@ var Dialog = Widget.extend({
                     $.when(def).always(self.close.bind(self));
                 }
             });
+            $button.on('keydown', function(e) {
+                    switch(e.which) {
+                        case $.ui.keyCode.TAB:
+                            if (!e.shiftKey && e.target.classList.contains("btn-primary")) {
+                                e.preventDefault();
+                            }
+                            break;
+                }
+            });
+
             self.$footer.append($button);
         });
     },
@@ -189,6 +201,13 @@ var Dialog = Widget.extend({
             modals.last().focus();
             // Keep class modal-open (deleted by bootstrap hide fnct) on body to allow scrolling inside the modal
             $('body').addClass('modal-open');
+        }
+    },
+
+    _onFocusControlButton:function(e) {
+        if (this.$footer) {
+            e.stopPropagation();
+            this.$footer.find('.btn-primary:visible:first()').focus();
         }
     }
 });

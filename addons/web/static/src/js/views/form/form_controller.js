@@ -42,9 +42,11 @@ var FormController = BasicController.extend({
     // Public
     //--------------------------------------------------------------------------
 
-    _onFocusControlButton:function(e){
-        e.stopPropagation();
-        this.$buttons.find('.btn-primary:visible:first()').focus();
+    _onFocusControlButton:function(e) {
+        if (this.$buttons) {
+            e.stopPropagation();
+            this.$buttons.find('.btn-primary:visible:first()').focus();
+        }
     },
 
     /**
@@ -131,6 +133,7 @@ var FormController = BasicController.extend({
         this.$buttons = $('<div/>');
         if (mustRenderFooterButtons) {
             this.$buttons.append($footer);
+
         } else {
             this.$buttons.append(qweb.render("FormView.buttons", {widget: this}));
             this.$buttons.on('click', '.o_form_button_edit', this._onEdit.bind(this));
@@ -256,7 +259,7 @@ var FormController = BasicController.extend({
                     self._discardChanges.apply(self);
                     break;
                 case $.ui.keyCode.TAB:
-                    if (!e.shiftKey && e.target.classList.contains("btn-primary")) {
+                    if (!e.shiftKey && (e.target.classList.contains("btn-primary") || e.target.classList.contains("oe_highlight"))) {
                         e.preventDefault();
                     }
                     break;
