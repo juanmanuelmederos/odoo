@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <t t-name="wechatpay.qrcode">
+        <img t-attf-src="/web/image/#{image_id}?" t-att-data-id="image_id" style=" width: 25%; margin: auto;"/>
+        <h4 style=" margin: auto;">Scan this code from WeChat Application or Download it from here.</h4>
+        <div class="mt8 row mr0 ml0">
+            <div class="col-md-4 col-xs-4 col-sm-4">
+                <a class="center-block" href="https://play.google.com/store/apps/details?id=com.odoo.mobile" target="_blank">
+                    <img class="center-block img img-responsive" src="/payment_wechatpay/static/src/img/google_play.png"/>
+                </a>
+            </div>
+            <div class="col-md-4 col-xs-4 col-sm-4 pull-right">
+                <a class="center-block" href="https://itunes.apple.com/us/app/odoo/id1272543640" target="_blank">
+                    <img class="center-block img img-responsive" src="/payment_wechatpay/static/src/img/app_store.png"/>
+                </a>
+            </div>
+        </div>
+    </t>
+</templates>

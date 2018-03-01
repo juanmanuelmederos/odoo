@@ -140,6 +140,7 @@ odoo.define('payment.payment_form', function (require) {
                 // if the user is going to pay with a form payment, then
                 else if (this.isFormPaymentRadio(checked_radio)) {
                     var $tx_url = this.$el.find('input[name="prepare_tx_url"]');
+                    if (checked_radio.dataset.provider == 'wechatpay') {return;}
                     // if there's a prepare tx url set
                     if ($tx_url.length === 1) {
                         // if the user wants to save his credit card info

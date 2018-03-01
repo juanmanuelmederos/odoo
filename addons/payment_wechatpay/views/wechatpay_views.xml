@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="payment_acquirer_view_form_inherit_payment_wechatpay" model="ir.ui.view">
+        <field name="name">payment.acquirer.view.form.inherit.payment.wechatpay</field>
+        <field name="model">payment.acquirer</field>
+        <field name="inherit_id" ref="payment.acquirer_form"/>
+        <field name="arch" type="xml">
+            <xpath expr='//group[@name="acquirer"]' position='after'>
+                <group attrs="{'invisible': [('provider', '!=', 'wechatpay')]}">
+                    <field name="wechatpay_appid"/>
+                    <field name="wechatpay_mch_id"/>
+                    <field name="wechatpay_app_key"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="payment_transaction_view_form_inherit_payment_wechatpay" model="ir.ui.view">
+        <field name="name">payment.transaction.view.form.inherit.payment.wechatpay</field>
+        <field name="model">payment.transaction</field>
+        <field name="inherit_id" ref="payment.transaction_form"/>
+        <field name="arch" type="xml">
+            <field name="date_validate" position="after">
+                <field name="provider" invisible="1"/>
+                <field name="out_trade_no" attrs="{'invisible': [('provider', '!=', 'wechatpay')]}"/>
+            </field>
+        </field>
+    </record>
+
+</odoo>

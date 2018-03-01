@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="wechatpay_form">
+        <div>
+            <input type="hidden" name="body" t-att-value="body"/>
+        </div>
+    </template>
+
+    <template id="assets_frontend" inherit_id="web.assets_frontend">
+        <xpath expr="script[last()]" position="after">
+            <script type="text/javascript" src="/payment_wechatpay/static/src/js/wechatpay_qrcode.js"></script>
+        </xpath>
+    </template>
+
+</odoo>
