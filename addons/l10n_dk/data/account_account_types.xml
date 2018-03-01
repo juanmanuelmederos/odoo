@@ -70,7 +70,7 @@
         <record id="account_type_prepayments" model="account.account.type">
             <field name="name">Forudbetaling til leverandører</field>
             <field name="include_initial_balance" eval="True"/>
-        </record>        
+        </record>
         <record id="account_type_other_receivables" model="account.account.type">
             <field name="name">Andre tilgodehavender</field>
             <field name="include_initial_balance" eval="True"/>
@@ -80,15 +80,15 @@
          <record id="account_type_equity_individual_enterprices" model="account.account.type">
             <field name="name">Egenkapital enkeltmandsvirksomheder</field>
             <field name="include_initial_balance" eval="True"/>
-         </record>          
+         </record>
          <record id="account_type_equity_corporations" model="account.account.type">
             <field name="name">Egenkapital selskaber</field>
             <field name="include_initial_balance" eval="True"/>
-        </record> 
+        </record>
         <record id="account_type_credit_institutions" model="account.account.type">
             <field name="name">Kreditinstitutter</field>
             <field name="include_initial_balance" eval="True"/>
-        </record> 
+        </record>
         <record id="account_type_bank_loans" model="account.account.type">
             <field name="name">Bankgæld</field>
             <field name="include_initial_balance" eval="True"/>
@@ -113,5 +113,6 @@
             <field name="name">Anden kortfristet gæld</field>
             <field name="include_initial_balance" eval="True"/>
         </record>
-       </data>
+
+    </data>
 </odoo>

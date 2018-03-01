@@ -11,11 +11,10 @@
     'website': 'https://odoohouse.dk',
     'category': 'Localization',
     'description': """
-    
 Localization Module for Denmark
 ===============================
 This is the module to manage the **accounting chart for Denmark**. Cover both one-man business as well as I/S, IVS, ApS and A/S
-  
+
 **Modulet opsætter:**
 - **Dansk kontoplan**
 - Dansk moms
@@ -23,7 +22,7 @@ This is the module to manage the **accounting chart for Denmark**. Cover both on
         - Hotel moms 12,50%
         - Resturationsmoms 6,25%
         - Omvendt betalingspligt
-        
+
 - Konteringsgrupper
         - EU (Virksomhed)
         - EU (Privat)
@@ -34,7 +33,7 @@ This is the module to manage the **accounting chart for Denmark**. Cover both on
         - Momsafregning
             - Afregning
             - Rubrik A, B og C
-            
+
 - **Anglo-Saxon regnskabsmetode**
 .
 Produkt setup:
@@ -63,9 +62,9 @@ Produkt setup:
 .
 **Restauration**
 **Købsmoms:**       Restaurationsmoms 6,25%, købsmoms
-**Købskonto:**      4010 Restaurationsbesøg    
+**Købskonto:**      4010 Restaurationsbesøg
 .
-    
+
 Copyright 2018 Odoo House ApS
     """,
     'depends': ['account', 'base_iban', 'base_vat'],
