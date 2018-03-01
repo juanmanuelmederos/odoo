@@ -3290,7 +3290,7 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
         self = self.browse(cr.fetchone()[0])
 
         # update parent_path
-        self._parent_store_create(vals)
+        self._parent_store_create()
 
         with self.env.protecting(protected_fields, self):
             # mark fields to recompute; do this before setting other fields,
@@ -3327,23 +3327,18 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
 
         return self
 
-    def _parent_store_create(self, vals):
+    def _parent_store_create(self):
         """ Set the parent_path field on ``self`` after its creation. """
         if not self._parent_store:
             return
 
-        parent_val = vals.get(self._parent_name)
-        if parent_val:
-            query = """
-                UPDATE {0}
-                SET parent_path=concat((SELECT parent_path FROM {0} WHERE id=%s), id, '/')
-                WHERE id IN %s
-            """
-            params = [parent_val, tuple(self.ids)]
-        else:
-            query = "UPDATE {} SET parent_path=concat(id, '/') WHERE id IN %s"
-            params = [tuple(self.ids)]
-        self._cr.execute(query.format(self._table), params)
+        query = """
+            UPDATE {0} N
+            SET parent_path=concat(
+                    (SELECT P.parent_path FROM {0} P WHERE P.id=N.{1}), N.id, '/')
+            WHERE N.id IN %s
+        """.format(self._table, self._parent_name)
+        self._cr.execute(query, [tuple(self.ids)])
 
     def _parent_store_update_prepare(self, vals):
         """ Return the records in ``self`` that must update their parent_path
