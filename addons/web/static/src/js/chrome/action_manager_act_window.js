@@ -244,7 +244,7 @@ ActionManager.include({
         }
         action.flags = this._generateActionFlags(action);
 
-        return this._loadViews(action).then(function (fieldsViews) {
+        return this.dp.add(this._loadViews(action)).then(function (fieldsViews) {
             var views = self._generateActionViews(action, fieldsViews);
             action._views = action.views;  // save the initial attribute
             action.views = views;
@@ -276,13 +276,13 @@ ActionManager.include({
                     _.extend(action.env, self._processSearchData(action, searchData));
                 });
             }
-            return $.when(def).then(function () {
+            return self.dp.add($.when(def)).then(function () {
                 var defs = [];
                 defs.push(self._createViewController(action, firstView.type));
                 if (lazyLoadFirstView) {
                     defs.push(self._createViewController(action, views[0].type, {}, {lazy: true}));
                 }
-                return $.when.apply($, defs);
+                return self.dp.add($.when.apply($, defs));
             }).then(function (controller, lazyLoadedController) {
                 action.controllerID = controller.jsID;
                 return self._executeAction(action, options).done(function () {
