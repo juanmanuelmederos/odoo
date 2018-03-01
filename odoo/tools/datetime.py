@@ -620,7 +620,7 @@ class datetime(datetimelib.datetime, date):
                     pass
 
             if not result:
-                result = du_parser().parse(string, default=cls.now(), yearfirst=True)
+                result = du_parser().parse(string, default=cls.now(tzinfo=tzinfo), yearfirst=True)
                 result = cls.from_datetime(result)
 
         if not with_microsecond:
