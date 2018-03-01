@@ -11,3 +11,4 @@ from . import test_purchase_lead_time
 from . import test_purchase_order
 from . import test_purchase_order_process
 from . import test_stockvaluation
+from . import test_replenish_wizard
