@@ -812,8 +812,12 @@ var FieldX2Many = AbstractField.extend({
             return false;
         }
 
-        if (options && !options.noselect) {
+        if (options && !options.noselect && this.editable) {
             this.trigger_up("add_record");
+        }
+
+        if (this.view.type === 'kanban') {
+            this.$buttons.find(".o-kanban-button-new").focus();
         }
         return true;
     },
