@@ -1967,6 +1967,10 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
             for d in data:
                 d[field] = (d[field], data_dict[d[field]]) if d[field] else False
 
+    @api.model
+    def read_kpis(self):
+        return "Victory!"
+
     def _inherits_join_add(self, current_model, parent_model_name, query):
         """
         Add missing table SELECT and JOIN clause to ``query`` for reaching the parent table (no duplicates)

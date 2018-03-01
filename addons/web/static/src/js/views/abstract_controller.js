@@ -225,7 +225,28 @@ var AbstractController = AbstractAction.extend(ControlPanelMixin, {
     //--------------------------------------------------------------------------
     // Private
     //--------------------------------------------------------------------------
-
+    
+    /**
+     * Disable buttons so that they cannot be clicked anymore.
+     *
+     * @override
+     * @private
+     */
+    _disableButtons: function () {
+        if (this.$buttons) {
+            this.$buttons.find('button').attr('disabled', true);
+        }
+    },
+    /**
+     * Enables buttons so they can be clicked again.
+     *
+     * @private
+     */
+    _enableButtons: function () {
+        if (this.$buttons) {
+            this.$buttons.find('button').removeAttr('disabled');
+        }
+    },
     /**
      * This method is the way a view can notifies the outside world that
      * something has changed.  The main use for this is to update the url, for

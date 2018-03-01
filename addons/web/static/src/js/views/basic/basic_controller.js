@@ -301,9 +301,7 @@ var BasicController = AbstractController.extend(FieldManagerMixin, {
      * @private
      */
     _disableButtons: function () {
-        if (this.$buttons) {
-            this.$buttons.find('button').attr('disabled', true);
-        }
+        this._super.apply(this, arguments);
     },
     /**
      * Discards the changes made to the record whose ID is given, if necessary.
@@ -347,9 +345,7 @@ var BasicController = AbstractController.extend(FieldManagerMixin, {
      * @private
      */
     _enableButtons: function () {
-        if (this.$buttons) {
-            this.$buttons.find('button').removeAttr('disabled');
-        }
+        this._super.apply(this, arguments);
     },
     /**
      * Returns the new sidebar env

@@ -18,6 +18,7 @@ var DashboardView = BasicView.extend({
         Controller: DashboardController,
         Renderer: DashboardRenderer,
     },
+    
 });
 
 viewRegistry.add('dashboard', DashboardView);
