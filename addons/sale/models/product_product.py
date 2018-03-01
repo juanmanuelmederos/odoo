@@ -21,3 +21,22 @@ class ProductProduct(models.Model):
         return r
 
     sales_count = fields.Integer(compute='_sales_count', string='# Sales', help="Sales in past 365 days")
+
+    @api.multi
+    def action_view_sales(self):
+        self.ensure_one()
+        action = self.env.ref('sale.action_orders')
+        view_id = self.env.ref('sale.view_sale_order_graph').id
+
+        return {
+            'name': action.name,
+            'help': action.help,
+            'type': action.type,
+            'target': action.target,
+            'view_id': view_id,
+            'views': [(view_id, 'graph')],
+            'view_type': action.view_type,
+            'view_mode': action.view_mode,
+            'res_model': action.res_model,
+            'context': {'group_by': ['date_order', 'state'], 'graph_measure': 'amount_untaxed',}
+        }

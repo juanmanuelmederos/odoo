@@ -55,7 +55,7 @@ class ProductTemplate(models.Model):
             'view_type': action.view_type,
             'view_mode': action.view_mode,
             'res_model': action.res_model,
-            'context': "{'group_by': ['date_planned_start', 'state']}",
+            'context': {'group_by': ['date_planned_start', 'state'], 'graph_measure': 'product_qty'}
         }
 
 
@@ -105,3 +105,22 @@ class ProductProduct(models.Model):
         }
         action['domain'] = ['|', ('product_id', 'in', self.ids), '&', ('product_id', '=', False), ('product_tmpl_id', 'in', template_ids)]
         return action
+
+    @api.multi
+    def action_view_mos(self):
+        self.ensure_one()
+        action = self.env.ref('mrp.mrp_production_action')
+        view_id = self.env.ref('mrp.view_production_graph').id
+
+        return {
+            'name': action.name,
+            'help': action.help,
+            'type': action.type,
+            'target': action.target,
+            'view_id': view_id,
+            'views': [(view_id, 'graph')],
+            'view_type': action.view_type,
+            'view_mode': action.view_mode,
+            'res_model': action.res_model,
+            'context': {'group_by': ['date_planned_start', 'state'], 'graph_measure': 'product_qty'}
+        }

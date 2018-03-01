@@ -42,7 +42,7 @@ class ProductTemplate(models.Model):
             'view_type': action.view_type,
             'view_mode': action.view_mode,
             'res_model': action.res_model,
-            'context': "{'group_by': ['date_order', 'state']}",
+            'context': {'group_by': ['date_order', 'state'], 'graph_measure': 'amount_untaxed'},
         }
 
     sales_count = fields.Integer(compute='_sales_count', string='# Sales', help="Sales in past 365 days")

@@ -173,7 +173,7 @@
                                name="%(product_open_quants)d"
                                icon="fa-building-o"
                                type="action" attrs="{'invisible':[('type', '!=', 'product')]}">
-                            <field name="qty_available" widget="statinfo" string="On Hand"/>
+                            <field name="qty_available" widget="statinfo" string="UOM On Hand"/>
                         </button>
                         <button type="action"
                             name="%(stock.action_stock_level_forecast_report_product)d"
@@ -186,7 +186,7 @@
                                         +<field name="incoming_qty" widget="statinfo" nolabel="1"/>)
                                     </span>
                                 </span>
-                                <span class="o_stat_text">Forecasted</span>
+                                <span class="o_stat_text">UOM Forecasted</span>
                             </div>
                         </button>
                        <button string="Product Moves"

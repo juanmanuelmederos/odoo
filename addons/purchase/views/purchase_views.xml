@@ -588,8 +588,14 @@
                 <button name="toggle_active" position="before">
                    <button class="oe_stat_button" name="action_view_pos"
                        type="object" icon="fa-shopping-cart" attrs="{'invisible': [('purchase_ok', '=', False)]}">
-                       <field string="Purchases" name="purchase_count" widget="statinfo"/>
-                   </button>
+                        <div class="o_field_widget o_stat_info">
+                            <span class="o_stat_value">
+                                <field name="purchase_count" widget="statinfo" nolabel="1"/>
+                                UOM
+                            </span>
+                            <span class="o_stat_text">Purchases</span>
+                        </div>
+                    </button>
                 </button>
             </field>
         </record>
