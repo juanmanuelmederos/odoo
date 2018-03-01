@@ -270,6 +270,9 @@ var FormRenderer = BasicRenderer.extend({
 
         $el.on('keydown', function(e) {
             if (e.which === $.ui.keyCode.TAB) {
+                if (!e.shiftKey && (e.target.classList.contains("btn-primary") || e.target.classList.contains("oe_highlight"))) {
+                    e.preventDefault();
+                }
                 //TODO : block on tab if btn-primary + show popup
                 console.info("TAB was pressed on", e.target.innerText);
                
