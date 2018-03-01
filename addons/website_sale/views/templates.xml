@@ -1152,7 +1152,7 @@
                                         <input type="tel" name="phone" class="form-control" t-att-value="'phone' in checkout and checkout['phone']" />
                                     </div>
                                     <div class="clearfix" />
-                                    <t t-if="mode == ('new', 'billing')">
+                                    <t t-if="mode == ('new', 'billing') or can_edit_vat">
                                         <div t-attf-class="form-group #{error.get('company_name') and 'has-error' or ''} col-md-6">
                                             <label class="control-label font-weight-normal label-optional" for="company_name">Company Name</label>
                                             <input type="text" name="company_name" class="form-control" t-att-value="'company_name' in checkout and checkout['company_name']" />
@@ -1161,6 +1161,18 @@
                                             <label class="control-label font-weight-normal label-optional" for="vat">TIN / VAT </label>
                                             <input type="text" name="vat" class="form-control" t-att-value="'vat' in checkout and checkout['vat']" />
                                         </div>
+                                    </t>
+                                    <t t-else="1">
+                                        <t t-if="'vat' in checkout and checkout['vat']">
+                                            <div t-attf-class="form-group #{error.get('company_name') and 'has-error' or ''} col-md-6">
+                                                <label class="control-label font-weight-normal label-optional" for="company_name">Company Name</label>
+                                                <input type="text" name="company_name" readonly="1" class="form-control" t-att-value="'company_name' in checkout and checkout['company_name']" title="Changing company name is not allowed once document(s) have been issued for your account. Please contact us directly for this operation."/>
+                                            </div>
+                                            <div t-attf-class="form-group #{error.get('vat') and 'has-error' or ''} col-md-6 div_vat">
+                                                <label class="control-label font-weight-normal label-optional" for="vat">TIN / VAT </label>
+                                                <input type="text" name="vat" class="form-control" readonly="1" t-att-value="'vat' in checkout and checkout['vat']" title="Changing VAT number is not allowed once document(s) have been issued for your account. Please contact us directly for this operation." />
+                                            </div>
+                                        </t>
                                     </t>
                                     <div class="clearfix" />
                                     <div t-attf-class="form-group #{error.get('street') and 'has-error' or ''} col-md-12 div_street">

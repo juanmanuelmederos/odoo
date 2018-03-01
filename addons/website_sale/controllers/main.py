@@ -633,6 +633,7 @@ class WebsiteSale(http.Controller):
             'partner_id': partner_id,
             'mode': mode,
             'checkout': values,
+            'can_edit_vat': hasattr(values, 'can_edit_vat') and values.can_edit_vat(),
             'country': country,
             'countries': country.get_website_sale_countries(mode=mode[1]),
             "states": country.get_website_sale_states(mode=mode[1]),

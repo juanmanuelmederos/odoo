@@ -253,11 +253,15 @@
                             <div t-attf-class="form-group #{error.get('company_name') and 'has-error' or ''} col-lg-6">
                                 <label class="control-label label-optional" for="company_name">Company Name</label>
                                 <p t-if="partner.commercial_partner_id.is_company" class="form-control" t-esc="partner.commercial_company_name"/>
-                                <input t-else="" type="text" name="company_name" class="form-control" t-att-value="company_name or partner.company_name"/>
+                                <t t-else="1">
+                                    <input type="text" t-if="partner.can_edit_vat()" name="company_name" class="form-control" t-att-value="company_name or partner.company_name" />
+                                    <input type="text" t-else="1" readonly="1" name="company_name" class="form-control" t-att-value="company_name or partner.company_name" title="Changing company name is not allowed once document(s) have been issued for your account. Please contact us directly for this operation."/>
+                                </t>
                             </div>
-                            <div t-if="has_check_vat" t-attf-class="form-group #{error.get('vat') and 'has-error' or ''} col-lg-6">
+                            <div t-attf-class="form-group #{error.get('vat') and 'has-error' or ''} col-lg-6">
                                 <label class="control-label label-optional" for="vat">VAT Number</label>
-                                <input type="text" name="vat" class="form-control" t-att-value="vat or partner.vat" />
+                                <input type="text" name="vat" t-if="partner.can_edit_vat()" class="form-control" t-att-value="vat or partner.vat" />
+                                <input type="text" name="vat" t-else="1" readonly="1" class="form-control" t-att-value="vat or partner.vat" title="Changing VAT number is not allowed once document(s) have been issued for your account. Please contact us directly for this operation." />
                             </div>
 
                             <div class="clearfix" />

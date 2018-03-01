@@ -25,3 +25,14 @@ class ResPartner(models.Model):
             partner_ids = [partner.id] + item.get('child_ids')
             # then we can sum for all the partner's child
             partner.sale_order_count = sum(mapped_data.get(child, 0) for child in partner_ids)
+
+    def can_edit_vat(self):
+        can_edit_vat = super(ResPartner, self).can_edit_vat()
+        if not can_edit_vat:
+            return can_edit_vat
+        SaleOrder = self.env['sale.order']
+        so_count = SaleOrder.search_count([
+            ('partner_id', '=', self.commercial_partner_id.id),
+            ('state', 'in', ['sent', 'sale', 'done'])
+        ])
+        return can_edit_vat and not bool(so_count)
