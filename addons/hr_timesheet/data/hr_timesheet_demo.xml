@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <record id="working_hours_requirements" model="account.analytic.line">
+    <record id="working_hours_requirements" model="timesheet.line">
         <field name="name">Requirements analysis and specification</field>
         <field name="user_id" ref='base.user_root'/>
         <field name="date" eval="(DateTime.now() + relativedelta(days=-1)).strftime('%Y-%m-%d')"/>
@@ -10,7 +10,7 @@
         <field name="amount">-60.00</field>
     </record>
 
-    <record id="working_hours_design" model="account.analytic.line">
+    <record id="working_hours_design" model="timesheet.line">
         <field name="name">Design and specification</field>
         <field name="user_id" ref='base.user_root'/>
         <field name="date" eval="(DateTime.now() + relativedelta(days=-1)).strftime('%Y-%m-%d')"/>
@@ -19,7 +19,7 @@
         <field name="amount">-30.00</field>
     </record>
 
-    <record id="working_hours_coding" model="account.analytic.line">
+    <record id="working_hours_coding" model="timesheet.line">
         <field name="name">Coding and module testing</field>
         <field name="user_id" ref='base.user_root'/>
         <field name="date" eval="(DateTime.now() + relativedelta(days=-1)).strftime('%Y-%m-%d')"/>
@@ -28,22 +28,22 @@
         <field name="amount">-90.00</field>
     </record>
 
-    <record id="working_hours_testing" model="account.analytic.line">
+    <record id="working_hours_testing" model="timesheet.line">
         <field name="name">Integration and system testing</field>
         <field name="user_id" ref='base.user_root'/>
         <field name="date" eval="(DateTime.now() + relativedelta(days=-1)).strftime('%Y-%m-%d')"/>
         <field name="unit_amount">1.00</field>
         <field name="project_id" ref='project.project_project_2'/>
         <field name="amount">-30.00</field>
-    </record>   
+    </record>
 
-    <record id="working_hours_maintenance" model="account.analytic.line">
+    <record id="working_hours_maintenance" model="timesheet.line">
         <field name="name">Delivery and maintenance</field>
         <field name="user_id" ref='base.user_root'/>
         <field name="date" eval="(DateTime.now() + relativedelta(days=-1)).strftime('%Y-%m-%d')"/>
         <field name="unit_amount">1.00</field>
         <field name="project_id" ref='project.project_project_2'/>
         <field name="amount">-30.00</field>
-    </record>   
+    </record>
 
 </odoo>
