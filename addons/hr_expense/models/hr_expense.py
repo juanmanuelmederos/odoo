@@ -524,19 +524,6 @@ class HrExpenseSheet(models.Model):
             if len(employee_ids) > 1 or (len(employee_ids) == 1 and employee_ids != sheet.employee_id):
                 raise ValidationError(_('You cannot add expense lines of another employee.'))
 
-    @api.model
-    def create(self, vals):
-        self._create_set_followers(vals)
-        sheet = super(HrExpenseSheet, self).create(vals)
-        return sheet
-
-    @api.multi
-    def write(self, vals):
-        res = super(HrExpenseSheet, self).write(vals)
-        if vals.get('employee_id'):
-            self._add_followers()
-        return res
-
     @api.multi
     def unlink(self):
         for expense in self:
@@ -563,38 +550,13 @@ class HrExpenseSheet(models.Model):
             return 'hr_expense.mt_expense_responsible'
         return super(HrExpenseSheet, self)._track_subtype(init_values)
 
-    def _get_users_to_subscribe(self, employee=False):
-        users = self.env['res.users']
-        employee = employee or self.employee_id
-        if employee.user_id:
-            users |= employee.user_id
-        if employee.parent_id:
-            users |= employee.parent_id.user_id
-        if employee.department_id and employee.department_id.manager_id and employee.parent_id != employee.department_id.manager_id:
-            users |= employee.department_id.manager_id.user_id
-        return users
-
-    def _add_followers(self):
-        users = self._get_users_to_subscribe()
-        self.message_subscribe(partner_ids=users.mapped('partner_id').ids)
-
-    @api.model
-    def _create_set_followers(self, values):
-        # Add the followers at creation, so they can be notified
-        employee_id = values.get('employee_id')
-        if not employee_id:
-            return
-
-        employee = self.env['hr.employee'].browse(employee_id)
-        users = self._get_users_to_subscribe(employee=employee) - self.env.user
-        values['message_follower_ids'] = []
-        MailFollowers = self.env['mail.followers']
-        for partner in users.mapped('partner_id'):
-            values['message_follower_ids'] += MailFollowers._add_follower_command(self._name, [], {partner.id: None}, {})[0]
-        
-        if values.get('user_id') and values.get('user_id') != employee.user_id.id:
-            resp_partner = self.env['res.users'].browse(values['user_id'])
-            values['message_follower_ids'] += MailFollowers._add_follower_command(self._name, [], {resp_partner.partner_id.id: None}, {})[0]
+    def _message_auto_subscribe_followers(self, updated_values):
+        res = super(HrExpenseSheet, self)._message_auto_subscribe_followers(updated_values)
+        if updated_values.get('employee_id'):
+            employee = self.env['hr.employee'].browse(updated_values['employee_id'])
+            users = employee.user_id | employee.parent_id.user_id | employee.department_id.manager_id.user_id
+            res += users.mapped('partner_id').ids
+        return res
 
     # --------------------------------------------
     # Actions
