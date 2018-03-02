@@ -111,6 +111,7 @@ class ResCompany(models.Model):
                 rec.name AS reconciliation
             FROM account_move_line line
             LEFT JOIN account_move move ON move.id = line.move_id
+            LEFT JOIN account_journal j ON j.id = line.journal_id
             LEFT JOIN res_currency currency ON currency.id = line.currency_id
             LEFT JOIN account_tax tax ON tax.id = line.tax_line_id
             LEFT JOIN account_account account ON account.id = line.account_id
@@ -122,10 +123,10 @@ class ResCompany(models.Model):
             WHERE move.state = 'posted'
                 AND line.date <= %s
                 AND line.company_id = %s
-                AND line.journal_id = %s
+                AND j.type = 'sale'
             ORDER BY line.id
         '''
-        params = [self.fiscalyear_lock_date, self.id, self.env.ref('point_of_sale.pos_sale_journal').id]
+        params = [self.fiscalyear_lock_date, self.id]
 
         self._cr.execute(query, params)
         return filename, self._l10n_fr_compute_csv_archive_content(self._cr.dictfetchall(), fields)
