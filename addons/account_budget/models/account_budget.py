@@ -154,7 +154,7 @@ class CrossoveredBudgetLines(models.Model):
                     import logging
                     logger = logging.getLogger(__name__)
                     logger.error("============================================")
-                    logger.error((today, date_from, date_to, line.date_from, line.date_to))
+                    logger.error((today, line.date_from, line.date_to))
                     logger.error("********************************************")
                     elapsed_timedelta = today - line.date_from
 
