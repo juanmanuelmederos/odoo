@@ -151,6 +151,11 @@ class CrossoveredBudgetLines(models.Model):
                         theo_amt = line.planned_amount
                 else:
                     line_timedelta = line.date_to - line.date_from
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.info("============================================")
+                    logger.info((today, date_from, date_to, line.date_from, line.date_to))
+                    logger.info("********************************************")
                     elapsed_timedelta = today - line.date_from
 
                     if elapsed_timedelta.days < 0:
