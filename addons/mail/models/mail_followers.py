@@ -153,6 +153,19 @@ class Followers(models.Model):
     # --------------------------------------------------
 
     def _get_followers_data(self, res_model, res_ids, pids, cids):
+        where_params = (res_model, res_ids, pids, cids)
+        query = """
+SELECT fol.id, fol.res_id, fol.partner_id, fol.channel_id, array_agg(subtype.id)
+FROM mail_followers fol
+LEFT JOIN mail_followers_mail_message_subtype_rel fol_rel ON fol_rel.mail_followers_id = fol.id
+LEFT JOIN mail_message_subtype subtype ON subtype.id = fol_rel.mail_message_subtype_id
+WHERE fol.res_model = %s AND fol.res_id = ANY(%s) AND
+    (fol.partner_id = ANY(%s) OR fol.channel_id = ANY(%s))
+GROUP BY fol.id"""
+        self.env.cr.execute(query, where_params)
+        return self.env.cr.fetchall()
+
+    def _get_doc_follower_data(self, doc_data):
         """ Private method allowing to fetch follower data from a given set of
         res_model / res_ids. It returns data for each follower: its follower ID,
         the partner ID (if any), if the partner is shared aka customer or share
@@ -168,15 +181,16 @@ class Followers(models.Model):
          (aka no user or shared user, void id channel_id), list of followed subtype
          ids)
         """
-        where_params = (res_model, res_ids, pids, cids)
+        where_clause = ' OR '.join(['fol.res_model = %s AND fol.res_id = ANY(%s)'] * len(doc_data))
+        where_params = list(itertools.chain.from_iterable((res_model, res_ids) for res_model, res_ids in doc_data))
         query = """
-SELECT fol.id, fol.res_id, fol.partner_id, fol.channel_id, array_agg(subtype.id)
+SELECT fol.partner_id, fol.channel_id, partner.partner_share, array_agg(subtype.id)
 FROM mail_followers fol
+LEFT JOIN res_partner partner ON partner.id = fol.partner_id
 LEFT JOIN mail_followers_mail_message_subtype_rel fol_rel ON fol_rel.mail_followers_id = fol.id
 LEFT JOIN mail_message_subtype subtype ON subtype.id = fol_rel.mail_message_subtype_id
-WHERE fol.res_model = %s AND fol.res_id = ANY(%s) AND
-    (fol.partner_id = ANY(%s) OR fol.channel_id = ANY(%s))
-GROUP BY fol.id"""
+WHERE %s
+GROUP BY fol.id, partner.partner_share""" % where_clause
         self.env.cr.execute(query, where_params)
         return self.env.cr.fetchall()
 

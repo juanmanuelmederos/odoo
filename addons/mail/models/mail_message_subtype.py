@@ -54,16 +54,45 @@ class MailMessageSubtype(models.Model):
         self.clear_caches()
         return super(MailMessageSubtype, self).unlink()
 
-    def auto_subscribe_subtypes(self, model_name):
-        """ Retrieve the header subtypes and relations for the given model. """
-        subtype_ids, relations = self._auto_subscribe_subtypes(model_name)
-        return self.browse(subtype_ids), relations
+    def get_subscription_subtypes(self, model_name, updated_values):
+        updated_relation_data = dict()
+        all_ids, default_ids, internal_ids, parent_data, relation_data = self._get_subscription_subtypes(model_name)
+        for res_model, relation_fields in relation_data.items():
+            for field in (r for r in relation_fields if updated_values.get(r)):
+                updated_relation_data.setdefault(res_model, set()).add(field)
+        return all_ids, default_ids, internal_ids, parent_data, updated_relation_data
 
     @tools.ormcache('self.env.uid', 'model_name')
-    def _auto_subscribe_subtypes(self, model_name):
-        domain = ['|', ('res_model', '=', False), ('parent_id.res_model', '=', model_name)]
+    def _get_subscription_subtypes(self, model_name):
+        """
+
+        Example with tasks and project
+
+         * discussion subtypes: model = False
+         * task subtypes: model = project.task
+         * project subtypes: parent_id = task subtype, res_model = project.project
+         * we will receive
+
+          * default_ids: for task, all default subtypes
+          * internal_ids: for task, internal-only default subtypes
+          * parent_data: dict(parent model, parent subtypes linked to task), i.e. {'project.project': subtype_ids}
+          * relation_data: dict(parent_model, relation_fields), i.e. {'project.project': ['project_id']}
+        """
+        # domain = ['|', '|', ('res_model', '=', False), ('res_model', '=', model_name), '&', ('parent_id.res_model', '=', model_name), ('relation_field', 'in', updated_fields)]
+        domain = ['|', '|', ('res_model', '=', False), ('res_model', '=', model_name), ('parent_id.res_model', '=', model_name)]
         subtypes = self.search(domain)
-        return subtypes.ids, set(subtype.relation_field for subtype in subtypes if subtype.relation_field)
+        all_ids, default_ids, internal_ids, parent_data, relation_data = list(), list(), list(), dict(), dict()
+        for subtype in subtypes:
+            if not subtype.res_model or subtype.res_model == model_name:
+                all_ids += subtype.ids
+                if subtype.default:
+                    default_ids += subtype.ids
+            elif subtype.relation_field:
+                parent_data[subtype.id] = subtype.parent_id.id
+                relation_data.setdefault(subtype.res_model, set()).add(subtype.relation_field)
+            if subtype.internal:
+                internal_ids += subtype.ids
+        return all_ids, default_ids, internal_ids, parent_data, relation_data
 
     def default_subtypes(self, model_name):
         """ Retrieve the default subtypes (all, internal, external) for the given model. """
