@@ -234,7 +234,7 @@ class MailThread(models.AbstractModel):
         for key, val in self._context.items():
             if key.startswith('default_') and key[8:] not in create_values:
                 create_values[key[8:]] = val
-        thread.message_auto_subscribe(list(create_values), values=create_values)
+        thread.message_auto_subscribe(create_values)
 
         # track values
         if not self._context.get('mail_notrack'):
@@ -271,7 +271,7 @@ class MailThread(models.AbstractModel):
         result = super(MailThread, self).write(values)
 
         # update followers
-        self.message_auto_subscribe(list(values), values=values)
+        self.message_auto_subscribe(values)
 
         # Perform the tracking
         if tracked_fields:
@@ -2118,8 +2118,11 @@ class MailThread(models.AbstractModel):
             ('channel_id', 'in', channel_ids or [])
         ]).unlink()
 
-    @api.model
-    def _message_get_auto_subscribe_fields(self, updated_fields, auto_follow_fields=None):
+    def _message_auto_subscribe_followers(self, updated_values):
+        return []
+
+    def _message_auto_subscribe_fields_to_notify(self, updated_values):
+        """ Returns partners to notify depending on updated values. """
         """ Returns the list of relational fields linking to res.users that should
             trigger an auto subscribe. The default list checks for the fields
             - called 'user_id'
@@ -2130,45 +2133,40 @@ class MailThread(models.AbstractModel):
             Override this method if a custom behavior is needed about fields
             that automatically subscribe users.
         """
-        if auto_follow_fields is None:
-            auto_follow_fields = ['user_id']
-        user_field_lst = []
+        field_list = list()
         for name, field in self._fields.items():
-            if name in auto_follow_fields and name in updated_fields and getattr(field, 'track_visibility', False) and field.comodel_name == 'res.users':
-                user_field_lst.append(name)
-        return user_field_lst
+            if name == 'user_id' and updated_values.get(name) and getattr(field, 'track_visibility', False):
+                if field.comodel_name in ('res.users'):
+                    field_list.append((name, 'mail.message_user_assigned'))
+        return field_list
 
     @api.multi
-    def _message_auto_subscribe_notify(self, partner_ids):
-        """ Notify newly subscribed followers of the last posted message.
-            :param partner_ids : the list of partner to add as needaction partner of the last message
+    def _message_auto_subscribe_notify(self, partner_data, template):
+        """ Notify new followers, using a template to render the content of the
+        notification message. Notifications pushed are done using the standard
+        notification mechanism in mail.thread. It is either inbox either email
+        depending on the partner state: no user (email, customer), share user
+        (email, customer) or classic user (notification_type)
+
+         :param partner_data : the list of partner to add as needaction partner of the last message
                                  (This excludes the current partner)
         """
-        if not partner_ids:
+        if not self.ids or self.env.context.get('mail_auto_subscribe_no_notify'):
             return
 
-        if self.env.context.get('mail_auto_subscribe_no_notify'):
-            return
-
-        # send the email only to the current record and not all the ids matching active_domain !
-        # by default, send_mail for mass_mail use the active_domain instead of active_ids.
-        if 'active_domain' in self.env.context:
-            ctx = dict(self.env.context)
-            ctx.pop('active_domain')
-            self = self.with_context(ctx)
-
-        assignation_tpl = self.env.ref('mail.message_user_assigned')
+        template = template or self.env.ref('mail.message_user_assigned')
 
         for record in self:
             values = {
                 'object': record,
             }
-            assignation_msg = assignation_tpl.render(values, engine='ir.qweb')
+            pids = partner_data.get(record.id)
+            assignation_msg = template.render(values, engine='ir.qweb')
             assignation_msg = self.env['mail.thread']._replace_local_links(assignation_msg)
             record.message_notify(
                 subject='You have been assigned to %s' % record.display_name,
                 body=assignation_msg,
-                partner_ids=[(4, pid) for pid in partner_ids],
+                partner_ids=[(4, pid) for pid in pids],
                 record_name=record.display_name,
                 notif_layout='mail.mail_notification_light',
                 notif_values={
@@ -2177,7 +2175,7 @@ class MailThread(models.AbstractModel):
             )
 
     @api.multi
-    def message_auto_subscribe(self, updated_fields, values=None):
+    def message_auto_subscribe(self, updated_values):
         """ Handle auto subscription. Two methods for auto subscription exist:
 
          - tracked res.users relational fields, such as user_id fields. Those fields
@@ -2198,54 +2196,59 @@ class MailThread(models.AbstractModel):
                             to get the values. Added after releasing 7.0, therefore
                             not merged with updated_fields argumment.
         """
+        # if not self.ids:  # shortcut, if no record, avoid computing void stuff
+        #     return
+
         new_partners, new_channels = dict(), dict()
 
-        # fetch auto_follow_fields: res.users relation fields whose changes are tracked for subscription
-        user_field_lst = self._message_get_auto_subscribe_fields(updated_fields)
+        # fetch fields requiring auto subscription + notification
+        user_field_lst = self._message_auto_subscribe_fields_to_notify(updated_values)
+
+        # fetch followers to subscribe depending on the target model
+        tmp_pids = self._message_auto_subscribe_followers(updated_values)
+        for tmp_pid in tmp_pids:
+            new_partners.setdefault(tmp_pid, set())
 
         # fetch header subtypes
-        subtypes, relation_fields = self.env['mail.message.subtype'].auto_subscribe_subtypes(self._name)
+        all_ids, default_ids, internal_ids, parent_data, relation_data = self.env['mail.message.subtype'].get_subscription_subtypes(self._name, updated_values)
+        relation_fields = [a for b in relation_data.values() for a in b]
 
         # if no change in tracked field or no change in tracked relational field: quit
-        if not any(relation in relation_fields for relation in updated_fields) and not user_field_lst:
+        if not any(relation in relation_fields for relation in updated_values.keys()) and not user_field_lst and not tmp_pids:
             return True
 
         # find followers of headers, update structure for new followers
-        headers = set()
-        for subtype in subtypes:
-            if subtype.relation_field and values.get(subtype.relation_field):
-                headers.add((subtype.res_model, values.get(subtype.relation_field)))
-        if headers:
-            header_domain = ['|'] * (len(headers) - 1)
-            for header in headers:
-                header_domain += ['&', ('res_model', '=', header[0]), ('res_id', '=', header[1])]
-            for header_follower in self.env['mail.followers'].sudo().search(header_domain):
-                for subtype in header_follower.subtype_ids:
-                    if subtype.parent_id and subtype.parent_id.res_model == self._name:
-                        new_subtype = subtype.parent_id
-                    elif subtype.res_model is False:
-                        new_subtype = subtype
-                    else:
-                        continue
-                    if header_follower.partner_id:
-                        new_partners.setdefault(header_follower.partner_id.id, set()).add(new_subtype.id)
-                    else:
-                        new_channels.setdefault(header_follower.channel_id.id, set()).add(new_subtype.id)
+        if relation_data:
+            doc_data = [(model, [updated_values[fname] for fname in fname_set]) for model, fname_set in relation_data.items()]
+            res = self.env['mail.followers']._get_doc_follower_data(doc_data)
+            # print('res', res)
+            for pid, cid, pshare, subtype_ids in res:
+                if pid:
+                    sids = [parent_data[sid] for sid in subtype_ids if parent_data.get(sid)]
+                    sids += [sid for sid in subtype_ids if sid not in parent_data and sid in default_ids]
+                    # sids = [parent_data.get(sid, sid) for sid in subtype_ids]
+                    new_partners[pid] = set(sids) - set(internal_ids) if pshare else set(sids) & set(all_ids)
+                if cid:
+                    # sids = [parent_data.get(sid, sid) for sid in subtype_ids]
+                    sids = [parent_data[sid] for sid in subtype_ids if parent_data.get(sid)]
+                    sids += [sid for sid in subtype_ids if sid not in parent_data and sid in default_ids]
+                    new_channels[cid] = set(sids) & set(all_ids)
 
         # add followers coming from res.users relational fields that are tracked
-        to_add_users = self.env['res.users'].sudo().browse([values[name] for name in user_field_lst if values.get(name)]).filtered(lambda u: u.partner_id.active)
-        for partner in to_add_users.mapped('partner_id'):
-            new_partners.setdefault(partner.id, None)
+        user_ids = [updated_values[name] for name, template in user_field_lst if updated_values[name] != self.env.uid]
+        new_pids = list()
+        if user_ids:
+            new_pids = self.env['res.partner'].sudo().search([('id', 'not in', list(new_partners.keys())), ('user_ids', 'in', user_ids), ('active', '=', True)]).ids
+            for new_pid in new_pids:
+                new_partners.setdefault(new_pid, default_ids)
 
-        for pid, subtypes in new_partners.items():
-            subtypes = list(subtypes) if subtypes is not None else None
-            self.message_subscribe(partner_ids=[pid], subtype_ids=subtypes)
-        for cid, subtypes in new_channels.items():
-            subtypes = list(subtypes) if subtypes is not None else None
-            self.message_subscribe(channel_ids=[cid], subtype_ids=subtypes)
+        self.env['mail.followers']._insert_followers(
+            self._name, self.ids,
+            list(new_partners.keys()), new_partners,
+            list(new_channels.keys()), new_channels,
+            check_existing=True)
 
-        # remove the current user from the needaction partner to avoid to notify the author of the message
-        user_pids = [user.partner_id.id for user in to_add_users if user != self.env.user]
-        self._message_auto_subscribe_notify(user_pids)
+        if user_ids:
+            self._message_auto_subscribe_notify(dict((rid, new_pids) for rid in self.ids), None)
 
         return True
