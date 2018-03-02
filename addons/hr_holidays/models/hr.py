@@ -221,6 +221,23 @@ class Employee(models.Model):
         ])
         return [('id', 'in', holidays.mapped('employee_id').ids)]
 
+    @api.model
+    def create(self, values):
+        res = super(Employee, self).create(values)
+        leaves = self.env['resource.calendar.leaves'].search([('calendar_id', '=', self.resource_calendar_id.id), ('resource_id', '=', False)])
+        for leave in leaves:
+            request = self.env['hr.leave'].create({
+                'name': leave.name,
+                'employee_id': employee,
+                'holiday_status_id': leave.company_id.bank_leaves_type_id,
+                'date_from': leave.date_from,
+                'date_to': leave.date_to,
+                'number_of_days_temp': number_of_days,
+                'calendar_leave_id': leave,
+            })
+            request.action_approve()
+        return res
+
     def write(self, values):
         res = super(Employee, self).write(values)
         if 'parent_id' in values or 'department_id' in values:

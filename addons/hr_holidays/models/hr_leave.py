@@ -90,6 +90,8 @@ class HolidaysRequest(models.Model):
     validation_type = fields.Selection('Validation Type', related='holiday_status_id.validation_type')
     can_reset = fields.Boolean('Can reset', compute='_compute_can_reset')
 
+    calendar_leave_id = fields.Many2one('resource.calendar.leaves')
+
     _sql_constraints = [
         ('type_value', "CHECK( (holiday_type='employee' AND employee_id IS NOT NULL) or (holiday_type='category' AND category_id IS NOT NULL) or (holiday_type='department' AND department_id IS NOT NULL) )",
          "The employee, department or employee category of this request is missing. Please make sure that your user login is linked to an employee."),
@@ -301,7 +303,9 @@ class HolidaysRequest(models.Model):
             meeting_values = holiday._prepare_holidays_meeting_values()
             meeting = self.env['calendar.event'].with_context(no_mail_to_attendees=True).create(meeting_values)
             holiday.write({'meeting_id': meeting.id})
-            holiday._create_resource_leave()
+            # Don't create a resource.calendar.leaves if we come from resource.calendar.leaves
+            if not self.env.context.get('auto_leave_create_disable', False):
+                holiday._create_resource_leave()
 
     @api.multi
     def _prepare_holidays_meeting_values(self):

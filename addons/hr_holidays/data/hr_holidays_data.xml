@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <data>
+        <function id="_init_data_hr_holidays"
+            model="res.company"
+            name="_init_data_hr_holidays"
+            eval="[]"/>
+    </data>
+
     <data noupdate="1">
 
         <!-- Casual leave -->

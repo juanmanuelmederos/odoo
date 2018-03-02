@@ -22,6 +22,21 @@ class ResourceMixin(models.AbstractModel):
         default=lambda self: self.env['res.company']._company_default_get().resource_calendar_id,
         index=True, related='resource_id.calendar_id', store=True)
 
+    @api.onchange('resource_calendar_id')
+    def _onchange_resource_calendar_id(self):
+        for res in self:
+            # If there was another calendar we remove the old leaves based on it
+            # And we create the new ones
+            if hasattr(res, '_origin'):
+                resource_leaves = self.env['resource.calendar.leaves'].search([('calendar_id', '=', res._origin.resource_calendar_id.id), ('resource_id', '=', False)])
+                for rcl in resource_leaves:
+                    rcl.leave_ids.action_refuse()
+                    rcl.leave_ids.unlink()
+
+                resource_leaves = self.env['resource.calendar.leaves'].search([('calendar_id', '=', res.resource_calendar_id.id), ('resource_id', '=', False)])
+                for rcl in resource_leaves:
+                    rcl.create_leaves()
+
     @api.model
     def create(self, values):
         if not values.get('resource_id'):

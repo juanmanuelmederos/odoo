@@ -66,7 +66,8 @@ class HolidaysType(models.Model):
 
     employee_applicability = fields.Selection([('both', 'On Leave As Well As On Allocation'),
                                             ('leave', 'Only On Leave'),
-                                            ('allocation', 'Only On Allocation')],
+                                            ('allocation', 'Only On Allocation'),
+                                            ('none', 'None')],
                                            default='both', string='Available For Employee :',
                                            help='This leave type will be available on Leave / Allocation request based on selected value')
 
