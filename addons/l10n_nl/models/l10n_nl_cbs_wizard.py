@@ -38,7 +38,7 @@ class L10nNlCBS(models.TransientModel):
         software_version = release.version
 
         # The software_version looks like saas~11.1+e but we have maximum 5 characters allowed
-        software_version = software_version.replace('saas~', '').replace('+e', '')
+        software_version = software_version.replace('saas~', '').replace('+e', '').replace('alpha', '')
 
         # HEADER LINE
         file_content = ''.join([
