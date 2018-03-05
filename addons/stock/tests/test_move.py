@@ -669,7 +669,6 @@ class StockMove(TransactionCase):
         })
         putaway = self.env['product.putaway'].create({
             'name': 'putaway stock->shelf1',
-            'based_on': 'category',
             'fixed_location_ids': [(0, 0, {
                 'category_id': self.env.ref('product.product_category_all').id,
                 'fixed_location_id': shelf1_location.id,
@@ -712,7 +711,6 @@ class StockMove(TransactionCase):
         })
         putaway = self.env['product.putaway'].create({
             'name': 'putaway stock->shelf1',
-            'based_on': 'product',
             'product_location_ids': [(0, 0, {
                 'product_id': self.env.ref('product.product_product_5').id,
                 'fixed_location_id': shelf1_location.id,
@@ -761,7 +759,6 @@ class StockMove(TransactionCase):
         })
         putaway = self.env['product.putaway'].create({
             'name': 'putaway stock->shelf1',
-            'based_on': 'product_category',
             'fixed_location_ids': [(0, 0, {
                 'category_id': self.env.ref('product.product_category_all').id,
                 'fixed_location_id': shelf1_location.id,

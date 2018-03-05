@@ -31,19 +31,17 @@ class PutAwayStrategy(models.Model):
         'Fixed Locations Per Product', domain=[('product_id', '!=', False)], copy=True)
 
     def putaway_apply(self, product):
-        if self.based_on in ['product', 'product_category']:
-            if self.product_location_ids:
-                put_away = self.product_location_ids.filtered(lambda x: x.product_id == product)
+        if self.product_location_ids:
+            put_away = self.product_location_ids.filtered(lambda x: x.product_id == product)
+            if put_away:
+                return put_away[0].fixed_location_id
+        elif self.fixed_location_ids:
+            categ = product.categ_id
+            while categ:
+                put_away = self.fixed_location_ids.filtered(lambda x: x.category_id == categ)
                 if put_away:
                     return put_away[0].fixed_location_id
-        elif self.based_on in ['category', 'product_category']:
-            if self.fixed_location_ids:
-                categ = product.categ_id
-                while categ:
-                    put_away = self.fixed_location_ids.filtered(lambda x: x.category_id == categ)
-                    if put_away:
-                        return put_away[0].fixed_location_id
-                    categ = categ.parent_id
+                categ = categ.parent_id
         return self.env['stock.location']
 
 
