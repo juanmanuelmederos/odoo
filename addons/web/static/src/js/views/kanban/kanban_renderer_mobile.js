@@ -187,10 +187,14 @@ KanbanRenderer.include({
         this._moveToGroup($(event.currentTarget).index(), true);
     },
     _onMobileSwipeLeft: function (event) {
-        this._moveToGroup(this.activeColumnIndex + 1, this.ANIMATE);
+        if((this.activeColumnIndex + 1) < this.$('.o_kanban_group').length){
+            this._moveToGroup(this.activeColumnIndex + 1, this.ANIMATE);
+        }
     },
     _onMobileSwipeRight: function (event) {
-        this._moveToGroup(this.activeColumnIndex - 1, this.ANIMATE);
+        if(this.activeColumnIndex > 0){
+            this._moveToGroup(this.activeColumnIndex - 1, this.ANIMATE);
+        }
     },
 
 });

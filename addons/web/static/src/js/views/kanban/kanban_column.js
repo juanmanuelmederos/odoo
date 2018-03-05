@@ -98,7 +98,7 @@ var KanbanColumn = Widget.extend({
 
         var count = 0;
         var sortable = new Sortable(this.el, {
-            group: { name: ".o_kanban_group" },
+            group: { name: ".o_kanban_group" , pull: this.draggable},
             ghostClass: "oe_kanban_card_ghost",
             chosenClass: "o_kanban_record_chosen",
             draggable: ".o_kanban_record",

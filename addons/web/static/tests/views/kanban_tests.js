@@ -1,6 +1,7 @@
 odoo.define('web.kanban_tests', function (require) {
 "use strict";
 
+var concurrency = require('web.concurrency');
 var KanbanColumnProgressBar = require('web.KanbanColumnProgressBar');
 var kanbanExamplesRegistry = require('web.kanban_examples_registry');
 var KanbanRenderer = require('web.KanbanRenderer');
@@ -1289,6 +1290,7 @@ QUnit.module('Views', {
     });
 
     QUnit.test('can drag and drop a record from one column to the next', function (assert) {
+        var done = assert.async();
         assert.expect(9);
 
         var envIDs = [1, 3, 2, 4]; // the ids that should be in the environment during this test
@@ -1320,6 +1322,8 @@ QUnit.module('Views', {
                 },
             },
         });
+        var $view = $('#qunit-fixture').contents();
+        $view.prependTo('body');
         assert.strictEqual(kanban.$('.o_kanban_group:nth-child(1) .o_kanban_record').length, 2,
                         "column should contain 2 record(s)");
         assert.strictEqual(kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record').length, 2,
@@ -1328,23 +1332,31 @@ QUnit.module('Views', {
         assert.strictEqual(kanban.$('.thisiseditable').length, 4, "all records should be editable");
         var $record = kanban.$('.o_kanban_group:nth-child(1) .o_kanban_record:first');
         var $group = kanban.$('.o_kanban_group:nth-child(2)');
-        envIDs = [3, 2, 4, 1]; // first record of first column moved to the bottom of second column
-        testUtils.dragAndDrop($record, $group);
+        envIDs = [3, 1, 2, 4]; // first record of first column moved to the bottom of second column
+        testUtils.dragMouseEvent($record, $group);
+        concurrency.delay(50).then(function () {
 
-        assert.strictEqual(kanban.$('.o_kanban_group:nth-child(1) .o_kanban_record').length, 1,
-                        "column should now contain 1 record(s)");
-        assert.strictEqual(kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record').length, 3,
-                        "column should contain 3 record(s)");
-        assert.strictEqual(kanban.$('.thisiseditable').length, 4, "all records should be editable");
-        kanban.destroy();
+            testUtils.dropMouseEvent($group);
+
+            assert.strictEqual(kanban.$('.o_kanban_group:nth-child(1) .o_kanban_record').length, 1,
+                            "column should now contain 1 record(s)");
+            assert.strictEqual(kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record').length, 3,
+                            "column should contain 3 record(s)");
+            assert.strictEqual(kanban.$('.thisiseditable').length, 4, "all records should be editable");
+            kanban.destroy();
+            $view.remove();
+            done();
+        });
     });
 
     QUnit.test('drag and drop a record, grouped by selection', function (assert) {
+        var done = assert.async();
         assert.expect(6);
 
         var kanban = createView({
             View: KanbanView,
             model: 'partner',
+            debug: true,
             data: this.data,
             arch: '<kanban class="o_kanban_test" on_create="quick_create">' +
                         '<templates>' +
@@ -1365,6 +1377,8 @@ QUnit.module('Views', {
                 return this._super(route, args);
             },
         });
+        var $view = $('#qunit-fixture').contents();
+        $view.prependTo('body');
         assert.strictEqual(kanban.$('.o_kanban_group:nth-child(1) .o_kanban_record').length, 1,
                         "column should contain 1 record(s)");
         assert.strictEqual(kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record').length, 1,
@@ -1372,16 +1386,22 @@ QUnit.module('Views', {
 
         var $record = kanban.$('.o_kanban_group:nth-child(1) .o_kanban_record:first');
         var $group = kanban.$('.o_kanban_group:nth-child(2)');
-        testUtils.dragAndDrop($record, $group);
+        testUtils.dragMouseEvent($record, $group);
+        concurrency.delay(50).then(function () {
+            testUtils.dropMouseEvent($group);
 
-        assert.strictEqual(kanban.$('.o_kanban_group:nth-child(1) .o_kanban_record').length, 0,
-                        "column should now contain 0 record(s)");
-        assert.strictEqual(kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record').length, 2,
-                        "column should contain 2 record(s)");
-        kanban.destroy();
+            assert.strictEqual(kanban.$('.o_kanban_group:nth-child(1) .o_kanban_record').length, 0,
+                            "column should now contain 0 record(s)");
+            assert.strictEqual(kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record').length, 2,
+                            "column should contain 2 record(s)");
+            kanban.destroy();
+            $view.remove();
+            done();
+        });
     });
 
     QUnit.test('prevent drag and drop of record if grouped by readonly', function (assert) {
+        var done = assert.async();
         assert.expect(12);
 
         this.data.partner.fields.foo.readonly = true;
@@ -1409,6 +1429,8 @@ QUnit.module('Views', {
         });
         // simulate an update coming from the searchview, with another groupby given
         kanban.update({groupBy: ['state']});
+        var $view = $('#qunit-fixture').contents();
+        $view.prependTo('body');
         assert.strictEqual(kanban.$('.o_kanban_group:nth-child(1) .o_kanban_record').length, 1,
                         "column should contain 1 record(s)");
         assert.strictEqual(kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record').length, 1,
@@ -1416,42 +1438,62 @@ QUnit.module('Views', {
         // drag&drop a record in another column
         var $record = kanban.$('.o_kanban_group:nth-child(1) .o_kanban_record:first');
         var $group = kanban.$('.o_kanban_group:nth-child(2)');
-        testUtils.dragAndDrop($record, $group);
-        // should not be draggable
-        assert.strictEqual(kanban.$('.o_kanban_group:nth-child(1) .o_kanban_record').length, 1,
-                        "column should now contain 1 record(s)");
-        assert.strictEqual(kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record').length, 1,
-                        "column should contain 1 record(s)");
 
-        // simulate an update coming from the searchview, with another groupby given
-        kanban.update({groupBy: ['foo']});
-        assert.strictEqual(kanban.$('.o_kanban_group:nth-child(1) .o_kanban_record').length, 1,
-                        "column should contain 1 record(s)");
-        assert.strictEqual(kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record').length, 2,
-                        "column should contain 2 record(s)");
-        // drag&drop a record in another column
-        $record = kanban.$('.o_kanban_group:nth-child(1) .o_kanban_record:first');
-        $group = kanban.$('.o_kanban_group:nth-child(2)');
-        testUtils.dragAndDrop($record, $group);
-        // should not be draggable
-        assert.strictEqual(kanban.$('.o_kanban_group:nth-child(1) .o_kanban_record').length, 1,
-                        "column should now contain 1 record(s)");
-        assert.strictEqual(kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record').length, 2,
-                        "column should contain 2 record(s)");
+        testUtils.dragMouseEvent($record, $group);
+        concurrency.delay(50).then(function () {
+            testUtils.dropMouseEvent($group);
+            // testUtils.dragAndDrop($record, $group);
+            // should not be draggable
+            assert.strictEqual(kanban.$('.o_kanban_group:nth-child(1) .o_kanban_record').length, 1,
+                            "column should now contain 1 record(s)");
+            assert.strictEqual(kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record').length, 1,
+                            "column should contain 1 record(s)");
 
-        // drag&drop a record in the same column
-        var $record1 = kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record:eq(0)');
-        var $record2 = kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record:eq(1)');
-        assert.strictEqual($record1.text(), "blipDEF", "first record should be DEF");
-        assert.strictEqual($record2.text(), "blipGHI", "second record should be GHI");
-        testUtils.dragAndDrop($record2, $record1, {position: 'top'});
-        // should still be able to resequence
-        assert.strictEqual(kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record:eq(0)').text(), "blipGHI",
-            "records should have been resequenced");
-        assert.strictEqual(kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record:eq(1)').text(), "blipDEF",
-            "records should have been resequenced");
+            // simulate an update coming from the searchview, with another groupby given
+            kanban.update({groupBy: ['foo']});
+            assert.strictEqual(kanban.$('.o_kanban_group:nth-child(1) .o_kanban_record').length, 1,
+                            "column should contain 1 record(s)");
+            assert.strictEqual(kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record').length, 2,
+                            "column should contain 2 record(s)");
+            // drag&drop a record in another column
+            $record = kanban.$('.o_kanban_group:nth-child(1) .o_kanban_record:first');
+            $group = kanban.$('.o_kanban_group:nth-child(2)');
 
-        kanban.destroy();
+            // testUtils.dragAndDrop($record, $group);
+            testUtils.dragMouseEvent($record, $group);
+            return concurrency.delay(50);
+        }).then(function () {
+            testUtils.dropMouseEvent($group);
+
+            // should not be draggable
+            assert.strictEqual(kanban.$('.o_kanban_group:nth-child(1) .o_kanban_record').length, 1,
+                            "column should now contain 1 record(s)");
+            assert.strictEqual(kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record').length, 2,
+                            "column should contain 2 record(s)");
+
+            // drag&drop a record in the same column
+
+            var $record1 = kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record:eq(0)');
+            var $record2 = kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record:eq(1)');
+            assert.strictEqual($record1.text(), "blipDEF", "first record should be DEF");
+            assert.strictEqual($record2.text(), "blipGHI", "second record should be GHI");
+            // testUtils.dragAndDrop($record2, $record1, {position: 'top'});
+
+            testUtils.dragMouseEvent($record2, $record1, {position: 'top'});
+            return concurrency.delay(50);
+        }).then(function () {
+            var $record1 = kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record:eq(0)');
+            testUtils.dropMouseEvent($record1);
+
+            // should still be able to resequence
+            assert.strictEqual(kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record:eq(0)').text(), "blipGHI",
+                "records should have been resequenced");
+            assert.strictEqual(kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record:eq(1)').text(), "blipDEF",
+                "records should have been resequenced");
+            kanban.destroy();
+            $view.remove();
+            done();
+        });
     });
 
     QUnit.test('kanban view with default_group_by', function (assert) {
@@ -2900,6 +2942,7 @@ QUnit.module('Views', {
     });
 
     QUnit.test('move a record then put it again in the same column', function (assert) {
+        var done = assert.async();
         assert.expect(6);
 
         this.data.partner.records = [];
@@ -2916,6 +2959,8 @@ QUnit.module('Views', {
             groupBy: ['product_id'],
         });
 
+        var $view = $('#qunit-fixture').contents();
+        $view.prependTo('body');
         kanban.$('.o_column_quick_create').click();
         kanban.$('.o_column_quick_create input').val('column1');
         kanban.$('.o_column_quick_create button.o_kanban_add').click();
@@ -2936,26 +2981,37 @@ QUnit.module('Views', {
 
         var $record = kanban.$('.o_kanban_group:eq(1) .o_kanban_record:eq(0)');
         var $group = kanban.$('.o_kanban_group:eq(0)');
-        testUtils.dragAndDrop($record, $group);
+        // testUtils.dragAndDrop($record, $group);
+        testUtils.dragMouseEvent($record, $group);
+        concurrency.delay(50).then(function () {
+            testUtils.dropMouseEvent($group);
+            assert.strictEqual(kanban.$('.o_kanban_group:eq(0) .o_kanban_record').length, 1,
+                            "column should contain 1 records");
+            assert.strictEqual(kanban.$('.o_kanban_group:eq(1) .o_kanban_record').length, 0,
+                            "column should contain 0 records");
 
-        assert.strictEqual(kanban.$('.o_kanban_group:eq(0) .o_kanban_record').length, 1,
-                        "column should contain 1 records");
-        assert.strictEqual(kanban.$('.o_kanban_group:eq(1) .o_kanban_record').length, 0,
-                        "column should contain 0 records");
+            // testUtils.dragAndDrop($record, $group);
+            return concurrency.delay(400);
+        }).then(function () {
+            $record = kanban.$('.o_kanban_group:eq(0) .o_kanban_record:eq(0)');
+            $group = kanban.$('.o_kanban_group:eq(1)');
+            testUtils.dragMouseEvent($record, $group);
+            return concurrency.delay(100);
+        }).then(function () {
+            testUtils.dropMouseEvent($group);
 
-        $record = kanban.$('.o_kanban_group:eq(0) .o_kanban_record:eq(0)');
-        $group = kanban.$('.o_kanban_group:eq(1)');
-
-        testUtils.dragAndDrop($record, $group);
-
-        assert.strictEqual(kanban.$('.o_kanban_group:eq(0) .o_kanban_record').length, 0,
-                        "column should contain 0 records");
-        assert.strictEqual(kanban.$('.o_kanban_group:eq(1) .o_kanban_record').length, 1,
-                        "column should contain 1 records");
-        kanban.destroy();
+            assert.strictEqual(kanban.$('.o_kanban_group:eq(0) .o_kanban_record').length, 0,
+                            "column should contain 0 records");
+            assert.strictEqual(kanban.$('.o_kanban_group:eq(1) .o_kanban_record').length, 1,
+                            "column should contain 1 records");
+            kanban.destroy();
+            $view.remove();
+            done();
+        });
     });
 
     QUnit.test('resequence a record twice', function (assert) {
+        var done = assert.async();
         assert.expect(10);
 
         this.data.partner.records = [];
@@ -2980,6 +3036,8 @@ QUnit.module('Views', {
             },
         });
 
+        var $view = $('#qunit-fixture').contents();
+        $view.prependTo('body');
         kanban.$('.o_column_quick_create').click();
         kanban.$('.o_column_quick_create input').val('column1');
         kanban.$('.o_column_quick_create button.o_kanban_add').click();
@@ -3003,25 +3061,33 @@ QUnit.module('Views', {
 
         var $record1 = kanban.$('.o_kanban_group:eq(0) .o_kanban_record:eq(1)');
         var $record2 = kanban.$('.o_kanban_group:eq(0) .o_kanban_record:eq(0)');
-        testUtils.dragAndDrop($record1, $record2, {position: 'top'});
+        // testUtils.dragAndDrop($record1, $record2, {position: 'top'});
+        testUtils.dragMouseEvent($record1, $record2, {position: 'top'});
+        concurrency.delay(50).then(function () {
+            testUtils.dropMouseEvent($record2);
 
-        assert.strictEqual(kanban.$('.o_kanban_group:eq(0) .o_kanban_record').length, 2,
-                        "column should contain 2 records");
-        assert.strictEqual(kanban.$('.o_kanban_group:eq(0) .o_kanban_record:eq(0)').text(), "record1",
-                        "records should be correctly ordered");
-        assert.strictEqual(kanban.$('.o_kanban_group:eq(0) .o_kanban_record:eq(1)').text(), "record2",
-                        "records should be correctly ordered");
-
-        testUtils.dragAndDrop($record2, $record1, {position: 'top'});
-
-        assert.strictEqual(kanban.$('.o_kanban_group:eq(0) .o_kanban_record').length, 2,
-                        "column should contain 2 records");
-        assert.strictEqual(kanban.$('.o_kanban_group:eq(0) .o_kanban_record:eq(0)').text(), "record2",
-                        "records should be correctly ordered");
-        assert.strictEqual(kanban.$('.o_kanban_group:eq(0) .o_kanban_record:eq(1)').text(), "record1",
-                        "records should be correctly ordered");
-        assert.strictEqual(nbResequence, 2, "should have resequenced twice");
-        kanban.destroy();
+            assert.strictEqual(kanban.$('.o_kanban_group:eq(0) .o_kanban_record').length, 2,
+                            "column should contain 2 records");
+            assert.strictEqual(kanban.$('.o_kanban_group:eq(0) .o_kanban_record:eq(0)').text(), "record1",
+                            "records should be correctly ordered");
+            assert.strictEqual(kanban.$('.o_kanban_group:eq(0) .o_kanban_record:eq(1)').text(), "record2",
+                            "records should be correctly ordered");
+            // testUtils.dragAndDrop($record2, $record1, {position: 'top'});
+            testUtils.dragMouseEvent($record2, $record1, {position: 'top'});
+            return concurrency.delay(50);
+        }).then(function () {
+            testUtils.dropMouseEvent($record1);
+            assert.strictEqual(kanban.$('.o_kanban_group:eq(0) .o_kanban_record').length, 2,
+                            "column should contain 2 records");
+            assert.strictEqual(kanban.$('.o_kanban_group:eq(0) .o_kanban_record:eq(0)').text(), "record2",
+                            "records should be correctly ordered");
+            assert.strictEqual(kanban.$('.o_kanban_group:eq(0) .o_kanban_record:eq(1)').text(), "record1",
+                            "records should be correctly ordered");
+            assert.strictEqual(nbResequence, 2, "should have resequenced twice");
+            kanban.destroy();
+            $view.remove();
+            done();
+        });
     });
 
     QUnit.test('basic support for widgets', function (assert) {

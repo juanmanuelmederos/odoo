@@ -15,6 +15,7 @@ var ajax = require('web.ajax');
 var basic_fields = require('web.basic_fields');
 var config = require('web.config');
 var ControlPanel = require('web.ControlPanel');
+var concurrency = require('web.concurrency');
 var core = require('web.core');
 var dom = require('web.dom');
 var session = require('web.session');
@@ -581,7 +582,39 @@ function dragAndDrop($el, $to, options) {
         });
     }
 }
+function dragMouseEvent($el, $to, options) {
+    // debugger
+    var position = (options && options.position) || 'center';
 
+    var elementCenter = $el.offset();
+    elementCenter.left += $el.outerWidth()/2;
+    elementCenter.top += $el.outerHeight()/2;
+
+    var toOffset = $to.offset();
+    toOffset.top += $to.outerHeight()/2;
+    toOffset.left += $to.outerWidth()/2;
+
+    if (position === 'top') {
+        toOffset.top -= $to.outerHeight()/2;
+    } else if (position === 'bottom') {
+        toOffset.top += $to.outerHeight()/2;
+    } else if (position === 'left') {
+        toOffset.left -= $to.outerWidth()/2;
+    } else if (position === 'right') {
+        toOffset.left += $to.outerWidth()/2;
+    }
+    triggerPositionalMouseEvent(elementCenter.left, elementCenter.top, 'mousedown');
+    triggerPositionalMouseEvent(toOffset.left, toOffset.top , 'mousemove');
+
+}
+function dropMouseEvent($to, options) {
+    var position = (options && options.position) || 'center';
+
+    var toOffset = $to.offset();
+    toOffset.top += $to.outerHeight()/2;
+    toOffset.left += $to.outerWidth()/2;
+    triggerPositionalMouseEvent(toOffset.left, toOffset.top, 'mouseup');
+}
 /**
  * simulate a mouse event with a custom event who add the item position. This is
  * sometimes necessary because the basic way to trigger an event (such as
@@ -823,6 +856,8 @@ return $.when(
         createParent: createParent,
         createView: createView,
         dragAndDrop: dragAndDrop,
+        dragMouseEvent: dragMouseEvent,
+        dropMouseEvent: dropMouseEvent,
         fieldsViewGet: fieldsViewGet,
         intercept: intercept,
         observe: observe,
