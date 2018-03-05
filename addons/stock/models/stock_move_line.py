@@ -28,7 +28,7 @@ class StockMoveLine(models.Model):
         'Real Reserved Quantity', digits=0,
         compute='_compute_product_qty', inverse='_set_product_qty', store=True)
     product_uom_qty = fields.Float('Reserved', default=0.0, digits=dp.get_precision('Product Unit of Measure'), required=True)
-    ordered_qty = fields.Float('Ordered Quantity', digits=dp.get_precision('Product Unit of Measure'))
+    ordered_qty = fields.Float('Ordered Quantity', digits=dp.get_precision('Product Unit of Measure'))  # FIXME: remove me in master
     qty_done = fields.Float('Done', default=0.0, digits=dp.get_precision('Product Unit of Measure'), copy=False)
     package_id = fields.Many2one('stock.quant.package', 'Source Package', ondelete='restrict')
     lot_id = fields.Many2one('stock.production.lot', 'Lot')
