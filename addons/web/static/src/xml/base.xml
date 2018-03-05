@@ -420,6 +420,14 @@
         </div>
     </div>
 </t>
+<t t-name="CreateButton.tooltip">
+    <div class="oe_tooltip_string">
+        <div class="tooltip-inner">
+            Hit ENTER to CREATE<br/>
+            Hit DOWN to navigate to the list bellow
+        </div>
+    </div>
+</t>
 <form t-name="FormView.set_default">
     <t t-set="args" t-value="widget.args"/>
     <table style="width: 100%">
