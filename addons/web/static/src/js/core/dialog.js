@@ -160,7 +160,13 @@ var Dialog = Widget.extend({
         return (handler)? this._opened.then(handler) : this._opened;
     },
 
-    open: function () {
+    /**
+     * Show a dialog
+     * 
+     * @param {Object} options
+     * @param {Boolean} options.shouldFocusButtons  if true, put the focus on the first button primary when the dialog opens
+     */
+    open: function (options) {
         $('.tooltip').remove(); // remove open tooltip if any to prevent them staying when modal is opened
 
         var self = this;
@@ -169,6 +175,9 @@ var Dialog = Widget.extend({
             self.$modal.modal('show');
             self._opened.resolve();
         });
+        if (options && options.shouldFocusButtons) {
+            self._onFocusControlButton();
+        }
 
         return self;
     },
@@ -206,7 +215,9 @@ var Dialog = Widget.extend({
 
     _onFocusControlButton:function(e) {
         if (this.$footer) {
-            e.stopPropagation();
+            if (e) {
+                e.stopPropagation();
+            }
             this.$footer.find('.btn-primary:visible:first()').focus();
         }
     }
@@ -226,7 +237,7 @@ Dialog.alert = function (owner, message, options) {
             text: message,
         }),
         title: _t("Alert"),
-    }, options)).open();
+    }, options)).open({shouldFocusButtons:true});
 };
 
 // static method to open simple confirm dialog
@@ -251,7 +262,7 @@ Dialog.confirm = function (owner, message, options) {
             text: message,
         }),
         title: _t("Confirmation"),
-    }, options)).open();
+    }, options)).open({shouldFocusButtons:true});
 };
 
 /**
