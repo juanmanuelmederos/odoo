@@ -375,6 +375,9 @@ class MailActivityMixin(models.AbstractModel):
         It is useful to avoid having various "env.ref" in the code and allow
         to let the mixin handle access rights.
         """
+        if self.env.context.get('mail_activity_automation_skip'):
+            return False
+
         if not date_deadline:
             date_deadline = fields.Date.today()
         if act_type_xmlid:
@@ -402,6 +405,9 @@ class MailActivityMixin(models.AbstractModel):
         """ Reschedule some automated activities. Activities to reschedule can be
         limited by the type (xml_id) and by user. Purpose is to be able to change
         the deadline, not anything else currently. """
+        if self.env.context.get('mail_activity_automation_skip'):
+            return False
+
         Data = self.env['ir.model.data'].sudo()
         activity_types_ids = [Data.xmlid_to_res_id(xmlid) for xmlid in act_type_xmlids]
         domain = [
@@ -423,6 +429,9 @@ class MailActivityMixin(models.AbstractModel):
     def activity_feedback(self, act_type_xmlids, user_id=None, feedback=None):
         """ Set activities as done, limiting to some activity types and
         optionally to a given user. """
+        if self.env.context.get('mail_activity_automation_skip'):
+            return False
+
         Data = self.env['ir.model.data'].sudo()
         activity_types_ids = [Data.xmlid_to_res_id(xmlid) for xmlid in act_type_xmlids]
         domain = [
@@ -442,6 +451,9 @@ class MailActivityMixin(models.AbstractModel):
     def activity_unlink(self, act_type_xmlids, user_id=None):
         """ Unlink activities, limiting to some activity types and optionally
         to a given user. """
+        if self.env.context.get('mail_activity_automation_skip'):
+            return False
+
         Data = self.env['ir.model.data'].sudo()
         activity_types_ids = [Data.xmlid_to_res_id(xmlid) for xmlid in act_type_xmlids]
         domain = [
