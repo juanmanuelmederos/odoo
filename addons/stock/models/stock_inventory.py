@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
+from collections import Counter
+
 from odoo import api, fields, models, _
 from odoo.addons import decimal_precision as dp
 from odoo.exceptions import UserError
+from odoo.osv.expression import OR
 from odoo.tools import float_utils
 
 
@@ -353,23 +356,52 @@ class InventoryLine(models.Model):
             self._compute_theoretical_qty()
             self.product_qty = self.theoretical_qty
 
-    @api.model
-    def create(self, values):
-        if 'product_id' in values and 'product_uom_id' not in values:
-            values['product_uom_id'] = self.env['product.product'].browse(values['product_id']).uom_id.id
-        existings = self.search([
-            ('product_id', '=', values.get('product_id')),
-            ('inventory_id.state', '=', 'confirm'),
-            ('location_id', '=', values.get('location_id')),
-            ('partner_id', '=', values.get('partner_id')),
-            ('package_id', '=', values.get('package_id')),
-            ('prod_lot_id', '=', values.get('prod_lot_id'))])
-        res = super(InventoryLine, self).create(values)
-        if existings:
-            raise UserError(_("You cannot have two inventory adjustments in progress for the same product (%s) "
-                              "in the same location, for the same package, the same owner and the same lot number. "
-                              "Please validate or cancel the first inventory adjustment before creating a new one.") % (res.product_id.display_name))
-        return res
+    @api.create_multi
+    def create(self, valses):
+        if not valses:
+            return self.browse()
+
+        configs = [(
+                vals.get('product_id'),
+                vals.get('location_id'),
+                vals.get('partner_id'),
+                vals.get('package_id'),
+                vals.get('prod_lot_id'),
+            )
+            for vals in valses
+        ]
+        existing = len(set(configs)) < len(configs)
+        if existing:
+            # we have at least two lines with the same config
+            config = Counter(configs).most_common(1)[0]
+            product = self.env['product_product'].browse(config[0])
+        else:
+            # let us search for another line that matches one of the new lines
+            domain = [('inventory_id.state', '=', 'confirm')] + OR([
+                [
+                    '&', '&', '&', '&',
+                    ('product_id', '=', config[0]),
+                    ('location_id', '=', config[1]),
+                    ('partner_id', '=', config[2]),
+                    ('package_id', '=', config[3]),
+                    ('prod_lot_id', '=', config[4]),
+                ]
+                for config in configs
+            ])
+            existing = self.search(domain, limit=1)
+            product = existing.product_id
+        if existing:
+            msg = _("You cannot have two inventory adjustments in progress for the same product (%s) "
+                    "in the same location, for the same package, the same owner and the same lot number. "
+                    "Please validate or cancel the first inventory adjustment before creating a new one.")
+            raise UserError(msg % product.display_name)
+
+        for vals in valses:
+            if 'product_id' in vals and 'product_uom_id' not in vals:
+                product = self.env['product.product'].browse(vals['product_id'])
+                vals['product_uom_id'] = product.uom_id.id
+
+        return super(InventoryLine, self).create(valses)
 
     @api.constrains('product_id')
     def _check_product_id(self):
@@ -418,14 +450,13 @@ class InventoryLine(models.Model):
         }
 
     def _generate_moves(self):
-        moves = self.env['stock.move']
+        valses = []
         for line in self:
             if float_utils.float_compare(line.theoretical_qty, line.product_qty, precision_rounding=line.product_id.uom_id.rounding) == 0:
                 continue
             diff = line.theoretical_qty - line.product_qty
             if diff < 0:  # found more than expected
-                vals = line._get_move_values(abs(diff), line.product_id.property_stock_inventory.id, line.location_id.id, False)
+                valses.append(line._get_move_values(abs(diff), line.product_id.property_stock_inventory.id, line.location_id.id, False))
             else:
-                vals = line._get_move_values(abs(diff), line.location_id.id, line.product_id.property_stock_inventory.id, True)
-            moves |= self.env['stock.move'].create(vals)
-        return moves
+                valses.append(line._get_move_values(abs(diff), line.location_id.id, line.product_id.property_stock_inventory.id, True))
+        return self.env['stock.move'].create(valses)
