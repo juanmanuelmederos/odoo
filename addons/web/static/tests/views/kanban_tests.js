@@ -1356,7 +1356,6 @@ QUnit.module('Views', {
         var kanban = createView({
             View: KanbanView,
             model: 'partner',
-            debug: true,
             data: this.data,
             arch: '<kanban class="o_kanban_test" on_create="quick_create">' +
                         '<templates>' +
@@ -2979,6 +2978,7 @@ QUnit.module('Views', {
         assert.strictEqual(kanban.$('.o_kanban_group:eq(1) .o_kanban_record').length, 1,
                         "column should contain 1 records");
 
+
         var $record = kanban.$('.o_kanban_group:eq(1) .o_kanban_record:eq(0)');
         var $group = kanban.$('.o_kanban_group:eq(0)');
         // testUtils.dragAndDrop($record, $group);
@@ -2993,6 +2993,7 @@ QUnit.module('Views', {
             // testUtils.dragAndDrop($record, $group);
             $record = kanban.$('.o_kanban_group:eq(0) .o_kanban_record:eq(0)');
             $group = kanban.$('.o_kanban_group:eq(1)');
+
             testUtils.dragMouseEvent($record, $group);
             return concurrency.delay(50);
         }).then(function () {

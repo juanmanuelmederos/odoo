@@ -591,7 +591,7 @@ function dragMouseEvent($el, $to, options) {
     elementCenter.top += $el.outerHeight()/2;
 
     var toOffset = $to.offset();
-    toOffset.top += $to.outerHeight()/2;
+    toOffset.top += $to.outerHeight()/2 + 10;
     toOffset.left += $to.outerWidth()/2;
 
     if (position === 'top') {
