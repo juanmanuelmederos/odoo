@@ -18,25 +18,31 @@ class ResConfigSettings(models.TransientModel):
     @api.multi
     def set_values(self):
         super(ResConfigSettings, self).set_values()
+        self.env.ref('l10n_in.ir_cron_gstr_upload_scheduler_action').sudo().write({'active': self.register_gstn_service})
         if self.register_gstn_service:
             IrParams = self.env['ir.config_parameter'].sudo()
-            user_token = self.env['iap.account'].get('gst_return_sandbox')
-            params = {
-                'account_token': user_token.account_token,
-                'server_version': odoo.release.version,
-                'db': self.env.cr.dbname,
-                'company_name': self.env.user.company_id.name,
-                'company_email': self.env.user.company_id.email,
-                'company_gstn': self.env.user.company_id.vat,
-                'url': IrParams.get_param('web.base.url'),
-                'dbuuid':IrParams.get_param('database.uuid'),
-            }
-            if not params.get('company_email', False):
-                raise ValidationError("Company email is not set. First set company email")
-            if not params.get('company_gstn', False):
-                raise ValidationError("Company GSTN is not set. First set Company GSTN")
-            # ir.config_parameter allows locally overriding the endpoint
-            # for testing & al
-            endpoint = IrParams.get_param('gst_return_sandbox.endpoint', DEFAULT_ENDPOINT)
-            jsonrpc(endpoint + '/gstr_return/register_user', params=params)
-            self.env.ref('l10n_in.ir_cron_gstr_upload_scheduler_action').sudo().write({'active': True})
+            if not IrParams.get_param('register.gstn.service.%s'%(self.env.user.company_id.id)):
+                user_token = self.env['iap.account'].get('gst_return_sandbox')
+                default_sale_tax_rate = 18
+                if self.env.user.company_id.account_sale_tax_id.tax_group_id.id in self.env['account.invoice.gst.report'].get_all_gst_groups():
+                    default_sale_tax_rate = self.env.user.company_id.account_sale_tax_id.amount
+                params = {
+                    'account_token': user_token.account_token,
+                    'server_version': odoo.release.version,
+                    'db': self.env.cr.dbname,
+                    'company_name': self.env.user.company_id.name,
+                    'company_email': self.env.user.company_id.email,
+                    'company_gstn': self.env.user.company_id.vat,
+                    'url': IrParams.get_param('web.base.url'),
+                    'dbuuid':IrParams.get_param('database.uuid'),
+                    'default_sale_tax_rate': default_sale_tax_rate,
+                }
+                if not params.get('company_email', False):
+                    raise ValidationError("Company email is not set. First set company email")
+                if not params.get('company_gstn', False):
+                    raise ValidationError("Company GSTN is not set. First set Company GSTN")
+                # ir.config_parameter allows locally overriding the endpoint
+                # for testing & al
+                endpoint = IrParams.get_param('gst_return_sandbox.endpoint', DEFAULT_ENDPOINT)
+                jsonrpc(endpoint + '/gstr_return/register_user', params=params)
+                IrParams.set_param('register.gstn.service.%s'%(self.env.user.company_id.id), True)

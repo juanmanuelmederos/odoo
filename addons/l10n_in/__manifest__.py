@@ -32,6 +32,7 @@ Sheet, now only Vertical format has been permitted Which is Supported By Odoo.
         'data/gst.port.code.csv',
         'security/ir.model.access.csv',
         'wizard/account_invoice_refund_view.xml',
+        'wizard/export_gst_return_csv_views.xml',
         'views/product_template_view.xml',
         'views/report_invoice.xml',
         'views/res_company_view.xml',

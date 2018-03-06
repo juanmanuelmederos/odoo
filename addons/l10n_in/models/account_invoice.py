@@ -17,9 +17,10 @@ class AccountInvoice(models.Model):
     refund_reason_id = fields.Many2one("account.invoice.refund.reason", string="Selected Reason")
     port_code_id = fields.Many2one("gst.port.code", string="Port Code")
     is_reverse_charge = fields.Boolean("Reverse Charge", help="Tick This if invoice is reverse charge")
-    gst_invoice_type = fields.Selection([('R','Regular'),('DE','Deemed Exports'),
-                                         ('SEWP','SEZ Exports with payment'),
-                                         ('SEWOP','SEZ exports without payment')], default="R",string="GST Invoice Type")
+    gst_invoice_type = fields.Selection([('R', 'Regular'), ('DEWP', 'Deemed Exports with payment'),
+                                         ('DEWOP', 'Deemed Exports without payment'),
+                                         ('SEWP', 'SEZ Exports with payment'),
+                                         ('SEWOP', 'SEZ exports without payment')], default="R", string="GST Invoice Type")
     e_commerce_partner_id = fields.Many2one("res.partner", string="E-Commerce", help="Select E-Commerce if sale with E-Commerce")
 
 
