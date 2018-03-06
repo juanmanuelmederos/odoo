@@ -40,8 +40,9 @@ class BadgeUser(models.Model):
                 template.id,
                 model=badge_user._name,
                 res_id=badge_user.id,
-                composition_mode='mass_mail',
+                composition_mode='comment',
                 partner_ids=badge_user.user_id.partner_id.ids,
+                custom_layout='mail.mail_notification_borders',
             )
 
         return True

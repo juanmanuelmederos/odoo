@@ -1956,6 +1956,7 @@ class MailThread(models.AbstractModel):
             kwargs['message_type'] = 'notification'
         res_id = kwargs.get('res_id', self.ids and self.ids[0] or 0)
         res_ids = kwargs.get('res_id') and [kwargs['res_id']] or self.ids
+        custom_layout = kwargs.get('custom_layout') or 0
 
         # Create the composer
         composer = self.env['mail.compose.message'].with_context(
@@ -1966,6 +1967,7 @@ class MailThread(models.AbstractModel):
             default_model=kwargs.get('model', self._name),
             default_res_id=res_id,
             default_template_id=template_id,
+            default_custom_layout=custom_layout,
         ).create(kwargs)
         # Simulate the onchange (like trigger in form the view) only
         # when having a template in single-email mode
