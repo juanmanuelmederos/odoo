@@ -420,10 +420,15 @@ def model_cr_context(method):
     return method
 
 
+CREATE_SIZE = {}
+
 def _create_single(create, self, arg):
     # 'create' expects a dict and returns a record
     if isinstance(arg, Mapping):
         return create(self, arg)
+    if len(arg) > CREATE_SIZE.get(self._name, 1):
+        CREATE_SIZE[self._name] = len(arg)
+        _logger.warning("%s.create() with %d dicts", self._name, len(arg))
     return self.browse().concat(*(create(self, vals) for vals in arg))
 
 
