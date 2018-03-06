@@ -418,7 +418,7 @@ class MailActivityMixin(models.AbstractModel):
             activities.write({
                 'date_deadline': date_deadline,
             })
-        return True
+        return activities
 
     def activity_feedback(self, act_type_xmlids, user_id=None, feedback=None):
         """ Set activities as done, limiting to some activity types and
