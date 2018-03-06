@@ -129,7 +129,7 @@ class MrpBomReport(models.TransientModel):
 
     def _get_pdf_child_lines(self, bom_id, bom_qty, level, counter, child_bom_ids):
         data = {}
-        lines = self.get_lines(bom_id, bom_qty, level+1)
+        lines = self.get_lines(bom_id, bom_qty, level + 1)
 
         for line in lines[0]['components']:
             counter += 1

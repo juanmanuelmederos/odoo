@@ -1,4 +1,4 @@
-odoo.define('mrp.mrp_bom_generic', function (require) {
+odoo.define('mrp.mrp_bom_report', function (require) {
 'use strict';
 
 var ControlPanelMixin = require('web.ControlPanelMixin');
@@ -11,174 +11,125 @@ var Widget = require('web.Widget');
 var QWeb = core.qweb;
 var _t = core._t;
 
-var mrpBomReport = Widget.extend(ControlPanelMixin, {
+var MrpBomReport = Widget.extend(ControlPanelMixin, {
     events: {
-        'click span.o_mrp_bom_unfoldable': '_onUnfold',
-        'click span.o_mrp_bom_foldable': '_onFold',
-        'click a.o_mrp_reports_web_action' : '_onBoundLink',
+        'click .o_mrp_bom_unfoldable': '_onClickUnfold',
+        'click .o_mrp_bom_foldable': '_onClickFold',
+        'click .o_mrp_bom_action': '_onClickAction',
     },
-
-    /**
-     * @override
-     */
     init: function (parent, action) {
-        this.actionManager = parent;
-        this.given_context = action.context.context || {'active_id': action.context.active_id || action.params.active_id};
-        this.button = {'name': _t('Print')};
-        return this._super.apply(this, arguments);
+        this._super.apply(this, arguments);
+        this.reportContext = action.context.context || {'active_id': action.context.active_id || action.params.active_id};
     },
-    /**
-     * @override
-     */
     willStart: function () {
-        return this._getMrpBomHtml();
+        var self = this;
+        var def = this.getHtml().then(function (html) {
+            self.html = html;
+        });
+        return $.when(this._updateContolPanel(), def);
     },
-    /**
-     * @override
-     */
+    getHtml: function () {
+        return this._rpc({
+            model: 'mrp.bom.report',
+            method: 'get_html',
+            args: [this.reportContext],
+        });
+    },
+    _reload: function () {
+        var self = this;
+        this.getHtml().then(function (html) {
+            self.$el.html(html);
+        });
+    },
     start: function () {
         this.$el.html(this.html);
-        return this._super();
+        return this._super.apply(this, arguments);
     },
-
-    //--------------------------------------------------------------------------
-    // Public
-    //--------------------------------------------------------------------------
-
     do_show: function () {
-        this._super();
-        this.update_cp();
+        this._super.apply(this, arguments);
+        this._updateContolPanel();
     },
-    update_cp: function () {
-        // Updates the control panel and render the elements that have yet to be rendered
-        if (!this.$button) {
-            this.renderButton();
+    _updateContolPanel: function () {
+        if (!this.$buttonPrint || !this.$searchQty) {
+            this._renderSearch();
         }
         var status = {
-            cp_content: {$buttons: this.$button},
+            cp_content: {
+                $buttons: this.$buttonPrint,
+                $searchview_buttons: this.$searchQty
+            },
         };
         return this.update_control_panel(status);
     },
-    renderButton: function () {
-        var self = this;
-        this.$button = $('<button>', {
-            type: 'button',
-            class: 'btn btn-primary btn-sm',
-            text: _t('Print')
-        });
-        // bind actions
-        $(this.$button).click(function () {
-            var child_bom_ids = _.map(self.$el.find('.o_mrp_bom_foldable').closest('tr'), function (ele) {
-                    return $(ele).data('id');
-                });
-            var bom_id = self.given_context['active_id'];
-            framework.blockUI();
-            session.get_file({
-                url: '/mrp/pdf/bom_report/'+bom_id,
-                data: {child_bom_ids: JSON.stringify(child_bom_ids)},
-                complete: framework.unblockUI,
-                error: crash_manager.rpc_error.bind(crash_manager),
-            });
-        });
-        return this.$button;
+    _renderSearch: function () {
+        this.$buttonPrint = $(QWeb.render('mrp.button'));
+        this.$searchQty = $(QWeb.render('mrp.report_bom_search'));
+        this.$buttonPrint.on('click', this._onClickPrint.bind(this));
+        this.$searchQty.on('focusout', this._onFocusoutQty.bind(this));
     },
-
-    //--------------------------------------------------------------------------
-    // Private
-    //--------------------------------------------------------------------------
-
-    /**
-     * Fetches the html and is previous report.context if any, else create it
-     *
-     * @private
-     */
-    _getMrpBomHtml: function () {
-        var self = this;
-        var cpDef = this.update_cp();
-        var rpcDef  = this._rpc({
-                model: 'mrp.bom.report',
-                method: 'get_html',
-                args: [self.given_context],
-            })
-            .then(function (result) {
-                self.html = result;
-            });
-        return $.when(cpDef, rpcDef);
+    _onClickPrint: function (ev) {
+        var childBomIDs = _.map(this.$el.find('.o_mrp_bom_foldable').closest('tr'), function (el) {
+            return $(el).data('id');
+        });
+        framework.blockUI();
+        session.get_file({
+            url: '/mrp/pdf/bom_report/' + this.reportContext['active_id'],
+            data: {child_bom_ids: JSON.stringify(childBomIDs)},
+            complete: framework.unblockUI,
+            error: crash_manager.rpc_error.bind(crash_manager),
+        });
     },
-    /**
-     * Remove child lines
-     *
-     * @private
-     * @param {Object} el
-     */
-    _removeLines: function (el) {
-        var activeId = el.data('id');
-        var $parent = $('tr[parent_id='+ activeId +']');
-
-        for (var i = 0; i < $parent.length; i++) {
-            var $el = $('tr[parent_id='+ $($parent[i]).data('id') +']');
-            if ($el.length) {
-                this._removeLines($($parent[i]));
-            }
-            $parent[i].remove();
+    _onFocusoutQty: function (ev) {
+        var self = this;
+        var qty = $(ev.currentTarget).val().trim();
+        if (qty) {
+            this.reportContext.searchQty = qty;
+            this._reload();
         }
-        return true;
     },
-
-    //--------------------------------------------------------------------------
-    // Handlers
-    //--------------------------------------------------------------------------
-
-    /**
-     * Display child lines
-     *
-     * @private
-     * @param {MouseEvent} ev
-     */
-     _onUnfold: function (ev) {
+    _removeLines: function ($el) {
         var self = this;
-        var $parent = $(ev.target).closest('tr');
-        var activeId = $parent.data('id');
+        var activeID = $el.data('id');
+        _.each(this.$('tr[parent_id='+ activeID +']'), function (parent) {
+            var $parent = self.$(parent);
+            var $el = self.$('tr[parent_id='+ $parent.data('id') +']');
+            if ($el.length) {
+                self._removeLines($parent);
+            }
+            $parent.remove();
+        });
+    },
+     _onClickUnfold: function (ev) {
+        var $parent = $(ev.currentTarget).closest('tr');
+        var activeID = $parent.data('id');
         var qty = $parent.data('qty');
         var level = $parent.data('level') || 0;
-
         this._rpc({
-                model: 'mrp.bom.report',
-                method: 'get_html',
-                args: [self.given_context, activeId, parseFloat(qty), level+1],
-            })
-            .then(function (data) {
-                $parent.after(data);
-            });
-        $(ev.target).toggleClass('o_mrp_bom_foldable o_mrp_bom_unfoldable fa-caret-right fa-caret-down');
+            model: 'mrp.bom.report',
+            method: 'get_html',
+            args: [this.reportContext, activeID, parseFloat(qty), level + 1],
+        })
+        .then(function (html) {
+            $parent.after(html);
+        });
+        $(ev.currentTarget).toggleClass('o_mrp_bom_foldable o_mrp_bom_unfoldable fa-caret-right fa-caret-down');
     },
-    /**
-     * Hide child lines
-     *
-     * @private
-     * @param {MouseEvent} ev
-     */
-    _onFold: function (ev) {
-        this._removeLines($(ev.target).closest('tr'));
-        $(ev.target).toggleClass('o_mrp_bom_foldable o_mrp_bom_unfoldable fa-caret-right fa-caret-down');
+    _onClickFold: function (ev) {
+        this._removeLines($(ev.currentTarget).closest('tr'));
+        $(ev.currentTarget).toggleClass('o_mrp_bom_foldable o_mrp_bom_unfoldable fa-caret-right fa-caret-down');
     },
-    /**
-     * Redirect to the product page
-     *
-     * @private
-     * @param {MouseEvent} ev
-     */
-    _onBoundLink: function (ev) {
+    _onClickAction: function (ev) {
         return this.do_action({
             type: 'ir.actions.act_window',
-            res_model: $(ev.target).data('model'),
-            res_id: $(ev.target).data('res-id'),
+            res_model: $(ev.currentTarget).data('model'),
+            res_id: $(ev.currentTarget).data('res-id'),
             views: [[false, 'form']],
             target: 'current'
         });
     },
 });
 
-core.action_registry.add("mrp_bom_report", mrpBomReport);
-return mrpBomReport;
+core.action_registry.add("mrp_bom_report", MrpBomReport);
+return MrpBomReport;
+
 });

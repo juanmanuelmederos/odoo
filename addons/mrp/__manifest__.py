@@ -40,6 +40,7 @@
         'report/mrp_report_views_main.xml',
         'report/mrp_production_templates.xml',
     ],
+    'qweb': ['static/src/xml/mrp.xml'],
     'demo': [
         'data/mrp_demo.xml',
     ],

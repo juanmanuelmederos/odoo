@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <t t-name="mrp.button">
+        <button type="button" class="btn btn-primary btn-sm">print</button>
+    </t>
+    
+    <t t-name="mrp.report_bom_search">
+        <strong>Quantity: </strong><input type="number" class="o_input"/>
+    </t>
+</templates>

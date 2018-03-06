@@ -1,15 +1,25 @@
 .o_mrp_bom_report_page {
+    @media (max-width: @screen-md-min) {
+        overflow-x:scroll;
+    }
     background-color: @odoo-view-background-color;
-    color: @odoo-main-text-color;
-    padding: 24px 90px 24px 30px;
+
+    margin: 16px auto;
+    padding-top: 24px;
+    padding-right: 16px;
+    padding-bottom: 24px;
+    padding-left: 16px;
 
     .o_mrp_bom_report_table {
         white-space: nowrap;
+        margin-bottom: 228px;
         margin-top: 30px;
     }
     .o_report_header {
-        border-width: 2px;
+        border-top-style: solid;
+        border-top-style: groove;
         border-bottom-style: groove;
+        border-width: 2px;
     }
     table > tfoot {
         border-width: 2px;
