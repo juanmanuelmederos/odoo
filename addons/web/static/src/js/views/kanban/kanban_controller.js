@@ -391,6 +391,8 @@ var KanbanController = BasicController.extend({
         if (recordIds.length) {
             this.model.toggleActive(recordIds, active, column.db_id).then(function (dbID) {
                 var data = self.model.get(dbID);
+                data.progressBarValues['counts'] = {};
+                data.progressBarValues['sum_field'] = false;
                 self.renderer.updateColumn(dbID, data);
                 self._updateEnv();
             });
