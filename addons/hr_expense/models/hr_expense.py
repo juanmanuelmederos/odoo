@@ -468,16 +468,17 @@ class HrExpenseSheet(models.Model):
     name = fields.Char('Expense Report Summary', required=True)
     expense_line_ids = fields.One2many('hr.expense', 'sheet_id', string='Expense Lines', states={'approve': [('readonly', True)], 'done': [('readonly', True)], 'post': [('readonly', True)]}, copy=False)
     state = fields.Selection([
+        ('draft', 'Draft'),
         ('submit', 'Submitted'),
         ('approve', 'Approved'),
         ('post', 'Posted'),
         ('done', 'Paid'),
         ('cancel', 'Refused')
-    ], string='Status', index=True, readonly=True, track_visibility='onchange', copy=False, default='submit', required=True, help='Expense Report State')
+    ], string='Status', index=True, readonly=True, track_visibility='onchange', copy=False, default='draft', required=True, help='Expense Report State')
     employee_id = fields.Many2one('hr.employee', string="Employee", required=True, readonly=True, states={'submit': [('readonly', False)]}, default=lambda self: self.env['hr.employee'].search([('user_id', '=', self.env.uid)], limit=1))
     address_id = fields.Many2one('res.partner', string="Employee Home Address")
     payment_mode = fields.Selection([("own_account", "Employee (to reimburse)"), ("company_account", "Company")], related='expense_line_ids.payment_mode', default='own_account', readonly=True, string="Paid By")
-    user_id = fields.Many2one('res.users', 'Manager', readonly=True, copy=False, states={'submit': [('readonly', False)]}, track_visibility='onchange', oldname='responsible_id')
+    user_id = fields.Many2one('res.users', 'Manager', readonly=True, copy=False, states={'draft': [('readonly', False)]}, track_visibility='onchange', oldname='responsible_id')
     total_amount = fields.Monetary('Total Amount', currency_field='currency_id', compute='_compute_amount', store=True, digits=dp.get_precision('Account'))
     company_id = fields.Many2one('res.company', string='Company', readonly=True, states={'submit': [('readonly', False)]}, default=lambda self: self.env.user.company_id)
     currency_id = fields.Many2one('res.currency', string='Currency', readonly=True, states={'submit': [('readonly', False)]}, default=lambda self: self.env.user.company_id.currency_id)
@@ -646,6 +647,10 @@ class HrExpenseSheet(models.Model):
         self.write({'state': 'done'})
 
     @api.multi
+    def submit_expense_sheets(self):
+        self.write({'state': 'submit'})
+
+    @api.multi
     def approve_expense_sheets(self):
         if not self.user_has_groups('hr_expense.group_hr_expense_user'):
             raise UserError(_("Only HR Officers can approve expenses"))
@@ -666,5 +671,7 @@ class HrExpenseSheet(models.Model):
 
     @api.multi
     def reset_expense_sheets(self):
+        if not self.user_has_groups('hr_expense.group_hr_expense_user'):
+            raise UserError(_("Only HR Officers can reset expenses"))
         self.mapped('expense_line_ids').write({'is_refused': False})
-        return self.write({'state': 'submit'})
+        return self.write({'state': 'draft'})

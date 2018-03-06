@@ -17,6 +17,13 @@
             <field name="domain_force">[('employee_id.user_id', '=', user.id)]</field>
             <field name="groups" eval="[(4, ref('base.group_user'))]"/>
         </record>
+        <record id="property_rule_expense_sheet_write" model="ir.rule">
+            <field name="name">Expense Sheet Write</field>
+            <field name="model_id" ref="model_hr_expense_sheet"/>
+            <field name="domain_force">[('state', '=', 'draft')]</field>
+            <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+            <field name="perm_read" eval="False"/>
+        </record>
         <record id="hr_expense_comp_rule" model="ir.rule">
             <field name="name">Expense multi company rule</field>
             <field name="model_id" ref="model_hr_expense"/>

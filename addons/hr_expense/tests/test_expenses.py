@@ -41,7 +41,10 @@ class TestAccountEntry(TestExpenseCommon):
             'analytic_account_id': self.analytic_account.id,
         })
         expense_line._onchange_product_id()
+        # State should default to draft
+        self.assertEquals(expense.state, 'draft', 'Expense should be created in Draft state')
         # Submitted to Manager
+        expense.submit_expense_sheets()
         self.assertEquals(expense.state, 'submit', 'Expense is not in Reported state')
         # Approve
         expense.approve_expense_sheets()
