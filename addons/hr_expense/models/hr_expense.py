@@ -528,7 +528,7 @@ class HrExpenseSheet(models.Model):
     def create(self, vals):
         self._create_set_followers(vals)
         sheet = super(HrExpenseSheet, self).create(vals)
-        sheet.action_update_activities()
+        sheet.activity_update()
         return sheet
 
     @api.multi
@@ -618,7 +618,7 @@ class HrExpenseSheet(models.Model):
             self.write({'state': 'post'})
         else:
             self.write({'state': 'done'})
-        self.action_update_activities()
+        self.activity_update()
         return res
 
     @api.multi
@@ -647,7 +647,7 @@ class HrExpenseSheet(models.Model):
             raise UserError(_("Only HR Officers can approve expenses"))
         responsible_id = self.user_id.id or self.env.user.id
         self.write({'state': 'approve', 'user_id': responsible_id})
-        self.action_update_activities()
+        self.activity_update()
 
     @api.multi
     def paid_expense_sheets(self):
@@ -660,13 +660,13 @@ class HrExpenseSheet(models.Model):
         self.write({'state': 'cancel'})
         for sheet in self:
             sheet.message_post_with_view('hr_expense.hr_expense_template_refuse_reason', values={'reason': reason, 'is_sheet': True, 'name': self.name})
-        self.action_update_activities()
+        self.activity_update()
 
     @api.multi
     def reset_expense_sheets(self):
         self.mapped('expense_line_ids').write({'is_refused': False})
         self.write({'state': 'submit'})
-        self.action_update_activities()
+        self.activity_update()
         return True
 
     def _get_responsible_for_approval(self):
@@ -678,7 +678,7 @@ class HrExpenseSheet(models.Model):
             return self.employee_id.department_id.manager_id.user_id
         return self.env.user
 
-    def action_update_activities(self):
+    def activity_update(self):
         for expense_report in self.filtered(lambda hol: hol.state == 'submit'):
             self.activity_schedule(
                 'hr_expense.mail_act_expense_approval', fields.Date.today(),
