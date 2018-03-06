@@ -6,8 +6,7 @@
         <field name="auto_delete" eval="True" />
         <field name="email_to">${ctx['email_to']|safe}</field>
         <field name="email_from">${user.email}</field>
-        <field name="lang">${user.lang}</field>
-        <field name="subject">${object.name}</field>
+        <field name="subject">${ctx['company_id'].name}: ${object.name}</field>
         <field name="body_html" type="xml">
             <table style="height:100%;width:100%;border-spacing:0;margin:0;padding:0;background-color:#fff;font-family:Helvetica,Arial,Verdana,sans-serif;">
                 <tr>
@@ -23,7 +22,7 @@
                                 </td>
                             </tr>
                         </table>
-                        % set data = object.compute_kpis()
+                        % set data = object.with_context(company_id=ctx['company_id']).compute_kpis()
                         % set kpis = data.yesterday.keys()
                         % for kpi in kpis:
                         <table style="border-spacing:0; width:600px;">

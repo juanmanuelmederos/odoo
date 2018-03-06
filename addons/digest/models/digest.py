@@ -72,16 +72,17 @@ class Digest(models.Model):
     def compute_kpis(self):
         self.ensure_one()
         res = {}
+        company_id = self.env.context.get('company_id')
         for tf_name, tf in self._compute_timeframes().items():
             self.write({'start_date': tf[0], 'end_date': tf[1]})
             kpis = {}
             for field_name, field in self._fields.items():
                 if field.type == 'boolean' and (field_name.startswith('kpi_') or field_name.startswith('x_kpi_')) and self[field_name]:
                     if self._fields[field_name+'_value'].type == 'monetary':
-                        converted_amount = self._convert_number_notation(self.with_context(timeframe=tf_name)[field_name + '_value'])
-                        kpis.update({field_name: self._add_currency_symbol(converted_amount, self.company_id.currency_id)})
+                        converted_amount = self._convert_number_notation(self.with_context(timeframe=tf_name, company_id=company_id)[field_name + '_value'])
+                        kpis.update({field_name: self._add_currency_symbol(converted_amount, company_id.currency_id)})
                     else:
-                        kpis.update({field_name: self.with_context(timeframe=tf_name)[field_name + '_value']})
+                        kpis.update({field_name: self.with_context(timeframe=tf_name, company_id=company_id)[field_name + '_value']})
                 res.update({tf_name: kpis})
         return res
 
@@ -101,15 +102,14 @@ class Digest(models.Model):
 
     def send_digests_now(self):
         for digest in self:
-            recipients_emails = digest.user_ids.mapped('email')
-            recipients = ",".join(recipients_emails)
-            try:
-                mail_id = digest.template_id.with_context(email_to=recipients).send_mail(digest.id, raise_exception=True)
-                if mail_id:
-                    digest.next_run_date = self._get_next_run_date(digest.periodicity)
-            except MailDeliveryException as e:
-                _logger.error('Error while sending digest emails')
-                raise e
+            for user in digest.user_ids:
+                try:
+                    mail_id = digest.template_id.with_context(email_to=user.email,company_id=user.company_id).send_mail(digest.id, raise_exception=True)
+                    if mail_id:
+                        digest.next_run_date = self._get_next_run_date(digest.periodicity)
+                except MailDeliveryException as e:
+                    _logger.error('Error while sending digest emails')
+                    raise e
 
     @api.model
     def _cron_send_digest_email(self):

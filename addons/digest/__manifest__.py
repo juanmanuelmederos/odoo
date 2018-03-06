@@ -16,6 +16,7 @@ Send KPI Digests periodically
         'data/digest_data.xml',
         'data/ir_cron_data.xml',
         'views/digest_views.xml',
+        'views/res_config_settings_views.xml',
     ],
     'installable': True,
 }

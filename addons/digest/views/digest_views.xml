@@ -48,6 +48,7 @@
                                     <field name="kpi_res_users_connected" />
                                     <field name="kpi_mail_message_total" />
                                 </group>
+                                <group name="kpi_sales"/>
                             </group>
                         </page>
                         <page name="how_to" string="How to customize your digest?" groups="base.group_no_one">
