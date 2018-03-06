@@ -113,7 +113,7 @@ def _hasclass(context, *cls):
     return node_classes.issuperset(cls)
 
 
-def get_view_arch_from_file(filename, xmlid):
+def get_view_arch_from_file(filename, xmlid, mute=False):
     doc = etree.parse(filename)
     node = None
     for n in doc.xpath('//*[@id="%s"]' % (xmlid)):
@@ -141,7 +141,8 @@ def get_view_arch_from_file(filename, xmlid):
                 node.tag = 'data'
             node.attrib.pop('id', None)
             return etree.tostring(node, encoding='unicode')
-    _logger.warning("Could not find view arch definition in file '%s' for xmlid '%s'", filename, xmlid)
+    if not mute:
+        _logger.warning("Could not find view arch definition in file '%s' for xmlid '%s'", filename, xmlid)
     return None
 
 def add_text_before(node, text):
@@ -245,7 +246,10 @@ actual arch.
                 # It is safe to split on / herebelow because arch_fs is explicitely stored with '/'
                 fullpath = get_resource_path(*view.arch_fs.split('/'))
                 if fullpath:
-                    arch_fs = get_view_arch_from_file(fullpath, view.xml_id)
+                    retry = view.xml_id.endswith('_ir_ui_view')
+                    arch_fs = get_view_arch_from_file(fullpath, view.xml_id, mute=retry)
+                    if not arch_fs and retry:
+                        arch_fs = get_view_arch_from_file(fullpath, view.xml_id[:-len('_ir_ui_view')])
                     # replace %(xml_id)s, %(xml_id)d, %%(xml_id)s, %%(xml_id)d by the res_id
                     arch_fs = arch_fs and resolve_external_ids(arch_fs, view.xml_id).replace('%%', '%')
                 else:
@@ -260,7 +264,9 @@ actual arch.
                 imd = self._context['install_mode_data']
                 if '.' not in imd['xml_id']:
                     imd['xml_id'] = '%s.%s' % (imd['module'], imd['xml_id'])
-                if self._name == imd['model'] and (not view.xml_id or view.xml_id == imd['xml_id']):
+                # If working on ir.ui.view  - or - working on model with ir.ui.view as _inherits
+                if (self._name == imd['model'] and (not view.xml_id or view.xml_id == imd['xml_id'])) \
+                   or (self._name in self.env[imd['model']]._inherits and (not view.xml_id or view.xml_id == '%s_ir_ui_view' % imd['xml_id'])):
                     # we store the relative path to the resource instead of the absolute path, if found
                     # (it will be missing e.g. when importing data-only modules using base_import_module)
                     path_info = get_resource_from_path(imd['xml_file'])
