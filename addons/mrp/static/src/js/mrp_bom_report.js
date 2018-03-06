@@ -55,14 +55,17 @@ var mrpBomReport = Widget.extend(ControlPanelMixin, {
             this.renderButton();
         }
         var status = {
-            breadcrumbs: this.actionManager.get_breadcrumbs(),
             cp_content: {$buttons: this.$button},
         };
         return this.update_control_panel(status);
     },
     renderButton: function () {
         var self = this;
-        this.$button = $(QWeb.render("mrp.button", {button: this.button}));
+        this.$button = $('<button>', {
+            type: 'button',
+            class: 'btn btn-primary btn-sm',
+            text: _t('Print')
+        });
         // bind actions
         $(this.$button).click(function () {
             var child_bom_ids = _.map(self.$el.find('.o_mrp_bom_foldable').closest('tr'), function (ele) {
