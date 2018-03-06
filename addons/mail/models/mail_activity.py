@@ -423,16 +423,14 @@ class MailActivityMixin(models.AbstractModel):
     def activity_feedback(self, act_type_xmlids, user_id=None, feedback=None):
         """ Set activities as done, limiting to some activity types and
         optionally to a given user. """
-        sudo_env = self.sudo()
-        activity_types = self.env['mail.activity.type'].sudo()
-        for act_type_xmlid in act_type_xmlids:
-            activity_types |= sudo_env.env.ref(act_type_xmlid)
+        Data = self.env['ir.model.data'].sudo()
+        activity_types_ids = [Data.xmlid_to_res_id(xmlid) for xmlid in act_type_xmlids]
         domain = [
             '&', '&', '&',
             ('res_model', '=', self._name),
             ('res_id', 'in', self.ids),
             ('automated', '=', True),
-            ('activity_type_id', 'in', activity_types.ids)
+            ('activity_type_id', 'in', activity_types_ids)
         ]
         if user_id:
             domain = ['&'] + domain + [('user_id', '=', user_id)]
@@ -442,18 +440,16 @@ class MailActivityMixin(models.AbstractModel):
         return True
 
     def activity_unlink(self, act_type_xmlids, user_id=None):
-        """ Unlink activities as done, limiting to some activity types and
-        optionally to a given user. """
-        sudo_env = self.sudo()
-        activity_types = self.env['mail.activity.type'].sudo()
-        for act_type_xmlid in act_type_xmlids:
-            activity_types |= sudo_env.env.ref(act_type_xmlid)
+        """ Unlink activities, limiting to some activity types and optionally
+        to a given user. """
+        Data = self.env['ir.model.data'].sudo()
+        activity_types_ids = [Data.xmlid_to_res_id(xmlid) for xmlid in act_type_xmlids]
         domain = [
             '&', '&', '&',
             ('res_model', '=', self._name),
             ('res_id', 'in', self.ids),
             ('automated', '=', True),
-            ('activity_type_id', 'in', activity_types.ids)
+            ('activity_type_id', 'in', activity_types_ids)
         ]
         if user_id:
             domain = ['&'] + domain + [('user_id', '=', user_id)]
