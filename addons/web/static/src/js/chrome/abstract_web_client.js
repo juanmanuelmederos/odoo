@@ -135,8 +135,7 @@ var AbstractWebClient = Widget.extend(ServiceProviderMixin, {
 
     hide_accesskey_overlay:function(){
         this.areAccessKeyVisible = false;
-        var accesskeyElements = this.$el.find('[accesskey]').filter(':visible');
-        var overlays = accesskeyElements.find('.o_web_accesskey_overlay');
+        var overlays = this.$el.find('.o_web_accesskey_overlay');
         if (overlays.length) {
             return overlays.remove();
         }
@@ -197,15 +196,22 @@ var AbstractWebClient = Widget.extend(ServiceProviderMixin, {
                 
                 var accesskeyElements = $(document).find('[accesskey]').filter(':visible');
                 _.each(accesskeyElements, function (elem) {
-                    $(_.str.sprintf("<div class='o_web_accesskey_overlay'>%s</div>", $(elem).attr('accesskey').toUpperCase()))
-                    .appendTo($(elem).css('position', 'relative'));
+                    var overlay = $(_.str.sprintf("<div class='o_web_accesskey_overlay'>%s</div>", $(elem).attr('accesskey').toUpperCase()));
+                    if (elem.tagName.toUpperCase() ==="INPUT") {
+                        overlay.appendTo($(elem).parent().css('position', 'relative'));
+                    }
+                    else {
+                        overlay.appendTo($(elem).css('position', 'relative'));
+                    }
                 });
             } 
         });
-        this.$el.on('keyup',function(e){
+        this.$el.on('keyup',function(event){
             self.hide_accesskey_overlay.call(self);
-            if (e.altKey || e.key === 'Alt') {
-                e.preventDefault();
+            if (event.altKey || event.key === 'Alt') {
+                if (event.preventDefault) event.preventDefault(); else event.returnValue = false;
+                if (event.stopPropagation) event.stopPropagation();
+                if (event.cancelBubble) event.cancelBubble = true;
                 return false;
             }
         });
