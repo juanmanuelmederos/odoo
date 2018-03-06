@@ -14,6 +14,8 @@ var FormRenderer = BasicRenderer.extend({
     events: _.extend({}, BasicRenderer.prototype.events, {
         'click .o_notification_box .oe_field_translate': '_onTranslate',
         'click .oe_title, .o_inner_group': '_onClick',
+        'navigation_move':'_onNavigationMove',
+        'activate_next_widget' : '_onActivateNextWidget',
     }),
     /**
      * @override
@@ -21,6 +23,7 @@ var FormRenderer = BasicRenderer.extend({
     init: function () {
         this._super.apply(this, arguments);
         this.idsForLabels = {};
+        this.lastActivatedFieldIndex = -1;
     },
     /**
      * @override
@@ -222,17 +225,18 @@ var FormRenderer = BasicRenderer.extend({
         //else do the default behavior
         if ( (currentIndex + 1) >= (this.allFieldWidgets[record.id] || []).length) {
             this.trigger_up('focus_control_button');
-            return -1;
+            this.lastActivatedFieldIndex = -1;
         } else {
             var activatedIndex =  this._super.apply(this, arguments);
             if (activatedIndex === -1 ) { // no widget have been activated, we should go to the edit/save buttons
                 this.trigger_up('focus_control_button');
-                return -1;
+                this.lastActivatedFieldIndex = -1;
             }
             else {
-                return activatedIndex;
+                this.lastActivatedFieldIndex = activatedIndex;
             }
         }
+        return this.lastActivatedFieldIndex;
     },
     /**
      * Add a tooltip on a button
@@ -842,11 +846,15 @@ var FormRenderer = BasicRenderer.extend({
         this.defs = defs;
         var $form = this._renderNode(this.arch).addClass(this.className);
         delete this.defs;
-
+        
         return $.when.apply($, defs).then(function () {
             self._updateView($form.contents());
         }, function () {
             $form.remove();
+        }).then(function(){
+            if (self.lastActivatedFieldIndex >= 0) {
+                self._activateNextFieldWidget(self.state, self.lastActivatedFieldIndex);
+            } 
         });
     },
     /**
@@ -860,7 +868,7 @@ var FormRenderer = BasicRenderer.extend({
         var self = this;
 
         // Set the new content of the form view, and toggle classnames
-        this.$el.html($newContent);
+        this.$el.html($newContent); // VSC : focus lost here !
         this.$el.toggleClass('o_form_nosheet', !this.has_sheet);
         if (this.has_sheet) {
             this.$el.children().not('.oe_chatter')
@@ -905,7 +913,11 @@ var FormRenderer = BasicRenderer.extend({
     //--------------------------------------------------------------------------
     // Handlers
     //--------------------------------------------------------------------------
-
+    _onActivateNextWidget:function(e){
+        ev.stopPropagation();
+        index = this.allFieldWidgets[this.state.id].indexOf(ev.data.target);
+        this._activateNextFieldWidget(this.state, index);
+    },
     /**
      * Makes the Edit button bounce in readonly
      *

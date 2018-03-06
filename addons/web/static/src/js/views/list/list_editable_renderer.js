@@ -738,9 +738,6 @@ ListRenderer.include({
     _onFooterClick: function () {
         this.unselectRow();
     },
-
-
-
     /** 
      * It will returns the first visible widget that is editable
      *
