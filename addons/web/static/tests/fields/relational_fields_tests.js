@@ -10648,7 +10648,7 @@ QUnit.module('relational_fields', {
    });
 
 
-    /*QUnit.only('when Navigating to a many to one with tabs, not filling in the first field and hitting tab, we should not add a first line but navigate to the next control', function (assert) {
+    /*QUnit.test('when Navigating to a many to one with tabs, not filling in the first field and hitting tab, we should not add a first line but navigate to the next control', function (assert) {
         assert.expect(3);
 
         this.data.partner.records[0].turtles = [];
@@ -10681,7 +10681,6 @@ QUnit.module('relational_fields', {
                     '</sheet>' +
                 '</form>',
             res_id: 1,
-            debug:1
         });
 
         assert.strictEqual(form.$el.find('input[name="qux"]')[0],
@@ -10698,7 +10697,7 @@ QUnit.module('relational_fields', {
                             document.activeElement,
                             "after tab, the focus should be on the many2one"));
             
-        //form.destroy();
+        form.destroy();
     });*/
 
 
