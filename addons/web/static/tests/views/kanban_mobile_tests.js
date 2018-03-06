@@ -1,6 +1,7 @@
 odoo.define('web.kanban_mobile_tests', function (require) {
 "use strict";
 
+var concurrency = require('web.concurrency');
 var KanbanView = require('web.KanbanView');
 var testUtils = require('web.test_utils');
 
@@ -16,17 +17,18 @@ QUnit.module('Views', {
                     int_field: {string: "int_field", type: "integer", sortable: true},
                     qux: {string: "my float", type: "float"},
                     product_id: {string: "something_id", type: "many2one", relation: "product"},
+                    stage: {string: "stage_id", type: "many2one", relation: "stage"},
                     category_ids: { string: "categories", type: "many2many", relation: 'category'},
                     state: { string: "State", type: "selection", selection: [["abc", "ABC"], ["def", "DEF"], ["ghi", "GHI"]]},
                     date: {string: "Date Field", type: 'date'},
                     datetime: {string: "Datetime Field", type: 'datetime'},
                 },
                 records: [
-                    {id: 1, bar: true, foo: "yop", int_field: 10, qux: 0.4, product_id: 3, state: "abc", category_ids: []},
-                    {id: 2, bar: true, foo: "blip", int_field: 9, qux: 13, product_id: 5, state: "def", category_ids: [6]},
-                    {id: 3, bar: true, foo: "gnap", int_field: 17, qux: -3, product_id: 3, state: "ghi", category_ids: [7]},
-                    {id: 4, bar: false, foo: "blip", int_field: -4, qux: 9, product_id: 5, state: "ghi", category_ids: []},
-                    {id: 5, bar: false, foo: "Hello \"World\"! #peace_n'_love", int_field: -9, qux: 10, state: "jkl", category_ids: []},
+                    {id: 1, bar: true, foo: "yop", int_field: 10, qux: 0.4, product_id: 3, stage: 1, state: "abc", category_ids: []},
+                    {id: 2, bar: true, foo: "blip", int_field: 9, qux: 13, product_id: 5, stage: 2, state: "def", category_ids: [6]},
+                    {id: 3, bar: true, foo: "gnap", int_field: 17, qux: -3, product_id: 3, stage: 3, state: "ghi", category_ids: [7]},
+                    {id: 4, bar: false, foo: "blip", int_field: -4, qux: 9, product_id: 5, stage: 4, state: "ghi", category_ids: []},
+                    {id: 5, bar: false, foo: "Hello \"World\"! #peace_n'_love", int_field: -9, stage: 5, qux: 10, state: "jkl", category_ids: []},
                 ]
             },
             product: {
@@ -39,6 +41,21 @@ QUnit.module('Views', {
                     {id: 5, name: "xmo"},
                 ]
             },
+            stage: {
+                fields: {
+                    id: {string: "ID", type: "integer"},
+                    name: {string: "Display Name", type: "char"},
+                },
+                records: [
+                    {id: 1, name: "stage-1"},
+                    {id: 2, name: "stage-2"},
+                    {id: 3, name: "stage-3"},
+                    {id: 4, name: "stage-4"},
+                    {id: 5, name: "stage-5"},
+                    {id: 6, name: "stage-6"},
+                ]
+            },
+
             category: {
                 fields: {
                     name: {string: "Category Name", type: "char"},
@@ -157,6 +174,47 @@ QUnit.module('Views', {
         assert.deepEqual(column_ids, tab_ids, "all columns data-id should match mobile tabs data-id");
 
         kanban.destroy();
+    });
+
+    QUnit.test('drag and drop in mobile', function (assert) {
+        var done = assert.async();
+        assert.expect(2);
+
+        var def = $.Deferred();
+        var kanban = createView({
+            View: KanbanView,
+            model: 'partner',
+            data: this.data,
+            arch: '<kanban class="o_kanban_test o_kanban_small_column">' +
+                    '<templates><t t-name="kanban-box">' +
+                        '<div><field name="foo"/></div>' +
+                    '</t></templates>' +
+                '</kanban>',
+            groupBy: ['stage'],
+            intercepts: {
+                kanban_column_swipe_left: function (event) {
+                    assert.step(event.target.id);
+                    def.resolve();
+                },
+            },
+        });
+
+        var $view = $('#qunit-fixture').contents();
+        $view.prependTo('body');
+        var $record = kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record:first');
+        var elementCenter = $record.offset();
+        elementCenter.left += $record.outerWidth()/2;
+        elementCenter.top += $record.outerHeight()/2;
+        testUtils.triggerPositionalMouseEvent(elementCenter.left, elementCenter.top, 'mousedown');
+        concurrency.delay(200).then(function () {
+            testUtils.triggerPositionalMouseEvent(kanban.$('.o_kanban_view').width() - 5, elementCenter.top , 'mousemove');
+        })
+        def.then(function () {
+            assert.verifySteps([5]);
+            kanban.destroy();
+            $view.remove();
+            done();
+        });
     });
 });
 });

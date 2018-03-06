@@ -98,14 +98,14 @@ var KanbanColumn = Widget.extend({
 
         var count = 0;
         var sortable = new Sortable(this.el, {
-            group: { name: ".o_kanban_group" , pull: this.draggable},
+            group: { name: ".o_kanban_group" , pull: this.draggable}, // pull is like containment of jqueryui sortable
             ghostClass: "oe_kanban_card_ghost",
             chosenClass: "o_kanban_record_chosen",
-            draggable: ".o_kanban_record",
-            filter: ".o_updating",
+            draggable: ".o_kanban_record:not(.o_updating)",
             fallbackClass: "o_kanban_record_clone",
             scroll: config.device.isMobile ? true  : $('.o_content')[0],
             scrollSpeed: 20,
+            scrollSensitivity: config.device.isMobile ? 40 : 0,
             delay: config.device.isMobile ? 200 : 0,
             forceFallback: true,
             scrollFn: (config.device.isMobile) ? function(offsetX, offsetY, originalEvent, touchEvt, hoverTargetEl) {
@@ -129,11 +129,9 @@ var KanbanColumn = Widget.extend({
                 $(event.to).addClass('o_kanban_hover');
             },
             onSort: function (event) {
-                $('.o_kanban_view').off('mousemove');
                 var record = $(event.item).data('record');
                 var index = self.records.indexOf(record);
                 if (record) {
-                    record.$el.removeAttr('style');  // jqueryui sortable add display:block inline
                     if (index >= 0) {
                         if ($.contains(self.$el[0], record.$el[0])) {
                             // resequencing records

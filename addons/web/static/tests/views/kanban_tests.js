@@ -1344,7 +1344,7 @@ QUnit.module('Views', {
                             "column should contain 3 record(s)");
             assert.strictEqual(kanban.$('.thisiseditable').length, 4, "all records should be editable");
             kanban.destroy();
-            $view.remove();
+            $('.o_web_client').remove();
             done();
         });
     });
@@ -1395,7 +1395,7 @@ QUnit.module('Views', {
             assert.strictEqual(kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record').length, 2,
                             "column should contain 2 record(s)");
             kanban.destroy();
-            $view.remove();
+            $('.o_web_client').remove();
             done();
         });
     });
@@ -1491,7 +1491,7 @@ QUnit.module('Views', {
             assert.strictEqual(kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record:eq(1)').text(), "blipDEF",
                 "records should have been resequenced");
             kanban.destroy();
-            $view.remove();
+            $('.o_web_client').remove();
             done();
         });
     });
@@ -2991,12 +2991,10 @@ QUnit.module('Views', {
                             "column should contain 0 records");
 
             // testUtils.dragAndDrop($record, $group);
-            return concurrency.delay(400);
-        }).then(function () {
             $record = kanban.$('.o_kanban_group:eq(0) .o_kanban_record:eq(0)');
             $group = kanban.$('.o_kanban_group:eq(1)');
             testUtils.dragMouseEvent($record, $group);
-            return concurrency.delay(100);
+            return concurrency.delay(50);
         }).then(function () {
             testUtils.dropMouseEvent($group);
 
@@ -3005,7 +3003,7 @@ QUnit.module('Views', {
             assert.strictEqual(kanban.$('.o_kanban_group:eq(1) .o_kanban_record').length, 1,
                             "column should contain 1 records");
             kanban.destroy();
-            $view.remove();
+            $('.o_web_client').remove();
             done();
         });
     });
@@ -3085,7 +3083,7 @@ QUnit.module('Views', {
                             "records should be correctly ordered");
             assert.strictEqual(nbResequence, 2, "should have resequenced twice");
             kanban.destroy();
-            $view.remove();
+            $('.o_web_client').remove();
             done();
         });
     });
