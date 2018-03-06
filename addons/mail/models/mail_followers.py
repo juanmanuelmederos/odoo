@@ -121,9 +121,9 @@ class Followers(models.Model):
             if record.res_id:
                 self.env[record.res_model].invalidate_cache(ids=[record.res_id])
 
-    @api.model
-    def create(self, vals):
-        res = super(Followers, self).create(vals)
+    @api.create_multi
+    def create(self, valses):
+        res = super(Followers, self).create(valses)
         res._invalidate_documents()
         return res
 
