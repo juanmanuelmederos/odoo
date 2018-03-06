@@ -175,6 +175,10 @@
             <xpath expr="//button[@id='action_confirm']" position="attributes">
                 <attribute name="attrs">{'invisible': ['|',('can_directly_mark_as_paid', '=', True), ('state', 'not in', ['sent'])]}</attribute>
             </xpath>
+            <xpath expr="//button[@id='action_confirm']" position="after">
+                <button name="action_confirm" string="Confirm Order" type="object"
+                    attrs="{'invisible': ['|', ('state', 'not in', ['sent']), '&amp;', ('can_directly_mark_as_paid', '=', False), ('state', '=', 'sent')]}"/>
+            </xpath>
         </field>
     </record>
 
