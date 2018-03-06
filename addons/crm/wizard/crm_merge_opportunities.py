@@ -24,10 +24,9 @@ class MergeOpportunity(models.TransientModel):
         """
         record_ids = self._context.get('active_ids')
         result = super(MergeOpportunity, self).default_get(fields)
-
         if record_ids:
             if 'opportunity_ids' in fields:
-                opp_ids = self.env['crm.lead'].browse(record_ids).filtered(lambda opp: opp.probability < 100).ids
+                opp_ids = self.env['crm.lead'].get_active_records().filtered(lambda opp: opp.probability < 100).ids
                 result['opportunity_ids'] = opp_ids
 
         return result
