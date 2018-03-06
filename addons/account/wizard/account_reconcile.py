@@ -31,9 +31,8 @@ class AccountMoveLineReconcile(models.TransientModel):
 
     @api.multi
     def trans_rec_get(self):
-        context = self._context or {}
         credit = debit = 0
-        lines = self.env['account.move.line'].browse(context.get('active_ids', []))
+        lines = self.env['account.move.line'].get_active_records()
         for line in lines:
             if not line.full_reconcile_id:
                 credit += line.credit
@@ -54,7 +53,7 @@ class AccountMoveLineReconcile(models.TransientModel):
 
     @api.multi
     def trans_rec_reconcile_full(self):
-        move_lines = self.env['account.move.line'].browse(self._context.get('active_ids', []))
+        move_lines = self.env['account.move.line'].get_active_records()
         #Don't consider entries that are already reconciled
         move_lines_filtered = move_lines.filtered(lambda aml: not aml.reconciled)
         #Because we are making a full reconciliation in batch, we need to consider use cases as defined in the test test_manual_reconcile_wizard_opw678153
@@ -95,8 +94,7 @@ class AccountMoveLineReconcileWriteoff(models.TransientModel):
 
     @api.multi
     def trans_rec_reconcile_partial(self):
-        context = self._context or {}
-        self.env['account.move.line'].browse(context.get('active_ids', [])).reconcile()
+        self.env['account.move.line'].get_active_records().reconcile()
         return {'type': 'ir.actions.act_window_close'}
 
     @api.multi
@@ -106,7 +104,7 @@ class AccountMoveLineReconcileWriteoff(models.TransientModel):
         context['comment'] = self.comment
         if self.analytic_id:
             context['analytic_id'] = self.analytic_id.id
-        move_lines = self.env['account.move.line'].browse(self._context.get('active_ids', []))
+        move_lines = self.env['account.move.line'].get_active_records()
         #Don't consider entries that are already reconciled
         move_lines_filtered = move_lines.filtered(lambda aml: not aml.reconciled)
         #Because we are making a full reconciliation in batch, we need to consider use cases as defined in the test test_manual_reconcile_wizard_opw678153
