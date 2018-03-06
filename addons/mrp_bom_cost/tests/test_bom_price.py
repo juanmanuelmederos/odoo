@@ -29,8 +29,8 @@ class TestBom(common.TransactionCase):
         self.glass = self._create_product('Glass', 100)
 
         # Unit of Measure.
-        self.unit = self.env.ref("product.product_uom_unit")
-        self.dozen = self.env.ref("product.product_uom_dozen")
+        self.unit = self.env.ref('uom.product_uom_unit')
+        self.dozen = self.env.ref('uom.product_uom_dozen')
 
         # Bills Of Materials.
         # -------------------------------------------------------------------------------
