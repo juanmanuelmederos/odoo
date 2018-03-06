@@ -89,9 +89,10 @@ class Property(models.Model):
     def write(self, values):
         return super(Property, self).write(self._update_values(values))
 
-    @api.model
-    def create(self, values):
-        return super(Property, self).create(self._update_values(values))
+    @api.create_multi
+    def create(self, valses):
+        valses = [self._update_values(vals) for vals in valses]
+        return super(Property, self).create(valses)
 
     @api.multi
     def get_by_record(self):
@@ -221,10 +222,11 @@ class Property(models.Model):
                 prop.write({'value': value})
 
         # create new properties for records that do not have one yet
+        valses = []
         for ref, id in refs.items():
             value = clean(values[id])
             if value != default_value:
-                self.create({
+                valses.append({
                     'fields_id': field_id,
                     'company_id': company_id,
                     'res_id': ref,
@@ -232,6 +234,7 @@ class Property(models.Model):
                     'value': value,
                     'type': self.env[model]._fields[name].type,
                 })
+        self.create(valses)
 
     @api.model
     def search_multi(self, name, model, operator, value):
