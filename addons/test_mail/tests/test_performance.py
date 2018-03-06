@@ -162,12 +162,12 @@ class TestAdvMailPerformance(TransactionCase):
     def test_adv_activity_automated(self):
         record = self.env['mail.test.activity'].create({'name': 'Test'})
 
-        with self.assertQueryCount(admin=777, emp=888):  # test_mail only: 26 - 60
+        with self.assertQueryCount(admin=26, emp=32):  # test_mail only: 26 - 32
             record.action_start('Test Start')
 
         record.write({'name': 'Dupe write'})
 
-        with self.assertQueryCount(admin=777, emp=888):  # test_mail only: 32 - 89
+        with self.assertQueryCount(admin=60, emp=90):  # test_mail only: 60 - 90
             record.action_close('Dupe feedback')
 
         self.assertEqual(record.activity_ids, self.env['mail.activity'])
