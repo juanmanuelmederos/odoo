@@ -180,14 +180,15 @@ class SaleOrderLine(models.Model):
             else:
                 super(SaleOrderLine, line)._compute_product_updatable()
 
-    @api.model
-    def create(self, values):
-        line = super(SaleOrderLine, self).create(values)
+    @api.create_multi
+    def create(self, valses):
+        lines = super(SaleOrderLine, self).create(valses)
         # Do not generate task/project when expense SO line, but allow
         # generate task with hours=0.
-        if line.state == 'sale' and not line.is_expense:
-            line._timesheet_service_generation()
-        return line
+        for line in lines:
+            if line.state == 'sale' and not line.is_expense:
+                line._timesheet_service_generation()
+        return lines
 
     ###########################################
     ## Service : Project and task generation
