@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
+from odoo.tests import Form
 from odoo.tests.common import TransactionCase
 
 
@@ -48,26 +49,19 @@ class TestOnchangeProductId(TransactionCase):
         fp_tax_id = self.fiscal_position_tax_model.create(dict(position_id=fp_id.id,
                                                                tax_src_id=tax_include_id.id,
                                                                tax_dest_id=tax_exclude_id.id))
-        so_vals = {
-            'partner_id': partner_id.id,
-            'pricelist_id': pricelist.id,
-            'fiscal_position_id': fp_id.id,
-            'order_line': [
-                (0, 0, {
-                    'name': product_id.name,
-                    'product_id': product_id.id,
-                    'product_uom_qty': 1.0,
-                    'product_uom': uom_id.id,
-                    'price_unit': 121.0
-                })
-            ]
-        }
 
-        so = self.so_model.create(so_vals)
+        sale_order = self.so_model.create(dict(partner_id=partner_id.id,
+                                       pricelist_id=pricelist.id,
+                                       fiscal_position_id=fp_id.id))
 
-        so_line = so.order_line[0]
-        so_line.product_id_change()
-        self.assertEquals(100, so_line.price_unit, "The included tax must be subtracted to the price")
+        with Form(sale_order) as order:
+            with order.order_line.new() as line:
+                line.name = product_id.name
+                line.product_id = product_id
+                line.product_uom_qty = 1.0
+                line.product_uom = uom_id
+
+        self.assertEquals(100, sale_order.order_line[0].price_unit, "The included tax must be subtracted to the price")
 
     def test_pricelist_application(self):
         """ Test different prices are correctly applied based on dates """
@@ -102,17 +96,15 @@ class TestOnchangeProductId(TransactionCase):
             'pricelist_id': christmas_pricelist.id,
         })
 
-        order_line = self.env['sale.order.line'].new({
-            'order_id': so.id,
-            'product_id': support_product.id,
-        })
+        with Form(so) as order:
+            with order.order_line.new() as line:
+                line.product_id = support_product
 
-        # force compute uom and prices
-        order_line.product_id_change()
-        order_line.product_uom_change()
+        self.assertEqual(so.order_line[0].price_unit, 80, "First date pricelist rule not applied")
 
-        self.assertEqual(order_line.price_unit, 80, "First date pricelist rule not applied")
+        with Form(so) as order:
+            order.date_order = '2017-12-30'
+            with order.order_line.edit(0) as line:
+                line.product_id = support_product
 
-        so.date_order = '2017-12-30'
-        order_line.product_id_change()
-        self.assertEqual(order_line.price_unit, 50, "Second date pricelist rule not applied")
+        self.assertEqual(so.order_line[0].price_unit, 50, "Second date pricelist rule not applied")
