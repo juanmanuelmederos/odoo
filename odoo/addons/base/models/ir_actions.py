@@ -503,7 +503,7 @@ class IrActionsServer(models.Model):
         if self._context.get('active_model') == model_name and self._context.get('active_id'):
             record = model.browse(self._context['active_id'])
         if self._context.get('active_model') == model_name and self._context.get('active_ids'):
-            records = model.browse(self._context['active_ids'])
+            records = model.get_active_records()
         if self._context.get('onchange_self'):
             record = self._context['onchange_self']
         eval_context.update({
