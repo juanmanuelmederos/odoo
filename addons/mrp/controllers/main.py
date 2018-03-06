@@ -8,9 +8,10 @@ from odoo.http import request
 from odoo.addons.web.controllers.main import _serialize_exception
 from odoo.tools import html_escape
 
+
 class MrpReportController(http.Controller):
 
-    @http.route('/mrp/pdf/bom_report/<int:bom_id>', type='http', auth='user')
+    @http.route('/mrp/pdf/mrp_bom_report/<int:bom_id>', type='http', auth='user')
     def report(self, token, bom_id=False, **kw):
         child_bom_ids = json.loads(kw.get('child_bom_ids')) or []
         try:

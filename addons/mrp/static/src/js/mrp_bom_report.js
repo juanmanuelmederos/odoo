@@ -73,7 +73,7 @@ var MrpBomReport = Widget.extend(ControlPanelMixin, {
         });
         framework.blockUI();
         session.get_file({
-            url: '/mrp/pdf/bom_report/' + this.reportContext['active_id'],
+            url: '/mrp/pdf/mrp_bom_report/' + this.reportContext['active_id'],
             data: {child_bom_ids: JSON.stringify(childBomIDs)},
             complete: framework.unblockUI,
             error: crash_manager.rpc_error.bind(crash_manager),
@@ -129,7 +129,7 @@ var MrpBomReport = Widget.extend(ControlPanelMixin, {
     },
 });
 
-core.action_registry.add("mrp_bom_report", MrpBomReport);
+core.action_registry.add('mrp_bom_report', MrpBomReport);
 return MrpBomReport;
 
 });
