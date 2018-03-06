@@ -54,7 +54,6 @@ class TestPurchaseOrder(AccountingTestCase):
                 self.product_id_2.write({
                     'seller_ids': [(2, id_to_remove, False)],
                 })
-        print("aaaaaaa")
         self.assertFalse(self.product_id_2.seller_ids.filtered(lambda r: r.name == self.partner_id), 'Purchase: the partner should not be in the list of the product suppliers')
 
         self.po = self.PurchaseOrder.create(self.po_vals)
