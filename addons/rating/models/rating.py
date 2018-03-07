@@ -218,7 +218,7 @@ class RatingMixin(models.AbstractModel):
         in parameter. """
         lang = lang or 'en_US'
         for record in self:
-            template.with_context(lang=lang).send_mail(record.id, force_send=force_send)
+            template.with_context(lang=lang, custom_layout='mail.mail_notification_borders').send_mail(record.id, force_send=force_send)
 
     @api.multi
     def rating_apply(self, rate, token=None, feedback=None, subtype=None):
