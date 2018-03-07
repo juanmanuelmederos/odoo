@@ -497,6 +497,7 @@ class Import(models.TransientModel):
                 'preview': preview,
                 'options': options,
                 'advanced_mode': any([len(models.fix_import_export_id_paths(col)) > 1 for col in headers or []]),
+                # 'advanced_mode': True,
                 'debug': self.user_has_groups('base.group_no_one'),
             }
         except Exception as error:

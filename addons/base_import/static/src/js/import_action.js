@@ -145,6 +145,14 @@ var DataImport = Widget.extend(ControlPanelMixin, {
         this.$buttons = $(QWeb.render("ImportView.buttons", this));
         this.$buttons.filter('.o_import_validate').on('click', this.validate.bind(this));
         this.$buttons.filter('.o_import_import').on('click', this.import.bind(this));
+        this.$buttons.filter('.o_import_file_top').on('click', function(e) {
+            e.preventDefault();
+            self.$('.oe_import_file').click();
+        });
+        this.$buttons.filter('.oe_import_file_reload_top').on('click', function(e) {
+            e.preventDefault();
+            self.$('.oe_import_file_reload').click();
+        });
         this.$buttons.filter('.o_import_cancel').on('click', function(e) {
             e.preventDefault();
             self.exit();
@@ -254,9 +262,6 @@ var DataImport = Widget.extend(ControlPanelMixin, {
     //- File & settings change section
     onfile_loaded: function () {
         var file = this.$('.oe_import_file')[0].files[0];
-        this.$('.oe_import_file_show').val(file !== undefined && file.name || '');
-        this.$buttons.filter('.o_import_button').add(this.$('.oe_import_file_reload'))
-                .prop('disabled', true);
         if (!this.$('input.oe_import_file').val()) { return this['settings_changed'](); }
         this.$('.oe_import_date_format').val('');
         this.$('.oe_import_datetime_format').val('');
@@ -275,8 +280,6 @@ var DataImport = Widget.extend(ControlPanelMixin, {
     },
     onpreviewing: function () {
         var self = this;
-        this.$buttons.filter('.o_import_button').add(this.$('.oe_import_file_reload'))
-                .prop('disabled', true);
         this.$el.addClass('oe_import_with_file');
         // TODO: test that write // succeeded?
         this.$el.removeClass('oe_import_preview_error oe_import_error');
@@ -295,18 +298,19 @@ var DataImport = Widget.extend(ControlPanelMixin, {
     },
     onpreview_error: function (event, from, to, result) {
         this.$('.oe_import_options').show();
-        this.$('.oe_import_file_reload').prop('disabled', false);
         this.$el.addClass('oe_import_preview_error oe_import_error');
         this.$('.oe_import_error_report').html(
                 QWeb.render('ImportView.preview.error', result));
     },
     onpreview_success: function (event, from, to, result) {
         var self = this;
-        this.$buttons.filter('.o_import_import').removeClass('btn-primary');
-        this.$buttons.filter('.o_import_validate').addClass('btn-primary');
-        this.$buttons.filter('.o_import_button').add(this.$('.oe_import_file_reload'))
-                .prop('disabled', false);
+        this.$buttons.filter('.o_import_file_top').switchClass('btn-primary', 'btn-default');
+        this.$buttons.filter('.o_import_button').add(this.$buttons.filter('.oe_import_file_reload_top'))
+                .prop('disabled', false)
+                .removeClass('o_hidden');
         this.$el.addClass('oe_import_preview');
+        this.$el.filter('.o_view_nocontent').addClass('o_hidden');
+        this.$('.oe_import_box').removeClass('o_hidden');
         this.$('input.oe_import_advanced_mode').prop('checked', result.advanced_mode);
         this.$('.oe_import_grid').html(QWeb.render('ImportView.preview', result));
 
