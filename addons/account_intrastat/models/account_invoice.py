@@ -17,4 +17,4 @@ class AccountInvoiceLine(models.Model):
     _inherit = 'account.invoice.line'
 
     intrastat_transaction_id = fields.Many2one('account.intrastat.transaction', string='Intrastat Transaction Type',
-                                               help='Intrastat nature of transaction')
+        help='Intrastat nature of transaction')

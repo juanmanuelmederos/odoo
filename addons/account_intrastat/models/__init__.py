@@ -5,4 +5,4 @@ from . import account_intrastat
 from . import res_company
 from . import res_country
 from . import account_invoice
-from . import product_template
+from . import product
