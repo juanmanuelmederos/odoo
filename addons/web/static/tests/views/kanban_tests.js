@@ -1332,8 +1332,8 @@ QUnit.module('Views', {
         assert.strictEqual(kanban.$('.thisiseditable').length, 4, "all records should be editable");
         var $record = kanban.$('.o_kanban_group:nth-child(1) .o_kanban_record:first');
         var $group = kanban.$('.o_kanban_group:nth-child(2)');
-        envIDs = [3, 1, 2, 4]; // first record of first column moved to the bottom of second column
-        testUtils.dragMouseEvent($record, $group);
+        envIDs = [3, 2, 4, 1]; // first record of first column moved to the bottom of second column
+        testUtils.dragMouseEvent($record, $group, {position: 'bottom'});
         concurrency.delay(50).then(function () {
 
             testUtils.dropMouseEvent($group);
@@ -1344,7 +1344,7 @@ QUnit.module('Views', {
                             "column should contain 3 record(s)");
             assert.strictEqual(kanban.$('.thisiseditable').length, 4, "all records should be editable");
             kanban.destroy();
-            $('.o_web_client').remove();
+            $view.remove();
             done();
         });
     });
@@ -1394,7 +1394,7 @@ QUnit.module('Views', {
             assert.strictEqual(kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record').length, 2,
                             "column should contain 2 record(s)");
             kanban.destroy();
-            $('.o_web_client').remove();
+            $view.remove();
             done();
         });
     });
@@ -1441,7 +1441,6 @@ QUnit.module('Views', {
         testUtils.dragMouseEvent($record, $group);
         concurrency.delay(50).then(function () {
             testUtils.dropMouseEvent($group);
-            // testUtils.dragAndDrop($record, $group);
             // should not be draggable
             assert.strictEqual(kanban.$('.o_kanban_group:nth-child(1) .o_kanban_record').length, 1,
                             "column should now contain 1 record(s)");
@@ -1458,7 +1457,6 @@ QUnit.module('Views', {
             $record = kanban.$('.o_kanban_group:nth-child(1) .o_kanban_record:first');
             $group = kanban.$('.o_kanban_group:nth-child(2)');
 
-            // testUtils.dragAndDrop($record, $group);
             testUtils.dragMouseEvent($record, $group);
             return concurrency.delay(50);
         }).then(function () {
@@ -1476,7 +1474,6 @@ QUnit.module('Views', {
             var $record2 = kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record:eq(1)');
             assert.strictEqual($record1.text(), "blipDEF", "first record should be DEF");
             assert.strictEqual($record2.text(), "blipGHI", "second record should be GHI");
-            // testUtils.dragAndDrop($record2, $record1, {position: 'top'});
 
             testUtils.dragMouseEvent($record2, $record1, {position: 'top'});
             return concurrency.delay(50);
@@ -1490,7 +1487,7 @@ QUnit.module('Views', {
             assert.strictEqual(kanban.$('.o_kanban_group:nth-child(2) .o_kanban_record:eq(1)').text(), "blipDEF",
                 "records should have been resequenced");
             kanban.destroy();
-            $('.o_web_client').remove();
+            $view.remove();
             done();
         });
     });
@@ -2981,7 +2978,6 @@ QUnit.module('Views', {
 
         var $record = kanban.$('.o_kanban_group:eq(1) .o_kanban_record:eq(0)');
         var $group = kanban.$('.o_kanban_group:eq(0)');
-        // testUtils.dragAndDrop($record, $group);
         testUtils.dragMouseEvent($record, $group);
         concurrency.delay(50).then(function () {
             testUtils.dropMouseEvent($group);
@@ -2990,11 +2986,10 @@ QUnit.module('Views', {
             assert.strictEqual(kanban.$('.o_kanban_group:eq(1) .o_kanban_record').length, 0,
                             "column should contain 0 records");
 
-            // testUtils.dragAndDrop($record, $group);
             $record = kanban.$('.o_kanban_group:eq(0) .o_kanban_record:eq(0)');
             $group = kanban.$('.o_kanban_group:eq(1)');
 
-            testUtils.dragMouseEvent($record, $group);
+            testUtils.dragMouseEvent($record, $group,{position: 'bottom'});
             return concurrency.delay(50);
         }).then(function () {
             testUtils.dropMouseEvent($group);
@@ -3004,7 +2999,7 @@ QUnit.module('Views', {
             assert.strictEqual(kanban.$('.o_kanban_group:eq(1) .o_kanban_record').length, 1,
                             "column should contain 1 records");
             kanban.destroy();
-            $('.o_web_client').remove();
+            $view.remove();
             done();
         });
     });
@@ -3060,7 +3055,6 @@ QUnit.module('Views', {
 
         var $record1 = kanban.$('.o_kanban_group:eq(0) .o_kanban_record:eq(1)');
         var $record2 = kanban.$('.o_kanban_group:eq(0) .o_kanban_record:eq(0)');
-        // testUtils.dragAndDrop($record1, $record2, {position: 'top'});
         testUtils.dragMouseEvent($record1, $record2, {position: 'top'});
         concurrency.delay(50).then(function () {
             testUtils.dropMouseEvent($record2);
@@ -3071,7 +3065,6 @@ QUnit.module('Views', {
                             "records should be correctly ordered");
             assert.strictEqual(kanban.$('.o_kanban_group:eq(0) .o_kanban_record:eq(1)').text(), "record2",
                             "records should be correctly ordered");
-            // testUtils.dragAndDrop($record2, $record1, {position: 'top'});
             testUtils.dragMouseEvent($record2, $record1, {position: 'top'});
             return concurrency.delay(50);
         }).then(function () {
@@ -3084,7 +3077,7 @@ QUnit.module('Views', {
                             "records should be correctly ordered");
             assert.strictEqual(nbResequence, 2, "should have resequenced twice");
             kanban.destroy();
-            $('.o_web_client').remove();
+            $view.remove();
             done();
         });
     });

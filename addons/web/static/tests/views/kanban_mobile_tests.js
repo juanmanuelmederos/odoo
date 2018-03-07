@@ -180,10 +180,12 @@ QUnit.module('Views', {
         var done = assert.async();
         assert.expect(2);
 
-        var def = $.Deferred();
+        var def1 = $.Deferred();
+        var leftSwipeCount = 0;
         var kanban = createView({
             View: KanbanView,
             model: 'partner',
+            debug: true,
             data: this.data,
             arch: '<kanban class="o_kanban_test o_kanban_small_column">' +
                     '<templates><t t-name="kanban-box">' +
@@ -193,8 +195,11 @@ QUnit.module('Views', {
             groupBy: ['stage'],
             intercepts: {
                 kanban_column_swipe_left: function (event) {
-                    assert.step(event.target.id);
-                    def.resolve();
+                    leftSwipeCount+=1;
+                    if(leftSwipeCount > 3) {
+                        assert.step(leftSwipeCount);
+                        def1.resolve();
+                    }
                 },
             },
         });
@@ -209,8 +214,10 @@ QUnit.module('Views', {
         concurrency.delay(200).then(function () {
             testUtils.triggerPositionalMouseEvent(kanban.$('.o_kanban_view').width() - 5, elementCenter.top , 'mousemove');
         })
-        def.then(function () {
-            assert.verifySteps([5]);
+        def1.then(function () {
+            var $group = kanban.$('.o_kanban_group:nth-child(6)');
+            testUtils.dropMouseEvent($group);
+            assert.verifySteps([4]);
             kanban.destroy();
             $view.remove();
             done();

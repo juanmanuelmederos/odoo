@@ -105,21 +105,21 @@ var KanbanColumn = Widget.extend({
             fallbackClass: "o_kanban_record_clone",
             scroll: config.device.isMobile ? true  : $('.o_content')[0],
             scrollSpeed: 20,
-            scrollSensitivity: config.device.isMobile ? 40 : 0,
+            scrollSensitivity: 40,
             delay: config.device.isMobile ? 200 : 0,
             forceFallback: true,
+            // this method called when try to change the stage
             scrollFn: (config.device.isMobile) ? function(offsetX, offsetY, originalEvent, touchEvt, hoverTargetEl) {
-                // this method called when try to change the stage
-                if(offsetX != 0) { // what to do in vertical scroll
-                    if(config.device.isMobile) {
-                        count += 1;
-                        if (count > 30) {
-                            var swipeTo = offsetX > 0 ? 'left' : 'right';
-                            self.trigger_up("kanban_column_swipe_" + swipeTo);
-                            count = 0;
-                        }
+                // while dragging horizontally
+                if(offsetX != 0) {
+                    count += 1;
+                    if (count > 30) {
+                        var swipeTo = offsetX > 0 ? 'left' : 'right';
+                        self.trigger_up("kanban_column_swipe_" + swipeTo);
+                        count = 0;
                     }
                 }
+                // while dragging vertically
                 else if(offsetY != 0) {
                     self.$el.scrollTop(self.$el.scrollTop() + offsetY);
                 }

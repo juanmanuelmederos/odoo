@@ -32,6 +32,21 @@ function get_first_visible_element($elements) {
     }
     return $();
 }
+function triggerPositionalMouseEvent(x, y, type){
+    var ev = document.createEvent("MouseEvent");
+    var el = document.elementFromPoint(x,y);
+    ev.initMouseEvent(
+        type,
+        true /* bubble */,
+        true /* cancelable */,
+        window, null,
+        x, y, x, y, /* coordinates */
+        false, false, false, false, /* modifier keys */
+        0 /*left button*/, null
+    );
+    el.dispatchEvent(ev);
+    return el;
+}
 
 function do_before_unload(if_unload_callback, if_not_unload_callback) {
     if_unload_callback = if_unload_callback || function () {};
@@ -131,11 +146,14 @@ var RunningTourActionHelper = core.Class.extend({
 
         var toCenter = $to.offset();
         toCenter.left += $to.outerWidth()/2;
-        toCenter.top += $to.outerHeight()/2;
+        toCenter.top += $to.outerHeight()/2 + 10;
 
-        values.$element.trigger($.Event("mousedown", {which: 1, pageX: elementCenter.left, pageY: elementCenter.top}));
-        values.$element.trigger($.Event("mousemove", {which: 1, pageX: toCenter.left, pageY: toCenter.top}));
-        values.$element.trigger($.Event("mouseup", {which: 1, pageX: toCenter.left, pageY: toCenter.top}));
+        triggerPositionalMouseEvent(elementCenter.left, elementCenter.top, 'mousedown');
+        triggerPositionalMouseEvent(toCenter.left, toCenter.top , 'mousemove');
+        setTimeout(function () {
+            triggerPositionalMouseEvent(toCenter.left, toCenter.top, 'mouseup');
+        } ,50);
+
     },
     _keydown: function (values, keyCodes) {
         while (keyCodes.length) {
