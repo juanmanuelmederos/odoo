@@ -718,6 +718,9 @@ ListRenderer.include({
         if (!this._isEditable() || $(event.target).prop('special_click')) {
             return;
         }
+        if (this.state.groupedBy.length) {
+            this.trigger_up('get_data', {id: this.groupedID});
+        }
         var $td = $(event.currentTarget);
         var $tr = $td.parent();
         var rowIndex = this.$('.o_data_row').index($tr);
@@ -829,9 +832,11 @@ ListRenderer.include({
      * @override
      * @private
      */
-    _onRowClicked: function () {
+    _onRowClicked: function (event) {
         if (!this._isEditable()) {
             this._super.apply(this, arguments);
+        } else if ($(event.currentTarget).data('group')){
+            this.groupedID = $(event.currentTarget).data('group').id;
         }
     },
     /**
