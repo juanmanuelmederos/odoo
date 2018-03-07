@@ -8,13 +8,21 @@ from odoo.exceptions import ValidationError
 class Project(models.Model):
     _inherit = 'project.project'
 
-    sale_line_id = fields.Many2one('sale.order.line', 'Sales Order Line', domain=[('is_expense', '=', False)], readonly=True, help="Sale order line from which the project has been created. Used for tracability.")
+    sale_line_id = fields.Many2one('sale.order.line', 'Sales Order Line', domain="[('is_service', '=', True), ('order_partner_id', '=', partner_id), ('is_expense', '=', False)]", readonly=True, help="Sale order line from which the project has been created. Used for tracability.")
     billable_type = fields.Selection([
         ('task_rate', 'At Task Rate'),
         ('no', 'No Billable')
     ], string="Billable Type", default='no', required=True, help='Billable type implies:\n'
         ' - At task rate: each time spend on a task is billed at task rate.\n'
         ' - No Billable: track time without invoicing it')
+
+    @api.constrains('sale_line_id')
+    def _check_sale_line_type(self):
+        for project in self:
+            if not project.sale_line_id.is_service:
+                raise ValidationError(_("A billable project should be linked to a Sales Order Item having a Service product."))
+            if project.sale_line_id.is_expense:
+                raise ValidationError(_("A billable project should be linked to a Sales Order Item that does not come from an expense or a vendor bill."))
 
     @api.constrains('billable_type', 'sale_line_id')
     def _check_billable_type(self):
