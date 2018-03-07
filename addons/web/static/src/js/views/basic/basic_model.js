@@ -1684,6 +1684,9 @@ var BasicModel = AbstractModel.extend({
             case 'CREATE':
                 var options = {position: command.position};
                 def = this._addX2ManyDefaultRecord(list, options).then(function (id) {
+                    if (command.position === 'bottom' && list.orderedResIDs.length >= list.limit) {
+                        list.limit += 1;
+                    }
                     // FIXME: hack for lunch widget, which does useless default_get and onchange
                     if (command.data) {
                         return self._applyChange(id, command.data);
