@@ -26,10 +26,11 @@ class AccountIntrastatRegion(models.Model):
 
 class AccountIntrastatTransaction(models.Model):
     _name = 'account.intrastat.transaction'
+    _rec_name = 'code'
 
-    name = fields.Char(required=True, readonly=True)
+    code = fields.Char(required=True, readonly=True)
     description = fields.Text(readonly=True)
 
     _sql_constraints = [
-        ('intrastat_transaction_code_unique', 'UNIQUE (name)', 'Code must be unique.'),
+        ('intrastat_transaction_code_unique', 'UNIQUE (code)', 'Code must be unique.'),
     ]

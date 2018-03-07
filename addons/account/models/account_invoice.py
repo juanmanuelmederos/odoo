@@ -367,6 +367,8 @@ class AccountInvoice(models.Model):
     #fields use to set the sequence, on the first invoice of the journal
     sequence_number_next = fields.Char(string='Next Number', compute="_get_sequence_number_next", inverse="_set_sequence_next")
     sequence_number_next_prefix = fields.Char(string='Next Number Prefix', compute="_get_sequence_prefix")
+    incoterm_id = fields.Many2one('account.incoterms', string='Incoterm',
+        help='International Commercial Terms are a series of predefined commercial terms used in international transactions.')
 
     _sql_constraints = [
         ('number_uniq', 'unique(number, company_id, journal_id, type)', 'Invoice Number must be unique per Company!'),
