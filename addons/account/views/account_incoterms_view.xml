@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <!-- Stock incoterms -->
+        <!-- account incoterms -->
         <record id="view_incoterms_tree" model="ir.ui.view">
-            <field name="name">stock.incoterms.tree</field>
-            <field name="model">stock.incoterms</field>
+            <field name="name">account.incoterms.tree</field>
+            <field name="model">account.incoterms</field>
             <field name="arch" type="xml">
                 <tree string="Incoterms">
                     <field name="active" invisible="1"/>
@@ -13,9 +13,9 @@
                 </tree>
             </field>
         </record>
-        <record id="stock_incoterms_form" model="ir.ui.view">
-            <field name="name">stock.incoterms.form</field>
-            <field name="model">stock.incoterms</field>
+        <record id="account_incoterms_form" model="ir.ui.view">
+            <field name="name">account.incoterms.form</field>
+            <field name="model">account.incoterms</field>
             <field name="arch" type="xml">
                 <form string="Incoterms">
                     <sheet>
@@ -32,9 +32,9 @@
                 </form>
             </field>
         </record>
-        <record id="stock_incoterms_view_search" model="ir.ui.view">
-            <field name="name">stock.incoterms.search</field>
-            <field name="model">stock.incoterms</field>
+        <record id="account_incoterms_view_search" model="ir.ui.view">
+            <field name="name">account.incoterms.search</field>
+            <field name="model">account.incoterms</field>
             <field name="arch" type="xml">
                 <search string="Incoterms">
                     <filter string="Archived" name="inactive" domain="[('active','=',False)]"/>
@@ -43,7 +43,7 @@
         </record>
         <record id="action_incoterms_tree" model="ir.actions.act_window">
             <field name="name">Incoterms</field>
-            <field name="res_model">stock.incoterms</field>
+            <field name="res_model">account.incoterms</field>
             <field name="type">ir.actions.act_window</field>
             <field name="view_type">form</field>
             <field name="view_mode">tree,form</field>

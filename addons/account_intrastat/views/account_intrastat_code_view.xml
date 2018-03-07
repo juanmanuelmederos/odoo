@@ -2,8 +2,8 @@
 <odoo>
     <data>
         <record id="view_report_intrastat_code_tree" model="ir.ui.view">
-            <field name="name">report.intrastat.code.tree</field>
-            <field name="model">report.intrastat.code</field>
+            <field name="name">account.intrastat.code.tree</field>
+            <field name="model">account.intrastat.code</field>
             <field name="arch" type="xml">
                 <tree string="Intrastat code">
                     <field name="name"/>
@@ -12,8 +12,8 @@
             </field>
         </record>
         <record id="view_report_intrastat_code_form" model="ir.ui.view">
-            <field name="name">report.intrastat.code.form</field>
-            <field name="model">report.intrastat.code</field>
+            <field name="name">account.intrastat.code.form</field>
+            <field name="model">account.intrastat.code</field>
             <field name="arch" type="xml">
                 <form string="Intrastat Code">
                     <group>
@@ -26,7 +26,7 @@
         <record id="action_report_intrastat_code_tree" model="ir.actions.act_window">
             <field name="name">Intrastat Code</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">report.intrastat.code</field>
+            <field name="res_model">account.intrastat.code</field>
             <field name="view_type">form</field>
             <field name="view_mode">tree,form</field>
         </record>

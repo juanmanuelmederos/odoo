@@ -14,8 +14,9 @@ European Union.""",
     'data': [
         'security/ir.model.access.csv',
         'data/country_data.xml',
-        'views/intrastat_code_views.xml',
-        'views/product_views.xml',
-        'views/country_views.xml',
+        'data/transaction_data.xml',
+        'views/account_intrastat_code_view.xml',
+        'views/product_template_view.xml',
+        'views/res_country_view.xml',
     ],
 }

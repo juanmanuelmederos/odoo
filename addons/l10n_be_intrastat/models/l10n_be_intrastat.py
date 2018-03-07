@@ -14,7 +14,7 @@ class AccountInvoiceLine(models.Model):
 class AccountInvoice(models.Model):
     _inherit = "account.invoice"
 
-    incoterm_id = fields.Many2one('stock.incoterms', string='Incoterm',
+    incoterm_id = fields.Many2one('account.incoterms', string='Incoterm',
         help="International Commercial Terms are a series of predefined commercial terms "
              "used in international transactions.")
     transport_mode_id = fields.Many2one('l10n_be_intrastat.transport_mode', string='Intrastat Transport Mode')
@@ -120,7 +120,7 @@ class ResCompany(models.Model):
     region_id = fields.Many2one('l10n_be_intrastat.region', string='Intrastat region')
     transport_mode_id = fields.Many2one('l10n_be_intrastat.transport_mode',
                                              string='Default transport mode')
-    incoterm_id = fields.Many2one('stock.incoterms', string='Default incoterm for Intrastat',
+    incoterm_id = fields.Many2one('account.incoterms', string='Default incoterm for Intrastat',
                                        help="International Commercial Terms are a series of "
                                             "predefined commercial terms used in international "
                                             "transactions.")
