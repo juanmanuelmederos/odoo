@@ -129,11 +129,6 @@ var ListController = BasicController.extend({
      */
     renderSidebar: function ($node) {
         var self = this;
-        function confirmDialog() {
-            Dialog.confirm(self, _t("Are you sure that you want to archive all the selected records?"), {
-                confirm_callback: self._onToggleArchiveState.bind(self, true)
-            });
-        }
         if (this.hasSidebar) {
             var other = [{
                 label: _t("Export"),
@@ -142,7 +137,11 @@ var ListController = BasicController.extend({
             if (this.archiveEnabled) {
                 other.push({
                     label: _t("Archive"),
-                    callback: confirmDialog
+                    callback: function () {
+                        Dialog.confirm(self, _t("Are you sure that you want to archive all the selected records?"), {
+                            confirm_callback: self._onToggleArchiveState.bind(self, true)
+                        });
+                    }
                 });
                 other.push({
                     label: _t("Unarchive"),
