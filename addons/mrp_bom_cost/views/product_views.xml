@@ -7,7 +7,8 @@
             <field name="inherit_id" ref="product.product_template_only_form_view" />
             <field name="groups_id" eval="[(4, ref('mrp.group_mrp_user'))]"/>
             <field name="arch" type="xml">
-                <div name="standard_price_uom" position="after">
+                <xpath expr="//field[@name='standard_price']" position="after">
+                    <br/>
                     <button name="compute_price"
                         context="{'button': True}"
                         string="Compute Price from BOM" type="object"
@@ -15,7 +16,8 @@
                         help="Compute the price of the product using products and operations of related bill of materials, for manufactured products only."
                         class="oe_link oe_read_only"
                         colspan="2"/>
-                </div>
+                    <br/>
+                </xpath>
             </field>
         </record>
 
@@ -26,7 +28,8 @@
             <field name="inherit_id" ref="product.product_normal_form_view"/>
             <field name="groups_id" eval="[(4, ref('mrp.group_mrp_user'))]"/>
             <field name="arch" type="xml">
-               <div name="standard_price_uom" position="after">
+                <xpath expr="//field[@name='standard_price']" position="after">
+                    <br/>
                     <button name="compute_price"
                         context="{'button': True}"
                         string="Compute Price from BOM" type="object"
@@ -34,7 +37,28 @@
                         help="Compute the price of the product using products and operations of related bill of materials, for manufactured products only."
                         class="oe_link oe_read_only"
                         colspan="2"/>
-                </div>
+                    <br/>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="product_variant_easy_edit_view_bom_inherit" model="ir.ui.view">
+            <field name="name">product.product.product.view.form.easy.bom.inherit</field>
+            <field name="model">product.product</field>
+            <field name="inherit_id" ref="product.product_variant_easy_edit_view"/>
+            <field name="arch" type="xml">
+                <data>
+                    <field name="standard_price" position="after">
+                        <button name="compute_price"
+                            context="{'button': True}"
+                            string="Compute Price from BOM"
+                            type="object"
+                            attrs="{'invisible': ['|', ('cost_method', '!=', 'standard')]}"
+                            help="Compute the price of the product using products and operations of related bill of materials, for manufactured products only."
+                            class="oe_link oe_read_only"
+                            colspan="2"/>
+                    </field>
+                </data>
             </field>
         </record>
 
