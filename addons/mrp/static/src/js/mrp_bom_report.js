@@ -99,15 +99,16 @@ var MrpBomReport = Widget.extend(ControlPanelMixin, {
             $parent.remove();
         });
     },
-     _onClickUnfold: function (ev) {
+    _onClickUnfold: function (ev) {
         var $parent = $(ev.currentTarget).closest('tr');
         var activeID = $parent.data('id');
+        var lineID = $parent.data('line');
         var qty = $parent.data('qty');
         var level = $parent.data('level') || 0;
         this._rpc({
             model: 'mrp.bom.report',
             method: 'get_html',
-            args: [this.reportContext, activeID, parseFloat(qty), level + 1],
+            args: [this.reportContext, activeID, parseFloat(qty), lineID, level + 1],
         })
         .then(function (html) {
             $parent.after(html);

@@ -9,26 +9,30 @@ class MrpBomReport(models.TransientModel):
     _name = 'mrp.bom.report'
     _description = "Mrp Bom Report"
 
-    def _get_price(self, bom, line_qty):
+    def _get_price(self, bom, factor):
         price = 0
         for line in bom.bom_line_ids:
             if line.child_bom_id:
-                sub_price = self._get_price(line.child_bom_id, line.product_qty)
-                price += sub_price * line.product_qty
+                qty = line.product_uom_id._compute_quantity(line.product_qty * factor, line.child_bom_id.product_uom_id)
+                sub_price = self._get_price(line.child_bom_id, qty)
+                price += sub_price * qty
             else:
-                prod_qty = (line.product_qty * line_qty) / bom.product_qty
-                price += (line.product_id.uom_id._compute_price(line.product_id.standard_price, line.product_uom_id) * prod_qty) / line_qty
+                prod_qty = line.product_qty * factor
+                price += (line.product_id.uom_id._compute_price(line.product_id.standard_price, line.product_uom_id) * prod_qty)
         return price
 
     @api.model
-    def get_lines(self, bom_id=False, line_qty=False, level=False):
+    def get_lines(self, bom_id=False, line_qty=False, line_id=False, level=False):
         context = self.env.context or {}
         datas = []
         bom = self.env['mrp.bom'].browse(bom_id or context.get('active_id'))
-
+        qty = float(context.get('searchQty', 0)) or bom.product_qty
+        bom_quantity = qty
+        if line_id:
+            current_line = self.env['mrp.bom.line'].browse(int(line_id))
+            bom_quantity = current_line.product_uom_id._compute_quantity(line_qty, bom.product_uom_id)
         if bom:
-            products = bom.product_id or bom.product_tmpl_id.product_variant_ids or bom.product_tmpl_id
-
+            products = bom.product_id or bom.product_tmpl_id.product_variant_id
             for product in products:
                 lines = {}
                 components = []
@@ -40,22 +44,24 @@ class MrpBomReport(models.TransientModel):
                     'total': 0.0
                 })
                 for line in bom.bom_line_ids:
+                    line_quantity = (bom_quantity) * line.product_qty
                     if line._skip_bom_line(product):
                         continue
                     if line.child_bom_id:
-                        price = self._get_price(line.child_bom_id, line.product_qty)
+                        factor = line.product_uom_id._compute_quantity(line_quantity, line.child_bom_id.product_uom_id) * line.child_bom_id.product_qty
+                        price = self._get_price(line.child_bom_id, factor) / line_quantity
                     else:
                         price = line.product_id.uom_id._compute_price(line.product_id.standard_price, line.product_uom_id)
-                    prod_qty = line_qty * (line.product_qty / bom.product_qty) if line_qty else line.product_qty
+                    prod_qty = line_quantity
                     total = prod_qty * price
-
                     components.append({
                         'prod_id': line.product_id.id,
                         'prod_name': line.product_id.display_name,
-                        'prod_qty': prod_qty,
+                        'prod_qty': line_quantity,
                         'prod_uom': line.product_uom_id.name,
                         'prod_cost': price,
                         'parent_id': bom_id,
+                        'line_id': line.id,
                         'total': total,
                         'child_bom': line.child_bom_id.id,
                         'level': level or 0
@@ -66,9 +72,9 @@ class MrpBomReport(models.TransientModel):
         return datas
 
     @api.model
-    def get_html(self, given_context=None, bom_id=False, line_qty=False, level=False):
+    def get_html(self, given_context=None, bom_id=False, line_qty=False, line_id=False, level=False):
         rcontext = {}
-        rcontext['datas'] = self.with_context(given_context).get_lines(bom_id, line_qty, level)
+        rcontext['datas'] = self.with_context(given_context).get_lines(bom_id, line_qty, line_id, level)
         if bom_id:
             rcontext['data'] = rcontext['datas'][0]
             return self.env.ref('mrp.report_mrp_bom_line').render(rcontext)

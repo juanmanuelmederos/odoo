@@ -47,7 +47,7 @@
         <t t-set="currency" t-value="data['currency']"/>
         <t t-foreach="data['components']" t-as="l">
             <t t-set="space_td" t-value="'margin-left: '+ str(l['level'] * 16) + 'px;'"/>
-            <tr class="o_mrp_bom_report_line" t-att-data-id="l['child_bom']" t-att-parent_id="l['parent_id']" t-att-data-qty="l['prod_qty']" t-att-data-level="l['level']">
+            <tr class="o_mrp_bom_report_line" t-att-data-id="l['child_bom']" t-att-parent_id="l['parent_id']" t-att-data-line="l['line_id']" t-att-data-qty="l['prod_qty']" t-att-data-level="l['level']">
                 <td>
                     <span t-att-style="space_td"/>
                     <t t-if="l['child_bom']">
