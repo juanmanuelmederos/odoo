@@ -84,6 +84,20 @@
         </div>
     </t>
 
+    
+    <t t-name="SessionWarningWidget">
+        <div class="oe_status session_warning oe_hidden">
+            <span class='js_msg oe_orange oe_hidden'></span>
+            <div class="js_warning oe_icon oe_orange oe_hidden">
+                <i class='fa fa-fw fa-warning'></i>
+            </div>
+            <div class="js_error oe_icon oe_red oe_hidden">
+                <i class='fa fa-fw fa-warning'></i>
+            </div>
+
+        </div>
+    </t>
+
     <t t-name="SaleDetailsButton">
         <div class="oe_status">
             <div class="js_connected oe_icon">

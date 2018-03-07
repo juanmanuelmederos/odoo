@@ -413,6 +413,43 @@ var ProxyStatusWidget = StatusWidget.extend({
     },
 });
 
+/* -------- The Session Warning ------- */
+
+// Displays a warning when a session
+// stays open for more than 2 days and an
+// alert if it's more than 5 days
+var SessionWarningWidget = StatusWidget.extend({
+    template: 'SessionWarningWidget',
+    start: function(){
+        var self = this;
+        this.pos.get('orders').bind('add', function(order){
+            var local_init_date = (self.pos.pos_session.start_at || '').replace(/^(\d{4}-\d{2}-\d{2}) ((\d{2}:?){3})$/, '$1T$2Z');
+            var init_date = new Date(local_init_date);
+            var long_session_date = new Date();
+            long_session_date.setDate(init_date.getDate() + 2);
+            var xl_long_session_date = new Date();
+            xl_long_session_date.setDate(init_date.getDate() + 5);
+            var now = new Date();
+            if (now > xl_long_session_date) {
+                self.show();
+                self.set_status('error');
+            } else if (now > long_session_date) {
+                self.show();
+                self.set_status('warning');
+            } else {
+                self.hide();
+            }
+        });
+        this.$el.click(function(){
+            self.gui.show_popup('alert', {
+            'title': _t('This Session has ben in use for too long'),
+            'body': _t('Sessions should be closed and their accounting entries posted regularly (ideally every day) to avoid performance issues.'),
+        });
+    });  
+    },
+    show: function () { this.$el.removeClass('oe_hidden'); },
+    hide: function () { this.$el.addClass('oe_hidden'); },
+});
 
 /* --------- The Sale Details --------- */
 
@@ -696,6 +733,10 @@ var Chrome = PosBaseWidget.extend({
             'widget': ProxyStatusWidget,
             'append':  '.pos-rightheader',
             'condition': function(){ return this.pos.config.use_proxy; },
+        },{
+            'name': 'session_warning',
+            'widget': SessionWarningWidget,
+            'append': '.pos-rightheader',
         },{
             'name':   'notification',
             'widget': SynchNotificationWidget,
