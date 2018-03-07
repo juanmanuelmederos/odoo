@@ -723,7 +723,9 @@ ActionManager.include({
         switch(event.data.direction) {
             case 'down' :
                 var currentController = this.getCurrentController().widget;
-                currentController.giveFocus();
+                if (currentController.giveFocus) {
+                    currentController.giveFocus();
+                }
                 event.stopPropagation();
                 break;
         }
