@@ -254,6 +254,14 @@ actual arch.
             data = dict(arch_db=view.arch)
             if 'install_mode_data' in self._context:
                 imd = self._context['install_mode_data']
+
+                if '.' not in imd['xml_id']:
+                    imd['xml_id'] = '%s.%s' % (imd['module'], imd['xml_id'])
+                if not (self._name == imd['model'] and (not view.xml_id or view.xml_id == imd['xml_id'])):
+                    print(view.name)
+                    _logger.warning(view.id)
+                    _logger.warning(view.name)
+                    _logger.warning(imd)
                 # we store the relative path to the resource instead of the absolute path, if found
                 # (it will be missing e.g. when importing data-only modules using base_import_module)
                 path_info = get_resource_from_path(imd['xml_file'])
