@@ -34,3 +34,14 @@ class AccountIntrastatTransaction(models.Model):
     _sql_constraints = [
         ('intrastat_transaction_code_unique', 'UNIQUE (code)', 'Code must be unique.'),
     ]
+
+
+class AccountIntrastatTransport(models.Model):
+    _name = 'account.intrastat.transport'
+
+    code = fields.Char(required=True, readonly=True)
+    name = fields.Char(string='Description', readonly=True)
+
+    _sql_constraints = [
+        ('intrastat_transaction_transport_unique', 'UNIQUE (code)', 'Code must be unique.'),
+    ]

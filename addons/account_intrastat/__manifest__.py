@@ -19,5 +19,6 @@ European Union.""",
         'views/product_view.xml',
         'views/res_country_view.xml',
         'views/account_invoice_view.xml',
+        'views/res_company_view.xml',
     ],
 }
