@@ -23,10 +23,12 @@ var MrpBomReport = Widget.extend(ControlPanelMixin, {
     },
     willStart: function () {
         var self = this;
-        var def = this.getHtml().then(function (html) {
-            self.html = html;
+        var def = this.getHtml().then(function (result) {
+            self.html = result['html'];
+            self.searchVariants = result['variants'];
+            self.bomUomName = result['bom_uom_name'];
         });
-        return $.when(this._updateContolPanel(), def);
+        return $.when(def, this._super.apply(this, arguments));
     },
     getHtml: function () {
         return this._rpc({
@@ -37,12 +39,14 @@ var MrpBomReport = Widget.extend(ControlPanelMixin, {
     },
     _reload: function () {
         var self = this;
-        this.getHtml().then(function (html) {
-            self.$el.html(html);
+        this.getHtml().then(function (result) {
+            self.$el.html(result['html']);
         });
     },
     start: function () {
         this.$el.html(this.html);
+        this._renderSearch();
+        this._updateContolPanel();
         return this._super.apply(this, arguments);
     },
     do_show: function () {
@@ -50,22 +54,20 @@ var MrpBomReport = Widget.extend(ControlPanelMixin, {
         this._updateContolPanel();
     },
     _updateContolPanel: function () {
-        if (!this.$buttonPrint || !this.$searchQty) {
-            this._renderSearch();
-        }
         var status = {
             cp_content: {
                 $buttons: this.$buttonPrint,
-                $searchview_buttons: this.$searchQty
+                $searchview_buttons: this.$searchView
             },
         };
         return this.update_control_panel(status);
     },
     _renderSearch: function () {
         this.$buttonPrint = $(QWeb.render('mrp.button'));
-        this.$searchQty = $(QWeb.render('mrp.report_bom_search'));
         this.$buttonPrint.on('click', this._onClickPrint.bind(this));
-        this.$searchQty.on('focusout', this._onFocusoutQty.bind(this));
+        this.$searchView = $(QWeb.render('mrp.report_bom_search', {'variants': this.searchVariants, 'bom_uom_name': this.bomUomName}));
+        this.$searchView.find('.o_mrp_bom_report_qty').on('focusout', this._onFocusoutQty.bind(this));
+        this.$searchView.find('.o_mrp_bom_report_variants').on('click', this._onClickVariants.bind(this));
     },
     _onClickPrint: function (ev) {
         var childBomIDs = _.map(this.$el.find('.o_mrp_bom_foldable').closest('tr'), function (el) {
@@ -86,6 +88,10 @@ var MrpBomReport = Widget.extend(ControlPanelMixin, {
             this.reportContext.searchQty = qty;
             this._reload();
         }
+    },
+    _onClickVariants: function (ev) {
+        this.reportContext.searchVariant = $(ev.currentTarget).val();
+        this._reload();
     },
     _removeLines: function ($el) {
         var self = this;
@@ -110,8 +116,8 @@ var MrpBomReport = Widget.extend(ControlPanelMixin, {
             method: 'get_html',
             args: [this.reportContext, activeID, parseFloat(qty), lineID, level + 1],
         })
-        .then(function (html) {
-            $parent.after(html);
+        .then(function (result) {
+            $parent.after(result['html']);
         });
         $(ev.currentTarget).toggleClass('o_mrp_bom_foldable o_mrp_bom_unfoldable fa-caret-right fa-caret-down');
     },

@@ -7,7 +7,7 @@
                     <h1>BoM Structure &amp; Cost</h1>
                     <h6><b>Reference: </b><t t-esc="data['bom'].code"/></h6>
                     <h6><b>Product: </b><a t-att-data-res-id="data['product'].id" t-att-data-model="data['product']._name" class="o_mrp_bom_action"><t t-esc="data['bom_prod_name']"/></a></h6>
-                    <h6><b>Quantity: </b><t t-esc="data['bom'].product_qty"/> <t t-esc="data['bom'].product_uom_id.name"/></h6>
+                    <h6><b>Quantity: </b><t t-esc="data['bom_qty']"/> <t t-esc="data['bom'].product_uom_id.name"/></h6>
                     <t t-set="currency" t-value="data['currency']"/>
                     <div class="o_mrp_bom_report_table">
                         <h4 class="mt32"><b>Components</b></h4>

@@ -28,16 +28,25 @@ class MrpBomReport(models.TransientModel):
         bom = self.env['mrp.bom'].browse(bom_id or context.get('active_id'))
         qty = float(context.get('searchQty', 0)) or bom.product_qty
         bom_quantity = qty
+        variants = {}
+        bom_uom_name = ''
         if line_id:
             current_line = self.env['mrp.bom.line'].browse(int(line_id))
             bom_quantity = current_line.product_uom_id._compute_quantity(line_qty, bom.product_uom_id)
         if bom:
+            bom_uom_name = bom.product_uom_id.name
+            if not bom.product_id and bom.product_tmpl_id:
+                for i in bom.product_tmpl_id.product_variant_ids:
+                    variants[i.id] = i.display_name
             products = bom.product_id or bom.product_tmpl_id.product_variant_id
+            if context.get('searchVariant'):
+                products = self.env['product.product'].browse(int(context.get('searchVariant')))
             for product in products:
                 lines = {}
                 components = []
                 lines.update({
                     'bom': bom,
+                    'bom_qty': bom_quantity,
                     'bom_prod_name': product.display_name,
                     'currency': self.env.user.company_id.currency_id,
                     'product': product,
@@ -69,17 +78,18 @@ class MrpBomReport(models.TransientModel):
                     lines['total'] += total
                 lines['components'] = components
                 lines['components'] and datas.append(lines)
-        return datas
+        return {'datas': datas, 'variants': variants, 'bom_uom_name': bom_uom_name}
 
     @api.model
     def get_html(self, given_context=None, bom_id=False, line_qty=False, line_id=False, level=False):
         rcontext = {}
-        rcontext['datas'] = self.with_context(given_context).get_lines(bom_id, line_qty, line_id, level)
+        call = self.with_context(given_context).get_lines(bom_id, line_qty, line_id, level)
+        rcontext['datas'] = call['datas']
         if bom_id:
             rcontext['data'] = rcontext['datas'][0]
-            return self.env.ref('mrp.report_mrp_bom_line').render(rcontext)
+            return {'html': self.env.ref('mrp.report_mrp_bom_line').render(rcontext), 'variants': call['variants'], 'bom_uom_name': call['bom_uom_name']}
         else:
-            return self.env.ref('mrp.report_mrp_bom').render(rcontext)
+            return {'html': self.env.ref('mrp.report_mrp_bom').render(rcontext), 'variants': call['variants'], 'bom_uom_name': call['bom_uom_name']}
 
     @api.model
     def get_pdf(self, bom_id, child_bom_ids):
@@ -107,7 +117,7 @@ class MrpBomReport(models.TransientModel):
 
     def _get_pdf_lines(self, bom_id, child_bom_ids):
         final_data = []
-        lines = self.get_lines(bom_id)
+        lines = self.get_lines(bom_id)['datas']
 
         for line in lines:
             data = {}
