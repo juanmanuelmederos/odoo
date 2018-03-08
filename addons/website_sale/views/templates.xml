@@ -458,8 +458,7 @@
                         <div class="col-sm-5 col-lg-4 col-lg-offset-1" id="product_details">
                             <h1 itemprop="name" t-field="product.name">Product Name</h1>
                             <span itemprop="url" style="display:none;" t-esc="'%sshop/product/%s' % (request.httprequest.url_root, slug(product))"/>
-                            <t t-set="attribute_value_ids" t-value="get_attribute_value_ids(product)"/>
-                            <form action="/shop/cart/update" class="js_add_cart_variants" t-att-data-attribute_value_ids="attribute_value_ids" method="POST">
+                            <form action="/shop/cart/update" method="POST">
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()" />
                                 <div class="js_product" t-if="product.product_variant_ids">
                                     <t t-placeholder="select">
@@ -600,17 +599,16 @@
 
     <template id="product_variants" inherit_id="website_sale.product" active="False" customize_show="True" name="List View of Variants">
       <xpath expr="//t[@t-placeholder='select']" position="replace">
+        <t t-set="attribute_value_ids" t-value="get_attribute_value_ids(product)"/>
+        <ul class="hidden js_add_cart_variants" t-att-data-attribute_value_ids="json.dumps(attribute_value_ids)"/>
         <input type="hidden" t-if="len(product.product_variant_ids) == 1" class="product_id" name="product_id" t-att-value="product.product_variant_id.id"/>
         <t t-if="len(product.product_variant_ids) &gt; 1">
           <label label-default="label-default" class="radio" t-foreach="product.product_variant_ids" t-as="variant_id">
-            <input type="radio" name="product_id" class="js_product_change" t-att-checked="'checked' if variant_id_index == 0 else None" t-att-value="variant_id.id" t-att-data-lst_price="variant_id.lst_price" t-att-data-price="variant_id.price"/>
+            <input type="radio" name="product_id" class="js_product_change" t-att-checked="'checked' if variant_id_index == 0 else None" t-att-value="variant_id.id" t-att-data-lst_price="compute_currency(variant_id.lst_price)" t-att-data-price="variant_id.price"/>
             <span t-esc="variant_id.name_get()[0][1]"/>
-            <span class="badge" t-if="variant_id.price_extra">
-              <t t-esc="variant_id.price_extra > 0 and '+' or ''"/><span t-field="variant_id.price_extra" style="white-space: nowrap;" t-options='{
-                    "widget": "monetary",
-                    "from_currency": product.currency_id,
-                    "display_currency": website.currency_id
-                  }'/>
+            <t t-set="diff_price" t-value="variant_id.price - variant_id.product_tmpl_id.price"/>
+            <span class="badge" t-if="diff_price != 0">
+              <t t-esc="diff_price > 0 and '+' or '-'"/><span t-esc="abs(diff_price)" t-options="{'widget': 'monetary', 'display_currency': website.currency_id}"/>
             </span>
           </label>
         </t>
@@ -619,7 +617,7 @@
 
     <template id="variants">
       <t t-set="attribute_value_ids" t-value="get_attribute_value_ids(product)"/>
-      <ul t-attf-class="list-unstyled js_add_cart_variants #{ul_class}" t-att-data-attribute_value_ids="attribute_value_ids">
+      <ul t-attf-class="list-unstyled js_add_cart_variants #{ul_class}" t-att-data-attribute_value_ids="json.dumps(attribute_value_ids)">
         <t t-foreach="product.attribute_line_ids.sorted(key=lambda x: x.attribute_id.sequence)" t-as="variant_id">
           <li t-if="len(variant_id.value_ids) > 1">
 
@@ -846,7 +844,7 @@
                                 <a t-attf-href="#" class="mb8 input-group-addon js_add_cart_json hidden-xs">
                                     <i class="fa fa-minus"></i>
                                 </a>
-                                <input type="text" class="js_quantity form-control quantity" t-att-data-line-id="line.id" t-att-data-product-id="line.product_id.id" t-att-value="int(line.product_uom_qty)" />
+                                <input type="text" class="js_quantity form-control quantity" t-att-data-line-id="line.id" t-att-data-product-id="line.product_id.id" t-att-value="int(line.product_uom_qty) == line.product_uom_qty and int(line.product_uom_qty) or line.product_uom_qty" />
                                 <a t-attf-href="#" class="mb8 input-group-addon float_left js_add_cart_json hidden-xs">
                                     <i class="fa fa-plus"></i>
                                 </a>
@@ -932,7 +930,7 @@
                             <span t-esc="line.product_id.with_context(display_default_code=False).display_name" class="h6" />
                         </a>
                         <br />
-                        <small>Qty: <t t-esc="int(line.product_uom_qty)" /></small>
+                        <small>Qty: <t t-esc="int(line.product_uom_qty) == line.product_uom_qty and int(line.product_uom_qty) or line.product_uom_qty" /></small>
                     </div>
                 </div>
             </t>
@@ -1298,7 +1296,7 @@
                                                 </div>
                                             </td>
                                             <td class='td-qty'>
-                                                <div t-esc="line.product_uom_qty" />
+                                              <div t-esc="int(line.product_uom_qty) == line.product_uom_qty and int(line.product_uom_qty) or line.product_uom_qty" />
                                             </td>
                                             <td class="text-center td-price">
                                                 <span t-field="line.price_unit" style="white-space: nowrap;" t-options="{'widget': 'monetary','from_currency': website_sale_order.pricelist_id.currency_id,'display_currency': website.currency_id}" />
@@ -1416,8 +1414,8 @@
                                               </td>
                                               <td class='td-qty'>
                                                   <div id="quote_qty">
-                                                      <span t-field="line.product_uom_qty"/>
-                                                      <span class='hidden-xs' t-field="line.product_uom" groups="product.group_uom"/>
+                                                      <span t-esc="int(line.product_uom_qty) == line.product_uom_qty and int(line.product_uom_qty) or line.product_uom_qty"/>
+                                                      <span class='hidden-xs' t-field="line.product_uom" groups="uom.group_uom"/>
                                                   </div>
                                               </td>
                                               <td class='td-price'>

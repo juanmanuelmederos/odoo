@@ -488,8 +488,10 @@
     </div>
 </t>
 <div t-name="GraphView.error" class="o_view_nocontent" >
-    <p class="o_view_nocontent_empty_folder"><t t-esc="title"/></p>
-    <p><t t-esc="description"/></p>
+    <div class="o_nocontent_help">
+        <p class="o_view_nocontent_empty_folder"><t t-esc="title"/></p>
+        <p><t t-esc="description"/></p>
+    </div>
 </div>
 
 <div t-name="PivotView" class="o_pivot">
@@ -539,14 +541,16 @@
         </t>
     </ul>
 </t>
-<div t-name="PivotView.nodata" class="o_view_nocontent_container" >
+<div t-name="PivotView.nodata">
     <div class="o_view_nocontent">
-        <p class="o_view_nocontent_empty_folder">
-            No data to display
-        </p><p>
-            Try to add some records, or make sure
-            that there is at least one measure and no active filter in the search bar.
-        </p>
+        <div class="o_nocontent_help">
+            <p class="o_view_nocontent_empty_folder">
+                No data to display
+            </p><p>
+                Try to add some records, or make sure
+                that there is at least one measure and no active filter in the search bar.
+            </p>
+        </div>
     </div>
 </div>
 
@@ -907,6 +911,7 @@
         </t>
     </div>
 </t>
+
 <t t-name="HiddenInputFile">
     <div t-attf-class="o_hidden_input_file #{fileupload_class or ''}" t-att-style="fileupload_style">
         <form class="o_form_binary_form" t-att-target="fileupload_id"
@@ -921,6 +926,31 @@
         <iframe t-att-id="fileupload_id" t-att-name="fileupload_id" style="display: none"/>
     </div>
 </t>
+
+<t t-name="FieldPdfViewer">
+    <div class="o_field_pdfviewer">
+        <div t-if="widget.mode !== 'readonly'" class="o_form_pdf_controls mt8">
+            <span class="o_form_binary_progress">Uploading...</span>
+            <button type="button" class="btn btn-sm btn-primary o_select_file_button" title="Select">Upload your file</button>
+            <button class="btn btn-sm btn-default fa fa-pencil o_select_file_button" title="Select" type="button"></button>
+            <button class="btn btn-sm btn-default fa fa-trash-o o_clear_file_button" title="Clear" type="button"></button>
+        </div>
+        <iframe class="o_pdfview_iframe o_field_pdfviewer"/>
+        <t t-call="HiddenInputPDFFile">
+            <t t-set="fileupload_id" t-value="widget.fileupload_id"/>
+            <t t-set="fileupload_style" t-translation="off">overflow-x: hidden</t>
+        </t>
+    </div>
+</t>
+
+<t t-name="HiddenInputPDFFile" t-extend="HiddenInputFile">
+    <!-- remove the inputs and put a new one for pdf only -->
+    <t t-jquery="input[type='file']" t-operation="replace"/>
+    <t t-jquery="form" t-operation="append">
+        <input type="file" class="o_input_file" name="ufile" accept="application/pdf"/>
+    </t>
+</t>
+
 <div t-name="FieldBinaryFileUploader" t-attf-class="oe_fileupload #{widget.attrs.class ? widget.attrs.class :''}">
     <div class="oe_placeholder_files"/>
     <div t-if="widget.mode !== 'readonly'" class="oe_add">

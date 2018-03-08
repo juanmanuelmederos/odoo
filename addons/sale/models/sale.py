@@ -19,7 +19,7 @@ from odoo.addons import decimal_precision as dp
 
 class SaleOrder(models.Model):
     _name = "sale.order"
-    _inherit = ['mail.thread', 'mail.activity.mixin', 'portal.mixin']
+    _inherit = ['portal.mixin', 'mail.thread', 'mail.activity.mixin']
     _description = "Quotation"
     _order = 'date_order desc, id desc'
 
@@ -127,8 +127,8 @@ class SaleOrder(models.Model):
         ('cancel', 'Cancelled'),
         ], string='Status', readonly=True, copy=False, index=True, track_visibility='onchange', default='draft')
     date_order = fields.Datetime(string='Order Date', required=True, readonly=True, index=True, states={'draft': [('readonly', False)], 'sent': [('readonly', False)]}, copy=False, default=fields.Datetime.now)
-    validity_date = fields.Date(string='Expiration Date', readonly=True, copy=False, states={'draft': [('readonly', False)], 'sent': [('readonly', False)]},
-        help="Manually set the expiration date of your quotation (offer), or it will set the date automatically based on the template if online quotation is installed.")
+    validity_date = fields.Date(string='Quote Validity', readonly=True, copy=False, states={'draft': [('readonly', False)], 'sent': [('readonly', False)]},
+        help="Validity date of the quotation, after this date, the customer won't be able to validate the quotation online.")
     is_expired = fields.Boolean(compute='_compute_is_expired', string="Is expired")
     create_date = fields.Datetime(string='Creation Date', readonly=True, index=True, help="Date on which sales order is created.")
     confirmation_date = fields.Datetime(string='Confirmation Date', readonly=True, index=True, help="Date on which the sales order is confirmed.", oldname="date_confirm", copy=False)
@@ -647,13 +647,16 @@ class SaleOrder(models.Model):
         return self.env['ir.config_parameter'].sudo().get_param('sale.sale_portal_confirmation_options', default='none')
 
     @api.multi
-    def _notification_recipients(self, message, groups):
-        groups = super(SaleOrder, self)._notification_recipients(message, groups)
+    def _notify_get_groups(self, message, groups):
+        """ Give access button to users and portal customer as portal is integrated
+        in sale. Customer and portal group have probably no right to see
+        the document so they don't have the access button. """
+        groups = super(SaleOrder, self)._notify_get_groups(message, groups)
 
         self.ensure_one()
         if self.state not in ('draft', 'cancel'):
             for group_name, group_method, group_data in groups:
-                if group_name == 'customer':
+                if group_name in ('customer', 'portal'):
                     continue
                 group_data['has_button_access'] = True
 
@@ -865,7 +868,7 @@ class SaleOrderLine(models.Model):
     product_id = fields.Many2one('product.product', string='Product', domain=[('sale_ok', '=', True)], change_default=True, ondelete='restrict', required=True)
     product_updatable = fields.Boolean(compute='_compute_product_updatable', string='Can Edit Product', readonly=True, default=True)
     product_uom_qty = fields.Float(string='Ordered Quantity', digits=dp.get_precision('Product Unit of Measure'), required=True, default=1.0)
-    product_uom = fields.Many2one('product.uom', string='Unit of Measure', required=True)
+    product_uom = fields.Many2one('uom.uom', string='Unit of Measure', required=True)
     # Non-stored related field to allow portal user to see the image of the product he has ordered
     product_image = fields.Binary('Product Image', related="product_id.image", store=False)
 
@@ -971,7 +974,7 @@ class SaleOrderLine(models.Model):
         # browse so lines and product uoms here to make them share the same prefetch
         lines_map = {line.id: line for line in self}
         product_uom_ids = [item['product_uom_id'][0] for item in data if item['product_uom_id']]
-        product_uom_map = {uom.id: uom for uom in self.env['product.uom'].browse(product_uom_ids)}
+        product_uom_map = {uom.id: uom for uom in self.env['uom.uom'].browse(product_uom_ids)}
         for item in data:
             if not item['product_uom_id']:
                 continue

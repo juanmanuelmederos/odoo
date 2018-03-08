@@ -30,7 +30,7 @@ class MailController(http.Controller):
         base_link = request.httprequest.path
         params = dict(request.params)
         params.pop('token', '')
-        valid_token = request.env['mail.thread']._generate_notification_token(base_link, params)
+        valid_token = request.env['mail.thread']._notify_encode_link(base_link, params)
         return consteq(valid_token, str(token))
 
     @classmethod
@@ -91,9 +91,12 @@ class MailController(http.Controller):
             'model': model,
             'id': res_id,
             'active_id': res_id,
-            'view_id': record_sudo.get_formview_id(),
             'action': record_action.get('id'),
         }
+        view_id = record_sudo.get_formview_id()
+        if view_id:
+            url_params['view_id'] = view_id
+
         url = '/web?#%s' % url_encode(url_params)
         return werkzeug.utils.redirect(url)
 

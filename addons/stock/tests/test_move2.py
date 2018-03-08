@@ -1698,32 +1698,28 @@ class TestSinglePicking(TestStockCommon):
 
 class TestStockUOM(TestStockCommon):
     def setUp(self):
-        with registry().cursor() as cr:
-            env = api.Environment(cr, 1, {})
-            dp = env.ref('product.decimal_product_uom')
-            self.old_digits = dp.digits
-            dp.digits = 7
         super(TestStockUOM, self).setUp()
+        dp = self.env.ref('product.decimal_product_uom')
+        dp.digits = 7
 
-    def tearDown(self):
-        super(TestStockUOM, self).tearDown()
-        with self.registry.cursor() as cr:
-            env = api.Environment(cr, 1, {})
-            dp = env.ref('product.decimal_product_uom')
-            dp.digits = self.old_digits
+        # Trick: invoke the method 'precision_get' with the current environment.
+        # This fills in the cache of the method with the right value. If we
+        # don't do that, the registry will access the corresponding precision
+        # with a new cursor (LazyCursor), and get a different value!
+        self.assertEqual(dp.precision_get(dp.name), 7)
 
     def test_pickings_transfer_with_different_uom_and_back_orders(self):
         """ Picking transfer with diffrent unit of meassure. """
         # weight category
-        categ_test = self.env['product.uom.categ'].create({'name': 'Bigger than tons'})
+        categ_test = self.env['uom.category'].create({'name': 'Bigger than tons'})
 
-        T_LBS = self.env['product.uom'].create({
+        T_LBS = self.env['uom.uom'].create({
             'name': 'T-LBS',
             'category_id': categ_test.id,
             'uom_type': 'reference',
             'rounding': 0.01
         })
-        T_GT = self.env['product.uom'].create({
+        T_GT = self.env['uom.uom'].create({
             'name': 'T-GT',
             'category_id': categ_test.id,
             'uom_type': 'bigger',
@@ -1786,7 +1782,7 @@ class TestRoutes(TransactionCase):
             'type': 'product',
             'categ_id': self.env.ref('product.product_category_all').id,
         })
-        uom_unit = self.env.ref('product.product_uom_unit')
+        uom_unit = self.env.ref('uom.product_uom_unit')
         wh = self.env['stock.warehouse'].search([('company_id', '=', self.env.user.id)], limit=1)
 
         # create and get back the pick ship route
@@ -1856,7 +1852,7 @@ class TestRoutes(TransactionCase):
             'type': 'product',
             'categ_id': self.env.ref('product.product_category_all').id,
         })
-        uom_unit = self.env.ref('product.product_uom_unit')
+        uom_unit = self.env.ref('uom.product_uom_unit')
         stock_location = self.env.ref('stock.stock_location_stock')
         wh = self.env['stock.warehouse'].search([('company_id', '=', self.env.user.id)], limit=1)
 

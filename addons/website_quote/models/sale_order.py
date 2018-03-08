@@ -70,11 +70,19 @@ class SaleOrder(models.Model):
     require_payment = fields.Selection([
         (0, 'Online Signature'),
         (1, 'Online Payment')], default=_get_default_online_payment, string='Confirmation Mode',
+        compute='_compute_require_payment', store=True,
         help="Choose how you want to confirm an order to launch the delivery process. You can either "
              "request a digital signature or an upfront payment. With a digital signature, you can "
              "request the payment when issuing the invoice.")
+    @api.one
+    @api.depends('template_id')
+    def _compute_require_payment(self):
+        # Do not overwrite if the field is already set
+        if self.template_id and (self.require_payment is None or self.require_payment is False):
+            self.require_payment = self.template_id.require_payment
 
     @api.multi
+    @api.returns('self', lambda value: value.id)
     def copy(self, default=None):
         if self.template_id and self.template_id.number_of_days > 0:
             default = dict(default or {})
@@ -200,8 +208,8 @@ class SaleOrder(models.Model):
 
     def get_portal_confirmation_action(self):
         """ Template override default behavior of pay / sign chosen in sales settings """
-        if self.template_id:
-            return 'sign' if self.require_payment == 1 else 'pay'
+        if self.require_payment is not None or self.require_payment is not False:
+            return 'pay' if self.require_payment == 1 else 'sign'
         return super(SaleOrder, self).get_portal_confirmation_action()
 
     @api.multi
@@ -231,7 +239,7 @@ class SaleOrderOption(models.Model):
     website_description = fields.Html('Line Description', sanitize_attributes=False, translate=html_translate)
     price_unit = fields.Float('Unit Price', required=True, digits=dp.get_precision('Product Price'))
     discount = fields.Float('Discount (%)', digits=dp.get_precision('Discount'))
-    uom_id = fields.Many2one('product.uom', 'Unit of Measure ', required=True)
+    uom_id = fields.Many2one('uom.uom', 'Unit of Measure ', required=True)
     quantity = fields.Float('Quantity', required=True, digits=dp.get_precision('Product UoS'), default=1)
     sequence = fields.Integer('Sequence', help="Gives the sequence order when displaying a list of suggested product.")
 

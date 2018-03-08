@@ -11,7 +11,7 @@ from odoo.exceptions import UserError, AccessError
 from odoo.osv import expression
 
 _logger = logging.getLogger(__name__)
-_image_dataurl = re.compile(r'(data:image/[a-z]+?);base64,([a-z0-9+/]{3,}=*)([\'"])', re.I)
+_image_dataurl = re.compile(r'(data:image/[a-z]+?);base64,([a-z0-9+/\n]{3,}=*)\n*([\'"])', re.I)
 
 
 class Message(models.Model):
@@ -749,9 +749,10 @@ class Message(models.Model):
                         'datas_fname': name,
                         'res_model': 'mail.message',
                     })
+                    attachment.generate_access_token()
                     values['attachment_ids'].append((4, attachment.id))
-                    data_to_url[key] = '/web/image/%s' % attachment.id
-                return '%s%s alt="%s"' % (data_to_url[key], match.group(3), name)
+                    data_to_url[key] = ['/web/image/%s?access_token=%s' % (attachment.id, attachment.access_token), name]
+                return '%s%s alt="%s"' % (data_to_url[key][0], match.group(3), data_to_url[key][1])
             values['body'] = _image_dataurl.sub(base64_to_boundary, tools.ustr(values['body']))
 
         # delegate creation of tracking after the create as sudo to avoid access rights issues
@@ -795,7 +796,7 @@ class Message(models.Model):
     #------------------------------------------------------
 
     @api.multi
-    def _notify(self, layout=False, force_send=False, send_after_commit=True, user_signature=True):
+    def _notify(self, layout=False, force_send=False, send_after_commit=True, values=None):
         """ Compute recipients to notify based on specified recipients and document
         followers. Delegate notification to partners to send emails and bus notifications
         and to channels to broadcast messages on channels """
@@ -846,7 +847,7 @@ class Message(models.Model):
                 ('id', 'in', (partners_sudo - notif_partners).ids),
                 ('channel_ids', 'in', email_channels.ids),
                 ('email', '!=', self_sudo.author_id.email or self_sudo.email_from),
-            ])._notify(self, layout=layout, force_send=force_send, send_after_commit=send_after_commit, user_signature=user_signature)
+            ])._notify(self, layout=layout, force_send=force_send, send_after_commit=send_after_commit, values=values)
 
         notif_partners._notify_by_chat(self)
 
