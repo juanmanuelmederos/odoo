@@ -211,6 +211,11 @@ class SaleOrderLine(models.Model):
                 # set the SO line origin if product should create project
                 if not project.sale_line_id and self.product_id.service_tracking in ['task_new_project', 'project_only']:
                     project.write({'sale_line_id': self.id})
+        else:
+            # for SO with services, always create an AA. Since 2 SO lines 'project_only' will share the same project, no collision with AA for 2 differents projects.
+            account = self.order_id.analytic_account_id
+            if not account:
+                self.order_id._create_analytic_account(prefix=self.product_id.default_code or None)
         return project
 
     def _timesheet_create_task_prepare_values(self):
