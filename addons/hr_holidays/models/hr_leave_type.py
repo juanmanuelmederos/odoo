@@ -78,7 +78,12 @@ class HolidaysType(models.Model):
     valid = fields.Boolean(compute='_compute_valid', search='_search_valid', help='This indicates if it is still possible to use this type of leave')
 
     time_type = fields.Selection([('leave', 'Leave'), ('other', 'Other')], default='leave', string="Kind of Leave",
-                                 help="Whether this should be computed as a holiday or as work time (eg: formation)")
+                             help="Whether this should be computed as a holiday or as work time (eg: formation)")
+    method = fields.Selection([('day', 'Day'),
+                               ('half', 'Half day'),
+                               ('hour', 'Hour')],
+                              default='day', string='Take Leaves in',
+                              required=True)
 
     @api.multi
     @api.constrains('validity_start', 'validity_stop')

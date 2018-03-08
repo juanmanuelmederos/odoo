@@ -622,7 +622,8 @@ class TestWorkDays(TestResourceCommon):
         self.assertFalse(r.calendar_id._is_work_day(date(1932, 11, 20), r.id))  # sun
         self.assertFalse(r.calendar_id._is_work_day(date(1932, 12, 6), r.id))  # personal leave
 
-
+from odoo.tests import tagged
+@tagged('now')
 class TestResourceMixin(TestResourceCommon):
 
     def setUp(self):
@@ -649,12 +650,12 @@ class TestResourceMixin(TestResourceCommon):
         res = self.test.get_work_days_count(
             to_naive_utc(Datetime.from_string('2013-02-12 06:00:00'), self.env.user),
             to_naive_utc(Datetime.from_string('2013-02-22 23:00:00'), self.env.user))
-        self.assertEqual(res, 3.75)  # generic leaves, 3 hours
+        self.assertEqual(res, 3.625)  # generic leaves, 3 hours
 
         res = self.test.get_work_days_count(
             to_naive_utc(Datetime.from_string('2013-02-12 06:00:00'), self.env.user),
             to_naive_utc(Datetime.from_string('2013-02-22 20:00:00'), self.env.user))
-        self.assertEqual(res, 3.5)  # last day is truncated of 3 hours on 12)
+        self.assertEqual(res, 3.375)  # last day is truncated of 3 hours on 12)
 
         self.env['resource.calendar.leaves'].create({
             'name': 'Timezoned Leaves',
@@ -667,7 +668,7 @@ class TestResourceMixin(TestResourceCommon):
         res = self.test.get_work_days_count(
             to_naive_utc(Datetime.from_string('2013-02-12 06:00:00'), self.env.user),
             to_naive_utc(Datetime.from_string('2013-02-22 20:00:00'), self.env.user))
-        self.assertEqual(res, 2.5)  # one day is on leave and last day is truncated of 3 hours on 12)
+        self.assertEqual(res, 2.375)  # one day is on leave and last day is truncated of 3 hours on 12)
 
     def test_work_days_count_timezones_ultra(self):
         # user in timezone UTC+4 is attached to the resource and create leaves
@@ -708,7 +709,7 @@ class TestResourceMixin(TestResourceCommon):
             'calendar_id': self.test.resource_calendar_id.id,
             'resource_id': self.test.resource_id.id,
             'date_from': to_naive_utc(Datetime.from_string('2018-02-05 08:00:00'), self.lost_user),
-            'date_to': to_naive_utc(Datetime.from_string('2018-02-09 18:00:00'), self.lost_user)
+            'date_to': to_naive_utc(Datetime.from_string('2018-02-09 19:00:00'), self.lost_user)
         })
 
         self.env['resource.calendar.leaves'].sudo(self.lost_user).create({

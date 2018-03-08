@@ -94,13 +94,36 @@
                         <field name="holiday_status_id" context="{'employee_id':employee_id, 'default_date_from':date_from}"/>
                         <label for="number_of_days_temp" string="Duration"/>
                         <div>
+                            <field name="method" invisible="1"/>
                             <div>
-                                <field name="date_from" class="oe_inline"/>
-                                <label string="-" class="oe_inline"/>
-                                <field name="date_to" class="oe_inline"/>
+                              <field name="period_unit" widget="radio" attrs="{'invisible': [('method', '=', 'day')]}"/>
+                              <field name="period_unit_day" widget="radio" attrs="{'invisible': [('method', '!=', 'day')]}"/>
+
+                              <div>
+                                  <div>
+                                      <span class="oe_inline" attrs="{'invisible': [('period_unit', '!=', 'period')]}">From </span>
+                                      <field name="display_date_from" class="oe_inline" attrs="{'invisible': [('method', '=', 'hour'), ('period_unit', '=', 'period')]}"/>
+                                      <field name="date_from" class="oe_inline" attrs="{'invisible': ['|', ('method', '!=', 'hour'), ('period_unit', '!=', 'period')]}"/>
+                                      <span class="oe_inline" attrs="{'invisible': ['|', '&amp;', ('period_unit', '!=', 'half'), ('method', '!=', 'half'), '&amp;', ('period_unit', '=', 'day'), ('method', '=', 'half')]}">:</span>
+                                      <field name="date_from_period" class="oe_inline" widget="radio" options="{'horizontal': True}"
+                                          attrs="{'invisible': ['|', '&amp;', ('period_unit', '!=', 'half'), ('method', '!=', 'half'), '&amp;', ('period_unit', '=', 'day'), ('method', '=', 'half')]}"/>
+                                  </div>
+                                  <div>
+                                      <span class="oe_inline" attrs="{'invisible': [('period_unit', '!=', 'period')]}">To </span>
+                                      <field name="display_date_to" class="oe_inline" attrs="{'invisible': ['|', ('period_unit', '!=', 'period'), ('method', '=', 'hour')]}"/>
+                                      <field name="date_to" class="oe_inline" attrs="{'invisible': ['|', ('method', '!=', 'hour'), ('period_unit', '!=', 'period')]}"/>
+                                      <span class="oe_inline" attrs="{'invisible': ['|', ('method', '!=', 'half'), ('period_unit', '!=', 'period')]}">:</span>
+                                      <field name="date_to_period" class="oe_inline" widget="radio" options="{'horizontal': True}"
+                                          attrs="{'invisible': ['|', ('method', '!=', 'half'), ('period_unit', '!=', 'period')]}"/>
+                                  </div>
+                              </div>
+                          </div>
+
+                            <div attrs="{'invisible': [('method', '=', 'hour')]}">
+                                <field name="number_of_days_temp" class="oe_inline" attrs="{'readonly': [('method', '!=', 'hour')]}"/> day(s)
                             </div>
-                            <div>
-                                <field name="number_of_days_temp" class="oe_inline"/> days
+                            <div attrs="{'invisible': [('method', '!=', 'hour')]}">
+                                <field name="number_of_hours" class="oe_inline"/> hour(s)
                             </div>
                         </div>
                     </group>

@@ -33,6 +33,7 @@
                             <field name="time_type" groups="base.group_no_one"/>
                             <field name="limit"/>
                             <field name="sequence" attrs="{'invisible': [('limit', '=', 'False')]}" groups="base.group_no_one"/>
+                            <field name="method"/>
                         </group>
                         <group name="validation" string="Validation">
                             <field name="validation_type" widget="radio"/>
