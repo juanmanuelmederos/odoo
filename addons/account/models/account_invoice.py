@@ -1410,7 +1410,17 @@ class AccountInvoiceTax(models.Model):
     currency_id = fields.Many2one('res.currency', related='invoice_id.currency_id', store=True, readonly=True)
     base = fields.Monetary(string='Base', compute='_compute_base_amount')
 
-
+    # DO NOT FORWARD-PORT!!! ONLY FOR v10
+    def create(self, vals):
+        if 'amount' in vals:
+            currency = False
+            if 'currency_id' in vals:
+                currency = self.env['res.currency'].browse(vals['currency_id'])
+            elif 'invoice_id' in vals:
+                currency = self.env['account.invoice'].browse(vals['invoice_id']).currency_id
+            if currency:
+                vals['amount'] = currency.round(vals['amount'])
+        return super(AccountInvoiceTax, self).create(vals)
 
 
 class AccountPaymentTerm(models.Model):
