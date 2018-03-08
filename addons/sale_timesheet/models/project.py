@@ -8,7 +8,7 @@ from odoo.exceptions import ValidationError
 class Project(models.Model):
     _inherit = 'project.project'
 
-    sale_line_id = fields.Many2one('sale.order.line', 'Sales Order Line', domain="[('is_service', '=', True), ('order_partner_id', '=', partner_id), ('is_expense', '=', False)]", readonly=True, help="Sale order line from which the project has been created. Used for tracability.")
+    sale_line_id = fields.Many2one('sale.order.line', 'Sales Order Line', domain="[('is_service', '=', True), ('order_partner_id', '=', partner_id), ('is_expense', '=', False)]", help="Sale order line from which the project has been created. Used for tracability.")
     sale_order_id = fields.Many2one('sale.order', 'Sales Order', domain="[('partner_id', '=', partner_id)]")
     billable_type = fields.Selection([
         ('task_rate', 'At Task Rate'),
@@ -17,6 +17,7 @@ class Project(models.Model):
     ], string="Billable Type", default='no', required=True, help='Billable type implies:\n'
         ' - At task rate: each time spend on a task is billed at task rate.\n'
         ' - No Billable: track time without invoicing it')
+    product_employee_ids = fields.One2many('project.product.employee.map', 'project_id', "Product/Employee map")
 
     @api.constrains('sale_line_id')
     def _check_sale_line_type(self):
@@ -26,11 +27,11 @@ class Project(models.Model):
             if project.sale_line_id.is_expense:
                 raise ValidationError(_("A billable project should be linked to a Sales Order Item that does not come from an expense or a vendor bill."))
 
-    @api.constrains('billable_type', 'sale_line_id')
+    @api.constrains('billable_type', 'sale_line_id', 'sale_order_id')
     def _check_billable_type(self):
         for project in self:
             if project.billable_type == 'task_rate' and (not project.sale_line_id or project.sale_order_id):
-                raise ValidationError(_("A billable project (at task rate) should be linked to a Sales Order Item with a deliverable product."))
+                raise ValidationError(_("A billable project (at task rate) should be linked to a Sales Order Item."))
             if project.billable_type == 'employee_rate' and (not project.sale_order_id or project.sale_line_id):
                 raise ValidationError(_("A billable project (at employee rate) should be linked to a Sales Order."))
             if project.billable_type == 'no' and (project.sale_line_id or project.sale_order_id):
@@ -107,19 +108,40 @@ class ProjectTask(models.Model):
                 return project.sale_line_id
 
     sale_line_id = fields.Many2one('sale.order.line', 'Sales Order Item', default=_default_sale_line_id, domain="[('is_service', '=', True), ('order_partner_id', '=', partner_id), ('is_expense', '=', False)]")
-    sale_order_id = fields.Many2one('sale.order', 'Sales Order', related='sale_line_id.order_id', store=True, readonly=True)
+    sale_order_id = fields.Many2one('sale.order', 'Sales Order', compute='_compute_sale_order_id', store=True, readonly=True)
     billable_type = fields.Selection([
         ('task_rate', 'At Task Rate'),
         ('employee_rate', 'At Employee Rate'),
         ('no', 'No Billable')
     ], string="Billable Type", default='no', required=True, readonly=True)
 
+    @api.multi
+    @api.depends('sale_line_id', 'parent_id', 'project_id', 'billable_type')
+    def _compute_sale_order_id(self):
+        for task in self:
+            if task.billable_type == 'task_rate':
+                task.sale_order_id = task.sale_line_id.order_id
+            elif task.billable_type == 'employee_rate':
+                if task.parent_id:
+                    task.sale_order_id = task.parent_id.sale_order_id
+                else:
+                    task.sale_order_id = task.project_id.sale_order_id
+            elif task.billable_type == 'no':
+                task.sale_order_id = False
+
     @api.onchange('project_id')
     def _onchange_project(self):
         result = super(ProjectTask, self)._onchange_project()
-        self.sale_line_id = self.project_id.sale_line_id
+        if self.billable_type == 'task_rate':
+            self.sale_line_id = self.project_id.sale_line_id
         if not self.partner_id:
-            self.partner_id = self.sale_line_id.order_partner_id
+            self.partner_id = self.sale_line_id.order_partner_id or self.sale_order_id.parent_id
+        # Transfering task to a billable 'employee rate' project
+        # TODO JEM and "not self.parent_id"
+        if self._origin.project_id != self.project_id and self.project_id.billable_type == 'employee_rate':
+            self.billable_type = self.project_id.billable_type
+            result = result or {}
+            result['warning'] = _("We want to put the task in a billable per employee rate project. TODO JEM This will ??? 1/ set so_line to False on task timesheets 2/ determine the so line of project SO")
         return result
 
     @api.multi
@@ -130,12 +152,15 @@ class ProjectTask(models.Model):
                 if not task.sale_line_id.is_service or task.sale_line_id.is_expense:
                     raise ValidationError(_("The Sales order line should be one selling a service, and no coming from expense."))
 
-    @api.multi
-    @api.constrains('billable_type', 'sale_line_id')
+    @api.constrains('billable_type', 'sale_line_id', 'sale_order_id')
     def _check_billable_type(self):
         for task in self:
-            if task.sale_line_id and task.billable_type == 'no':
-                raise ValidationError(_("A billable task should be linked to a sale order item."))
+            if task.billable_type == 'task_rate' and not task.sale_line_id:
+                raise ValidationError(_("A billable task (at task rate) should be linked to a Sales Order Item."))
+            if task.billable_type == 'employee_rate' and (not task.sale_order_id or task.sale_line_id):
+                raise ValidationError(_("A billable task (at employee rate) should be linked to a Sales Order."))
+            if task.billable_type == 'no' and (task.sale_line_id or task.sale_order_id):
+                raise ValidationError(_("A none billable task should not be linked to a Sales Order Item or Sales Order."))
 
     @api.model
     def create(self, values):
