@@ -69,7 +69,7 @@ class sale_quote(http.Controller):
         else:
             Transaction = request.env['payment.transaction'].sudo().browse(transaction_id)
         values = {
-            'quotation': order_sudo,
+            'order': order_sudo,
             'message': message and int(message) or False,
             'option': any(not x.line_id for x in order_sudo.options),
             'order_valid': (not order_sudo.validity_date) or (now <= order_sudo.validity_date),
@@ -85,6 +85,7 @@ class sale_quote(http.Controller):
             'return_url': '/shop/payment/validate',
             'bootstrap_formatting': True,
             'partner_id': order_sudo.partner_id.id,
+            'reject_url': '/quote/%s/%s/decline' % (order_sudo.id, order_sudo.access_token)
         }
 
         if order_sudo.require_payment or values['need_payment']:
