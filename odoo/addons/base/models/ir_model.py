@@ -1396,6 +1396,45 @@ class IrModelData(models.Model):
         self.clear_caches()
         return super(IrModelData, self).unlink()
 
+    def _create_xmlid(self, xml_id, record, mode='init', noupdate=False):
+        """ Create or update the given XML id of ``record``. """
+        cr = self.env.cr
+        prefix, suffix = xml_id.split('.')
+        query = """
+            INSERT INTO ir_model_data (module, name, model, res_id, noupdate, date_init, date_update)
+            SELECT %s, %s, %s, %s, %s, (now() at time zone 'UTC'), (now() at time zone 'UTC')
+            WHERE NOT EXISTS (SELECT id FROM ir_model_data WHERE module=%s AND name=%s)
+        """
+        cr.execute(query, [prefix, suffix, record._name, record.id, bool(noupdate), prefix, suffix])
+
+        if cr.rowcount:
+            # also create XMLIDs for parent records
+            self.loads[(prefix, suffix)] = (record._name, record.id)
+            for parent_model, parent_field in record._inherits.items():
+                parent = record[parent_field]
+                puffix = suffix + '_' + parent_model.replace('.', '_')
+                cr.execute(query, [prefix, puffix, parent._name, parent.id, noupdate, prefix, puffix])
+                self.loads[(prefix, puffix)] = (parent._name, parent.id)
+
+        else:
+            # the XMLID already exists, update it
+            self._update_xmlid(xml_id, record, mode, noupdate)
+            for parent_model, parent_field in record._inherits.items():
+                parent = record[parent_field]
+                puffix = suffix + '_' + parent_model.replace('.', '_')
+                self.loads[(prefix, puffix)] = (parent._name, parent.id)
+
+    def _update_xmlid(self, xml_id, record, mode='init', noupdate=False):
+        """ Update the given XML id of ``record``. """
+        prefix, suffix = xml_id.split('.')
+        query = """ UPDATE ir_model_data
+                    SET date_update=(now() at time zone 'UTC')
+                    WHERE module=%s AND name=%s """
+        if mode == 'update':
+            query += "AND NOT noupdate"
+        self.env.cr.execute(query, (prefix, suffix))
+        self.loads[(prefix, suffix)] = (record._name, record.id)
+
     @api.model
     def _update(self, model, module, values, xml_id=False, store=True, noupdate=False, mode='init', res_id=False):
         # records created during module install should not display the messages of OpenChatter

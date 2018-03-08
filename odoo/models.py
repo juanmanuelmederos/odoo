@@ -3453,6 +3453,80 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
         modified_ids = {row[0] for row in cr.fetchall()}
         self.browse(modified_ids).modified(['parent_path'])
 
+    @api.model
+    def _create_with_xmlid(self, data, mode, noupdate):
+        """ Create or update records of this model, and assign XMLIDs.
+
+            :param data: a list of pairs (xml_id, values)
+            :param mode: 'init' or 'update'
+            :param noupdate: flag to set on xml_id
+        """
+        original_self = self.browse()
+        self = self.with_context(install_mode=True)
+        imd = self.env['ir.model.data'].sudo()
+        cr = self.env.cr
+
+        result = []                     # list of (index, record)
+        to_create = []                  # records to create
+        to_update = []                  # records to update
+
+        for index, (xml_id, vals) in enumerate(data):
+            if not xml_id:
+                if mode == 'init':
+                    to_create.append((index, vals, None))
+                continue
+            prefix, suffix = xml_id.split('.')
+            query = """
+                SELECT d.id, d.model, d.res_id, d.noupdate, r.id
+                FROM ir_model_data d LEFT JOIN "{}" r on d.res_id=r.id
+                WHERE d.module=%s AND d.name=%s
+            """.format(self._table)
+            cr.execute(query, (prefix, suffix))
+            if not cr.rowcount:
+                to_create.append((index, vals, xml_id))
+                continue
+            for d_id, d_model, d_res_id, d_noupdate, r_id in cr.fetchall():
+                record = self.browse(d_res_id)
+                if mode == 'update' and d_noupdate:
+                    result.append((index, record))
+                    break
+                elif r_id:
+                    to_update.append((index, vals, record))
+                    imd._update_xmlid(xml_id, record, mode, noupdate)
+                else:
+                    imd.browse(d_id).unlink()
+                    to_create.append((index, vals, xml_id))
+
+        # update existing records
+        for index, vals, record in to_update:
+            record.write(vals)
+            result.append((index, record))
+
+        # determine existing parents for new records
+        for parent_model, parent_field in self._inherits.items():
+            for index, vals, xml_id in to_create:
+                if not xml_id:
+                    continue
+                parent_xml_id = xml_id + '_' + parent_model.replace('.', '_')
+                try:
+                    imd_id, model, res_id = imd.xmlid_lookup(parent_xml_id)
+                    parent = self.env[model].browse(res_id)
+                    if parent.exists():
+                        vals[parent_field] = parent.id
+                    else:
+                        imd.browse(imd_id).unlink()
+                except ValueError:
+                    pass
+
+        # create records and their XMLID
+        records = self.create([item[1] for item in to_create])
+        for record, (index, vals, xml_id) in pycompat.izip(records, to_create):
+            result.append((index, record))
+            if xml_id:
+                imd._create_xmlid(xml_id, record, mode, noupdate)
+
+        return original_self.concat(*(item[1] for item in sorted(result)))
+
     # TODO: ameliorer avec NULL
     @api.model
     def _where_calc(self, domain, active_test=True):

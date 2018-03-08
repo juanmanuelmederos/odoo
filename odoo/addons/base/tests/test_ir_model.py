@@ -7,19 +7,11 @@ from odoo.tests.common import TransactionCase
 class TestXMLID(TransactionCase):
     def create(self, model, data, mode, noupdate):
         """ Create records with their XMLID. """
-        IMD = self.env['ir.model.data']
-        ids = []
-        for xml_id, vals in data:
-            module, suffix = xml_id.split('.')
-            ids.append(IMD._update(model, module, vals, suffix, mode=mode, noupdate=noupdate))
-        return self.env[model].browse(ids)
+        return self.env[model]._create_with_xmlid(data, mode, noupdate)
 
     def create_xmlid(self, xml_id, record, mode, noupdate):
         """ Create an XMLID for the given record. """
-        IMD = self.env['ir.model.data']
-        module, suffix = xml_id.split('.')
-        IMD._update(record._name, module, {}, suffix, mode=mode,
-                    noupdate=noupdate, res_id=record.id)
+        self.env['ir.model.data']._create_xmlid(xml_id, record, mode, noupdate)
 
     def get_data(self, xml_id):
         module, suffix = xml_id.split('.')
