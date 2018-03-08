@@ -20,10 +20,15 @@ class MrpProductProduce(models.TransientModel):
         return todo_quantity
 
     def continue_production(self):
-        self.do_produce()
-        action = self.production_id.open_produce_product()
-        action['context'] = {'active_id': self.production_id.id}
-        return action
+        production = self.env['mrp.production'].browse(self._context['active_id'])
+        todo_quantity = self._get_todo(production)
+        if todo_quantity == 1:
+            return self.do_produce()
+        else:
+            self.do_produce()
+            action = self.production_id.open_produce_product()
+            action['context'] = {'active_id': self.production_id.id}
+            return action
 
     @api.model
     def default_get(self, fields):
