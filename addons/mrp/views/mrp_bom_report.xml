@@ -12,7 +12,7 @@
                             </a>
                             <span class="pull-right"><b>Quantity : </b><t t-esc="data['bom_qty']"/> <t t-esc="data['bom'].product_uom_id.name"/></span>
                         </h3>
-                        <h6 t-if="data['bom'].code"><b>Reference: </b><t t-esc="data['bom'].code"/></h6>
+                        <h6 t-if="data['bom'].code">Reference: <t t-esc="data['bom'].code"/></h6>
                     </div>
                 </div>
                 <t t-set="currency" t-value="data['currency']"/>
@@ -141,14 +141,13 @@
                                     <t t-esc="data['header']['bom_prod_name']"/>
                                     <span class="pull-right"><b>Quantity : </b><t t-esc="data['header']['bom_qty']"/> <t t-esc="data['header']['bom'].product_uom_id.name"/></span>
                                 </h3>
-                                <h6 t-if="data['header']['bom'].code"><b>Reference: </b><t t-esc="data['header']['bom'].code"/></h6>
+                                <h6 t-if="data['header']['bom'].code">Reference: <t t-esc="data['header']['bom'].code"/></h6>
                             </div>
                         </div>
                         <t t-set="currency" t-value="data['header']['currency']"/>
-                        
                         <div class="row">
                             <div class="col-md-12">
-                                <div class="mt16">
+                                <div class="mt16 mb16">
                                     <h4><b>Components</b></h4>
                                     <table width="100%">
                                         <thead>
@@ -197,6 +196,56 @@
                                 </div>
                             </div>
                         </div>
+                        <div t-if="data['header']['operations']" groups="mrp.group_mrp_routings" class="row">
+                            <div class="col-md-12">
+                                <div class="mt16 mb16">
+                                    <h4><b>Operations</b></h4>
+                                    <table width="100%">
+                                        <thead>
+                                            <tr class="o_report_header">
+                                                <th>Operation</th>
+                                                <th>Work Center</th>
+                                                <th>Duration (Minutes)</th>
+                                                <th>Cost per Hour</th>
+                                                <th>Total Cost</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="o_mrp_bom_report_line" t-foreach="data['header']['operations']" t-as="operation">
+                                                <td>
+                                                    <span>
+                                                        <t t-esc="operation['name']"/>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span>
+                                                        <t t-esc="operation['operation'].workcenter_id.name"/>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span><t t-esc="operation['duration_expected']" t-options='{"widget": "float_time"}'/></span>
+                                                </td>
+                                                <td>
+                                                    <span><t t-esc="operation['operation'].workcenter_id.costs_hour"/></span>
+                                                </td>
+                                                <td>
+                                                    <span><t t-esc="operation['total']"/></span>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td><strong>Total Cost of Operations</strong></td>
+                                                <td><strong><t t-esc="data['header']['operations_total']"/></strong></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <t t-if="data_index &lt; data_size - 1">
                         <p style="page-break-before:always;"/>
@@ -204,7 +253,7 @@
                 </t>
             </t>
             <t t-else="">
-                <span class="text-center"><h1>Not available.</h1></span>
+                <h1 class="text-center">No data available.</h1>
             </t>
         </t>
     </template>

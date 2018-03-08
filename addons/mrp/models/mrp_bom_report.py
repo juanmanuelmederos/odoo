@@ -10,11 +10,13 @@ class MrpBomReport(models.TransientModel):
     _name = 'mrp.bom.report'
     _description = "Mrp Bom Report"
 
-    def _get_operations(self, bom, parent, qty, bom_ids):
+    def _get_operations(self, bom, product, parent, qty, bom_ids):
         operations = []
         if parent:
             qty = parent.product_uom_id._compute_quantity(qty, bom.product_uom_id, round=False)
         for line in bom.bom_line_ids:
+            if line._skip_bom_line(product):
+                continue
             line_quantity = line.product_qty * qty
             if parent:
                 line_quantity = line.product_qty * qty
@@ -23,7 +25,7 @@ class MrpBomReport(models.TransientModel):
                 operations = self._get_operation_line(line.bom_id.routing_id, line.bom_id, parent, (qty / bom.product_qty))
             if line.child_bom_id:
                 qty = line.product_uom_id._compute_quantity(line_quantity, line.child_bom_id.product_uom_id, round=False)
-                _operations = self._get_operations(line.child_bom_id, line, qty, bom_ids)
+                _operations = self._get_operations(line.child_bom_id, line.product_id, line, qty, bom_ids)
                 operations += _operations
         return operations
 
@@ -65,7 +67,7 @@ class MrpBomReport(models.TransientModel):
         context = self.env.context or {}
         lines = {}
         bom = self.env['mrp.bom'].browse(bom_id or context.get('active_id'))
-        bom_quantity = float(context.get('searchQty') or 1) or bom.product_qty
+        bom_quantity = float(context.get('searchQty') or 0) or bom.product_qty
         variants = {}
         bom_uom_name = ''
         if line_id:
@@ -80,7 +82,7 @@ class MrpBomReport(models.TransientModel):
             if context.get('searchVariant'):
                 product = self.env['product.product'].browse(int(context.get('searchVariant')))
             components = []
-            operations_data = self._get_operations(bom, False, bom_quantity, [])
+            operations_data = self._get_operations(bom, product, False, bom_quantity, [])
             lines = {
                 'bom': bom,
                 'bom_qty': bom_quantity,
@@ -152,38 +154,37 @@ class MrpBomReport(models.TransientModel):
         )
 
     def _get_pdf_lines(self, bom_id):
-        # final_data = {}
         child_bom_ids = json.loads(self.env.context.get('child_bom_ids'))
-        line = self.get_lines(bom_id)['lines']
-
-        # for line in lines:
+        res = self.get_lines(bom_id)
         data = {}
-        body = {}
-        counter = 0
-        data['header'] = {
-            'bom': line['bom'],
-            'bom_qty': line['bom_qty'],
-            'bom_prod_name': line['bom_prod_name'],
-            'currency': line['currency'],
-            'total': line['total'],
-        }
+        if res:
+            lines = res['lines']
+            body = {}
+            counter = 0
+            data['header'] = {
+                'bom': lines['bom'],
+                'bom_qty': lines['bom_qty'],
+                'bom_prod_name': lines['bom_prod_name'],
+                'currency': lines['currency'],
+                'total': lines['total'],
+                'operations': lines['operations'],
+                'operations_total': lines['operations_total'],
+            }
+            for component in lines['components']:
+                body[counter] = dict(component)
+                body[counter]['expanded'] = False
 
-        for component in line['components']:
-            body[counter] = dict(component)
-            body[counter]['expanded'] = False
-
-            if component.get('child_bom') in child_bom_ids:
-                body[counter]['expanded'] = True
-                sub_lines, counter = self._get_pdf_child_lines(component['child_bom'], component['prod_qty'], component['level'], counter, child_bom_ids)
-                body.update(sub_lines)
-            counter += 1
-        data['body'] = body
-        # data['body'] and final_data.append(data)
+                if component.get('child_bom') in child_bom_ids:
+                    body[counter]['expanded'] = True
+                    sub_lines, counter = self._get_pdf_child_lines(component['child_bom'], component['prod_qty'], component['level'], counter, child_bom_ids)
+                    body.update(sub_lines)
+                counter += 1
+            data['body'] = body
         return data
 
     def _get_pdf_child_lines(self, bom_id, bom_qty, level, counter, child_bom_ids):
         data = {}
-        lines = self.get_lines(bom_id, bom_qty, level + 1)
+        lines = self.get_lines(bom_id, bom_qty, False, level + 1)
 
         for line in lines['lines']['components']:
             counter += 1
