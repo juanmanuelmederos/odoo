@@ -375,7 +375,7 @@
             </h1>
         </div>
         <div class="row mt32 o_customer">
-            <div class="col-md-6 col-xs-6">
+            <div class="col-sm-6 col-xs-12">
                 <div class="row">
                     <label class="col-sm-4 col-xs-4 text-right">Customer:</label>
                     <div class="col-sm-8 col-xs-8">
@@ -418,10 +418,10 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-6 col-xs-6">
+            <div class="col-md-6 col-xs-12">
                 <div class="row">
-                    <label class="col-sm-5 col-xs-5 text-right">Your Contact:</label>
-                    <div class="col-sm-7 col-xs-7">
+                    <label class="col-sm-5 col-xs-4 text-right">Salesperson:</label>
+                    <div class="col-sm-7 col-xs-8">
                         <div t-field="order.user_id" t-field-options='{
                             "widget": "contact",
                             "fields": ["name", "phone", "email"]
@@ -429,28 +429,28 @@
                     </div>
                 </div>
                 <div class="row">
-                    <label class="col-sm-5 col-xs-5 text-right">Quote Date:</label>
-                    <div class="col-sm-7 col-xs-7">
+                    <label class="col-sm-5 col-xs-4 text-right">Quotation Date:</label>
+                    <div class="col-sm-7 col-xs-8">
                         <span t-field="order.date_order" t-field-options='{"widget": "datetime"}'/>
                     </div>
                     <div class="clearfix"/>
                     <div t-if="order.validity_date and order.state in ['draft', 'sent']">
-                      <label class="col-sm-5 col-xs-5 text-right">Expiration Date:</label>
-                      <div class="col-sm-7 col-xs-7">
+                      <label class="col-sm-5 col-xs-4 text-right">Expiration Date:</label>
+                      <div class="col-sm-7 col-xs-8">
                           <span t-field="order.validity_date" t-field-options='{"widget": "date"}'/>
                       </div>
                     </div>
                     <div class="clearfix"/>
                     <div t-if="order.client_order_ref">
-                        <label class="col-sm-5 col-xs-5 text-right">Your Reference:</label>
-                        <div class="col-sm-7 col-xs-7">
+                        <label class="col-sm-5 col-xs-4 text-right">Your Reference:</label>
+                        <div class="col-sm-7 col-xs-8">
                             <span t-field="order.client_order_ref"/>
                         </div>
                     </div>
                     <div class="clearfix"/>
                     <div t-if="order.payment_term_id">
-                        <label class="col-sm-5 col-xs-5 text-right">Payment Terms:</label>
-                        <div class="col-sm-7 col-xs-7">
+                        <label class="col-sm-5 col-xs-4 text-right">Payment Terms:</label>
+                        <div class="col-sm-7 col-xs-8">
                             <span t-field="order.payment_term_id"/>
                         </div>
                     </div>
