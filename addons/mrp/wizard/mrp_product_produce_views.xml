@@ -33,9 +33,10 @@
                         </field>
                     </group>
                     <footer>
-                        <button name="continue_production" type="object" string="Save &amp; Continue"/>
+                        <button name="continue_production" attrs="{'invisible': [('product_tracking', '=', 'none')]}" type="object" string="Save &amp; Continue"/>
                         <button name="do_produce" type="object" string="Record Production" class="btn-primary"/>
-                        <button string="Cancel" class="btn-default" special="cancel" options='{"reload": 1}'/>
+                        <button attrs="{'invisible': [('product_tracking', '=', 'none')]}" string="Cancel" class="btn-default" special="cancel" options='{"reload": 1}'/>
+                        <button attrs="{'invisible': [('product_tracking', '!=', 'none')]}" string="Cancel" class="btn-default" special="cancel"/>
                     </footer>
                 </form>
             </field>
