@@ -1,62 +1,35 @@
 .o_mrp_bom_report_page {
-    @media (max-width: @screen-md-min) {
-        overflow-x:scroll;
-    }
     background-color: @odoo-view-background-color;
-
     margin: 16px auto;
     padding-top: 24px;
     padding-right: 16px;
     padding-bottom: 24px;
     padding-left: 16px;
-
-    .o_mrp_bom_report_table {
-        white-space: nowrap;
-        margin-bottom: 228px;
-        margin-top: 30px;
-    }
     .o_report_header {
-        border-top-style: solid;
         border-top-style: groove;
         border-bottom-style: groove;
         border-width: 2px;
-    }
-    table > tfoot {
-        border-width: 2px;
-        border-top-style: groove;
-
-        > tr {
-            &:first-child  > td {
-                padding-top: 25px;
-            }
-            > td:last-child {
-                color: @odoo-brand-primary;
-                font-weight: bold;
-            }
+        th {
+            // text-align: left;
+            // padding-left: 10px;
         }
     }
-    .o_uom {
-        padding-left: 20px;
+    table > tbody > tr > td ~ td > span {
+        // margin-left: 10px;
     }
-    .o_mrp_bom_report_line {
-        color: @odoo-brand-primary;
-        font-weight: bold;
-
-        &:last-child  > td {
-            padding-bottom: 25px;
-        }
-        > td {
-            padding-top: 15px;
-        }
+    .o_mrp_bom_no_fold {
+        // margin-left: 17px;
+    }
+    tbody tr {
+        border-width: 1px;
+        border-top-style: solid;
+        border-bottom-style: groove;
     }
     .o_mrp_bom_unfoldable, .o_mrp_bom_foldable {
         margin-left: -20px;
         cursor: pointer;
     }
-    .o_mrp_bom_fold_unfold {
-        margin-left: -23px;
-    }
-    a.o_mrp_reports_web_action  {
+    .o_mrp_bom_action  {
         cursor: pointer;
     }
 }

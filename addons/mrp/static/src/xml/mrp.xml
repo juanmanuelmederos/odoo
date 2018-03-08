@@ -6,11 +6,11 @@
 
     <form class="form-inline" t-name="mrp.report_bom_search">
         <div class="form-group">
-            <label>Quantity:</label>
-            <input type="number" t-att-placeholder="bom_uom_name" class="o_input o_mrp_bom_report_qty"/>
+            <label>Quantity : <t t-esc="bom_uom_name"/></label>
+            <input type="number" t-att-placeholder="bom_uom_name" t-att-value="bom_qty" min="1" class="o_input o_mrp_bom_report_qty"/>
         </div>
         <div class="form-group ml16">
-            <label>Product Variants:</label>
+            <label>Product Variants :</label>
             <select class="o_input o_mrp_bom_report_variants">
                 <option t-foreach="variants" t-as="variant" t-att-value="variant">
                     <t t-esc="variants[variant]"/>

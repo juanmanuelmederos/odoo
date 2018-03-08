@@ -24,9 +24,10 @@ var MrpBomReport = Widget.extend(ControlPanelMixin, {
     willStart: function () {
         var self = this;
         var def = this.getHtml().then(function (result) {
-            self.html = result['html'];
+            self.lines = result['lines'];
             self.searchVariants = result['variants'];
             self.bomUomName = result['bom_uom_name'];
+            self.bomQty = result['bom_qty'];
         });
         return $.when(def, this._super.apply(this, arguments));
     },
@@ -40,11 +41,11 @@ var MrpBomReport = Widget.extend(ControlPanelMixin, {
     _reload: function () {
         var self = this;
         this.getHtml().then(function (result) {
-            self.$el.html(result['html']);
+            self.$el.html(result['lines']);
         });
     },
     start: function () {
-        this.$el.html(this.html);
+        this.$el.html(this.lines);
         this._renderSearch();
         this._updateContolPanel();
         return this._super.apply(this, arguments);
@@ -65,7 +66,7 @@ var MrpBomReport = Widget.extend(ControlPanelMixin, {
     _renderSearch: function () {
         this.$buttonPrint = $(QWeb.render('mrp.button'));
         this.$buttonPrint.on('click', this._onClickPrint.bind(this));
-        this.$searchView = $(QWeb.render('mrp.report_bom_search', {'variants': this.searchVariants, 'bom_uom_name': this.bomUomName}));
+        this.$searchView = $(QWeb.render('mrp.report_bom_search', {'variants': this.searchVariants, 'bom_uom_name': this.bomUomName, 'bom_qty': this.bomQty}));
         this.$searchView.find('.o_mrp_bom_report_qty').on('focusout', this._onFocusoutQty.bind(this));
         this.$searchView.find('.o_mrp_bom_report_variants').on('click', this._onClickVariants.bind(this));
     },
@@ -74,9 +75,14 @@ var MrpBomReport = Widget.extend(ControlPanelMixin, {
             return $(el).data('id');
         });
         framework.blockUI();
+        var values = {
+            child_bom_ids: JSON.stringify(childBomIDs),
+            searchQty: this.reportContext.searchQty,
+            searchVariant: this.reportContext.searchVariant
+        }
         session.get_file({
             url: '/mrp/pdf/mrp_bom_report/' + this.reportContext['active_id'],
-            data: {child_bom_ids: JSON.stringify(childBomIDs)},
+            data: values,
             complete: framework.unblockUI,
             error: crash_manager.rpc_error.bind(crash_manager),
         });
@@ -117,7 +123,7 @@ var MrpBomReport = Widget.extend(ControlPanelMixin, {
             args: [this.reportContext, activeID, parseFloat(qty), lineID, level + 1],
         })
         .then(function (result) {
-            $parent.after(result['html']);
+            $parent.after(result['lines']);
         });
         $(ev.currentTarget).toggleClass('o_mrp_bom_foldable o_mrp_bom_unfoldable fa-caret-right fa-caret-down');
     },
