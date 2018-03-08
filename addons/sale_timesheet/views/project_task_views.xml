@@ -27,6 +27,31 @@
         </field>
     </record>
 
+    <record id="project_project_view_form" model="ir.ui.view">
+        <field name="name">project.project.form.inherit</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.edit_project"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Employee / Product Map">
+                    <group>
+                        <field name="billable_type"/>
+                        <field name="sale_order_id" attrs="{'invisible': [('billable_type', 'not in', ['employee_rate', 'no'])]}" options='{"no_open": True, "no_create": True}'/>
+                        <field name="sale_line_id" attrs="{'invisible': [('billable_type', 'not in', ['task_rate', 'no'])]}" options='{"no_open": True, "no_create": True}'/>
+                    </group>
+                    <group>
+                        <field name="product_employee_ids">
+                            <tree editable="top">
+                                <field name="employee_id"/>
+                                <field name="product_id"/>
+                            </tree>
+                        </field>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
         <record id="view_sale_service_inherit_form2" model="ir.ui.view">
             <field name="name">sale.service.form.view.inherit</field>
             <field name="model">project.task</field>
@@ -40,7 +65,9 @@
                             string="Sales Order"/>
                 </xpath>
                 <field name="user_id" position="after">
-                    <field name="sale_line_id" string="Sales Order Item" attrs="{'invisible': [('partner_id', '=', False)], 'readonly': [('parent_id', '!=', False)]}" options='{"no_open": True, "no_create": True}' context="{'sale_show_order_product_name': True}"/>
+                    <field name="billable_type"/>
+                    <field name="sale_order_id" attrs="{'invisible': [('billable_type', 'not in', ['employee_rate', 'no']), ('partner_id', '=', False)], 'readonly': [('parent_id', '!=', False)]}" options='{"no_open": True, "no_create": True}'/>
+                    <field name="sale_line_id" attrs="{'invisible': [('billable_type', 'not in', ['task_rate', 'no']), ('partner_id', '=', False)]}" options='{"no_open": True, "no_create": True}' context="{'sale_show_order_product_name': True}"/>
                 </field>
             </field>
         </record>

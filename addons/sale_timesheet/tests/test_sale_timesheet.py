@@ -45,11 +45,11 @@ class TestSaleTimesheet(TestCommonSaleTimesheetNoChart):
             'order_id': sale_order.id,
         })
         so_line_ordered_global_project = self.env['sale.order.line'].create({
-            'name': self.product_order_timesheet2.name,
-            'product_id': self.product_order_timesheet2.id,
+            'name': self.product_order_timesheet1.name,
+            'product_id': self.product_order_timesheet1.id,
             'product_uom_qty': 50,
-            'product_uom': self.product_order_timesheet2.uom_id.id,
-            'price_unit': self.product_order_timesheet2.list_price,
+            'product_uom': self.product_order_timesheet1.uom_id.id,
+            'price_unit': self.product_order_timesheet1.list_price,
             'order_id': sale_order.id,
         })
         so_line_ordered_project_only.product_id_change()

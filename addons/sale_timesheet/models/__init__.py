@@ -5,4 +5,5 @@ from . import account
 from . import account_invoice
 from . import product
 from . import project
+from . import project_product_employee_map
 from . import sale_order
