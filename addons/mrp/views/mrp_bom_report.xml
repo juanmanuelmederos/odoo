@@ -117,7 +117,9 @@
                     <t t-if="l['child_bom']">
                         <span class="o_mrp_bom_unfoldable fa fa-fw fa-caret-right"/>
                     </t>
-                    <a t-att-data-res-id="l['prod_id']" t-att-data-model="'product.product'" class="o_mrp_bom_action"><t t-esc="l['prod_name']"/></a>
+                    <span t-att-class="None if l['child_bom'] else 'o_mrp_bom_no_fold'">
+                        <a t-att-data-res-id="l['prod_id']" t-att-data-model="'product.product'" class="o_mrp_bom_action"><t t-esc="l['prod_name']"/></a>
+                    </span>
                 </td>
                 <td><span><t t-esc="l['prod_qty']"/></span></td>
                 <td groups="uom.group_uom"><span><t t-esc="l['prod_uom']"/></span></td>
@@ -162,19 +164,13 @@
                                         <tbody>
                                             <t t-foreach="range(0, len(data['body']))" t-as="l">
                                                 <t t-set="row" t-value="data['body'][l]"/>
-                                                <t t-set="space_td" t-value="'margin-left: '+ str(row['level'] * 20) + 'px;'"/>
+                                                <t t-set="space_td" t-value="'margin-left: '+ str(row['level'] * 30) + 'px;'"/>
                                                 <tr class="o_mrp_bom_report_line">
                                                     <td>
                                                         <span t-att-style="space_td"/>
-                                                        <t t-if="row['child_bom']">
-                                                            <t t-if="row['expanded']">
-                                                                <span class="o_mrp_bom_foldable fa fa-fw fa-caret-down"/>
-                                                            </t>
-                                                            <t t-else="">
-                                                                <span class="o_mrp_bom_unfoldable fa fa-fw fa-caret-right"/>
-                                                            </t>
-                                                        </t>
-                                                        <t t-esc="row['prod_name']"/>
+                                                        <span>
+                                                            <t t-esc="row['prod_name']"/>
+                                                        </span>
                                                     </td>
                                                     <td><span><t t-esc="row['prod_qty']"/></span></td>
                                                     <td groups="uom.group_uom"><span><t t-esc="row['prod_uom']"/></span></td>
