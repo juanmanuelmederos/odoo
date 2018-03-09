@@ -143,11 +143,6 @@ class ProjectTask(models.Model):
             values['billable_type'] = parent_task_sudo.billable_type
 
         result = super(ProjectTask, self).write(values)
-        # reassign SO line on related timesheet lines
-        if 'sale_line_id' in values:
-            self.sudo().mapped('timesheet_ids').write({
-                'so_line': values['sale_line_id']
-            })
         return result
 
     @api.multi

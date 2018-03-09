@@ -161,11 +161,7 @@ class TestSaleService(TestCommonSaleTimesheetNoChart):
 
         # make task non billable
         task_serv2.write({'sale_line_id': False})
-        self.assertTrue(all([billing_type == 'non_billable' for billing_type in timesheets.mapped('timesheet_invoice_type')]), "Timesheet to a non billable task should be non billable too")
-
-        # make task billable again
-        task_serv2.write({'sale_line_id': so_line_deliver_global_project.id})
-        self.assertTrue(all([billing_type == 'billable_time' for billing_type in timesheets.mapped('timesheet_invoice_type')]), "Timesheet to a billable time task should be billable")
+        self.assertTrue(all([billing_type == 'billable_time' for billing_type in timesheets.mapped('timesheet_invoice_type')]), "billable type of timesheet should not change when tranfering task into another project")
 
         # invoice SO, and validate invoice
         invoice_id = self.sale_order.action_invoice_create()[0]
