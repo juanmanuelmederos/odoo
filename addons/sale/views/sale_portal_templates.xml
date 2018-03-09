@@ -174,7 +174,7 @@
                             <t t-foreach="layout_category['lines']" t-as="line">
                                 <tr>
                                     <td>
-                                        <span t-field="line.name"/>
+                                        <span class="o_product_name" t-field="line.name"/>
                                         <t t-if="line.discount">
                                             <div>
                                                 With a <span t-field="line.discount"/>% discount
