@@ -24,10 +24,7 @@ var MrpBomReport = Widget.extend(ControlPanelMixin, {
     willStart: function () {
         var self = this;
         var def = this.getHtml().then(function (result) {
-            self.lines = result['lines'];
-            self.searchVariants = result['variants'];
-            self.bomUomName = result['bom_uom_name'];
-            self.bomQty = result['bom_qty'];
+            self.data = result;
         });
         return $.when(def, this._super.apply(this, arguments));
     },
@@ -45,7 +42,7 @@ var MrpBomReport = Widget.extend(ControlPanelMixin, {
         });
     },
     start: function () {
-        this.$el.html(this.lines);
+        this.$el.html(this.data.lines);
         this._renderSearch();
         this._updateContolPanel();
         return this._super.apply(this, arguments);
@@ -66,7 +63,7 @@ var MrpBomReport = Widget.extend(ControlPanelMixin, {
     _renderSearch: function () {
         this.$buttonPrint = $(QWeb.render('mrp.button'));
         this.$buttonPrint.on('click', this._onClickPrint.bind(this));
-        this.$searchView = $(QWeb.render('mrp.report_bom_search', {'variants': this.searchVariants, 'bom_uom_name': this.bomUomName, 'bom_qty': this.bomQty}));
+        this.$searchView = $(QWeb.render('mrp.report_bom_search', _.omit(this.data, 'lines')));
         this.$searchView.find('.o_mrp_bom_report_qty').on('focusout', this._onFocusoutQty.bind(this));
         this.$searchView.find('.o_mrp_bom_report_variants').on('click', this._onClickVariants.bind(this));
     },

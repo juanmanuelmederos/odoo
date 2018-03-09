@@ -68,19 +68,25 @@ class MrpBomReport(models.TransientModel):
         lines = {}
         bom = self.env['mrp.bom'].browse(bom_id or context.get('active_id'))
         bom_quantity = float(context.get('searchQty') or 0) or bom.product_qty
-        variants = {}
+        bom_product_variants = {}
         bom_uom_name = ''
         if line_id:
             current_line = self.env['mrp.bom.line'].browse(int(line_id))
             bom_quantity = current_line.product_uom_id._compute_quantity(line_qty, bom.product_uom_id)
         if bom:
             bom_uom_name = bom.product_uom_id.name
-            if not bom.product_id and bom.product_tmpl_id:
-                for i in bom.product_tmpl_id.product_variant_ids:
-                    variants[i.id] = i.display_name
-            product = bom.product_id or bom.product_tmpl_id.product_variant_id
+
+            # Get variants used for search
+            if not bom.product_id:
+                for variant in bom.product_tmpl_id.product_variant_ids:
+                    bom_product_variants[variant.id] = variant.display_name
+
+            # Display bom components for current selected product variant
             if context.get('searchVariant'):
                 product = self.env['product.product'].browse(int(context.get('searchVariant')))
+            else:
+                product = bom.product_id or bom.product_tmpl_id.product_variant_id
+
             components = []
             operations_data = self._get_operations(bom, product, False, bom_quantity, [])
             lines = {
@@ -120,9 +126,11 @@ class MrpBomReport(models.TransientModel):
             lines['components'] = components
         return {
             'lines': lines,
-            'variants': variants,
+            'variants': bom_product_variants,
             'bom_uom_name': bom_uom_name,
-            'bom_qty': bom_quantity
+            'bom_qty': bom_quantity,
+            'is_variant_applied': self.env.user.user_has_groups('product.group_product_variant'),
+            'is_uom_applied': self.env.user.user_has_groups('uom.group_uom')
         }
 
     @api.model

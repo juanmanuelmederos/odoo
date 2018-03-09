@@ -20,7 +20,7 @@
                     <div class="col-md-12">
                         <div class="mt16">
                             <h4><b>Components</b></h4>
-                            <table width="100%" class="o_expandable">
+                            <table width="100%" class="o_mrp_bom_expandable">
                                 <thead>
                                     <tr>
                                         <th>Product</th>
@@ -80,7 +80,7 @@
                                             <span><t t-esc="operation['duration_expected']" t-options='{"widget": "float_time"}'/></span>
                                         </td>
                                         <td>
-                                            <span><t t-esc="operation['operation'].workcenter_id.costs_hour"/></span>
+                                            <span><t t-esc="operation['operation'].workcenter_id.costs_hour" t-options="{'widget': 'monetary', 'display_currency': currency}"/></span>
                                         </td>
                                         <td>
                                             <span><t t-esc="operation['total']"/></span>
@@ -209,7 +209,7 @@
                                                 <td><t t-esc="operation['name']"/></td>
                                                 <td><t t-esc="operation['operation'].workcenter_id.name"/></td>
                                                 <td><t t-esc="operation['duration_expected']" t-options='{"widget": "float_time"}'/></td>
-                                                <td><t t-esc="operation['operation'].workcenter_id.costs_hour"/></td>
+                                                <td><t t-esc="operation['operation'].workcenter_id.costs_hour" t-options="{'widget': 'monetary', 'display_currency': currency}"/></td>
                                                 <td><t t-esc="operation['total']"/></td>
                                             </tr>
                                         </tbody>
@@ -227,9 +227,7 @@
                             </div>
                         </div>
                     </div>
-                    <t t-if="data_index &lt; data_size - 1">
-                        <p style="page-break-before:always;"/>
-                    </t>
+                    <p t-if="data_index &lt; data_size - 1" style="page-break-before:always;"/>
                 </t>
             </t>
             <t t-else="">
