@@ -29,7 +29,7 @@ function adaptSidebarPosition() {
 $bsSidebar.affix({
     offset: {
         top: 0,
-        bottom: $('body').height() - $('#wrapwrap').outerHeight() + $("footer").outerHeight(),
+        bottom: $('#wrapwrap').outerHeight() - $('main').height(),
     },
 });
 });
