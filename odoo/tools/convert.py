@@ -241,6 +241,11 @@ class xml_import(object):
             return self.id_get(node_uid)
         return self.uid
 
+    def make_xml_id(self, xml_id):
+        if not xml_id or '.' in xml_id:
+            return xml_id
+        return "%s.%s" % (self.module, xml_id)
+
     def _test_xml_id(self, xml_id):
         id = xml_id
         if '.' in xml_id:
@@ -316,17 +321,17 @@ form: module.record_id""" % (xml_id,)
             pf_id = self.id_get(pf_name)
             res['paperformat_id'] = pf_id
 
-        id = self.env['ir.model.data']._update("ir.actions.report", self.module, res, xml_id, noupdate=self.isnoupdate(data_node), mode=self.mode)
-        self.idref[xml_id] = int(id)
+        xid = self.make_xml_id(xml_id)
+        report = self.env['ir.actions.report']._create_with_xmlid(
+            [(xid, res)], self.mode, self.isnoupdate(data_node),
+        )
+        self.idref[xml_id] = report.id
 
         if not rec.get('menu') or safe_eval(rec.get('menu','False')):
-            report = self.env['ir.actions.report'].browse(id)
             report.create_action()
         elif self.mode=='update' and safe_eval(rec.get('menu','False'))==False:
             # Special check for report having attribute menu=False on update
-            report = self.env['ir.actions.report'].browse(id)
             report.unlink_action()
-        return id
 
     def _tag_function(self, rec, data_node=None, mode=None):
         if self.isnoupdate(data_node) and self.mode != 'init':
@@ -431,8 +436,12 @@ form: module.record_id""" % (xml_id,)
             res['binding_type'] = 'report' if rec.get('key2') == 'client_print_multi' else 'action'
         if rec.get('multi'):
             res['multi'] = safe_eval(rec.get('multi', 'False'))
-        id = self.env['ir.model.data']._update('ir.actions.act_window', self.module, res, xml_id, noupdate=self.isnoupdate(data_node), mode=self.mode)
-        self.idref[xml_id] = int(id)
+
+        xid = self.make_xml_id(xml_id)
+        action = self.env['ir.actions.act_window']._create_with_xmlid(
+            [(xid, res)], self.mode, self.isnoupdate(data_node),
+        )
+        self.idref[xml_id] = action.id
 
     def _tag_menuitem(self, rec, data_node=None, mode=None):
         rec_id = rec.get("id")
@@ -494,12 +503,12 @@ form: module.record_id""" % (xml_id,)
             if rec.get('web_icon'):
                 values['web_icon'] = rec.get('web_icon')
 
-        pid = self.env['ir.model.data']._update('ir.ui.menu', self.module, values, rec_id, noupdate=self.isnoupdate(data_node), mode=self.mode, res_id=res and res[0] or False)
-
-        if rec_id and pid:
-            self.idref[rec_id] = int(pid)
-
-        return 'ir.ui.menu', pid
+        xid = self.make_xml_id(rec_id)
+        menu = self.env['ir.ui.menu']._create_with_xmlid(
+            [(xid, values)], self.mode, self.isnoupdate(data_node),
+        )
+        if rec_id and menu:
+            self.idref[rec_id] = menu.id
 
     def _assert_equals(self, f1, f2, prec=4):
         return not round(f1 - f2, prec)
@@ -578,7 +587,7 @@ form: module.record_id""" % (xml_id,)
         self._test_xml_id(rec_id)
         # in update mode, the record won't be updated if the data node explicitly
         # opt-out using @noupdate="1". A second check will be performed in
-        # ir.model.data#_update() using the record's ir.model.data `noupdate` field.
+        # model._create_with_xmlid() using the record's ir.model.data `noupdate` field.
         if self.isnoupdate(data_node) and self.mode != 'init':
             # check if the xml record has no id, skip
             if not rec_id:
@@ -647,12 +656,14 @@ form: module.record_id""" % (xml_id,)
                         f_val = str2bool(f_val)
             res[f_name] = f_val
 
-        id = self.env(context=rec_context)['ir.model.data']._update(rec_model, self.module, res, rec_id or False, not self.isnoupdate(data_node), noupdate=self.isnoupdate(data_node), mode=self.mode)
+        xid = self.make_xml_id(rec_id)
+        record = self.env(context=rec_context)[rec_model]._create_with_xmlid(
+            [(xid, res)], self.mode, self.isnoupdate(data_node),
+        )
         if rec_id:
-            self.idref[rec_id] = int(id)
+            self.idref[rec_id] = record.id
         if config.get('import_partial'):
             self.cr.commit()
-        return rec_model, id
 
     def _tag_template(self, el, data_node=None, mode=None):
         # This helper transforms a <template> element into a <record> and forwards it
