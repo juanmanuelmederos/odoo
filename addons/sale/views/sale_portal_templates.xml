@@ -148,7 +148,7 @@
             <h1 class="page-header">Pricing</h1>
             <t t-foreach="quotation.order_lines_layouted()" t-as="page">
                 <!-- for mobile responsive -->
-                <div id="order_line" t-if="not pdf_view" class="row mr0 ml0 visible-xs hidden-print">
+                <div id="order_line" class="row mr0 ml0 visible-xs hidden-print">
                     <table class='table wq-table'>
                         <colgroup>
                             <col width='50%' />
@@ -213,7 +213,7 @@
                         </t>
                     </table>
                 </div>
-                <table t-attf-class="table wq-table #{'hidden-xs' if not pdf_view else ''}">
+                <table class="table wq-table hidden-xs">
                     <thead>
                         <tr>
                             <th>Products</th>
