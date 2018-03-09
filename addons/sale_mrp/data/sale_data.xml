@@ -8,7 +8,12 @@
             <t t-foreach="prod_order_ids" t-as="production_order">
                 <a href="#" data-oe-model="mrp.production" t-att-data-oe-id="production_order.id"><t t-esc="production_order.name"/></a>.
             </t>
-            Manual actions may be needed.
+            <t t-foreach="prod_order_ids" t-as="production_order">
+                <t t-if="production_order.state == 'cancel'">
+                    <br/>Your order <a href="#" data-oe-model="mrp.production" t-att-data-oe-id="production_order.id"><t t-esc="production_order.name"/></a>. has been cancelled.
+                </t>
+            </t>
+            <br/>Manual actions may be needed.
         <div class="mt16">
             <p>Exception(s):</p>
                 <ul t-foreach="order_exceptions" t-as="exception">
@@ -21,28 +26,6 @@
                     </li>
                 </ul>
         </div>
-        <div class="mt16" t-if="impacted_pickings">
-            <p>Next transfer(s) impacted:</p>
-            <ul t-foreach="impacted_pickings" t-as="picking">
-                <li><a href="#" data-oe-model="stock.picking" t-att-data-oe-id="picking.id"><t t-esc="picking.name"/></a></li>
-            </ul>
-        </div>
-        </div>
-    </template>
-
-    <template id="exception_cancelling_production_order">
-        <div class="alert alert-warning"> 
-            Exception(s) occurred on the production order(s):
-            <t t-foreach="prod_order_ids" t-as="production_order">
-                <a href="#" data-oe-model="mrp.production" t-att-data-oe-id="production_order.id"><t t-esc="production_order.name"/></a>.
-            </t>
-            <br/>Your order
-            <t t-foreach="prod_order_ids" t-as="production_order">
-                <t t-if="production_order.state == 'cancel'">
-                    <a href="#" data-oe-model="mrp.production" t-att-data-oe-id="production_order.id"><t t-esc="production_order.name"/></a>.
-                </t>
-            </t>
-          has been cancelled. Manual actions may be needed.
         <div class="mt16" t-if="impacted_pickings">
             <p>Next transfer(s) impacted:</p>
             <ul t-foreach="impacted_pickings" t-as="picking">
