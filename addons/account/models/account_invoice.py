@@ -387,8 +387,8 @@ class AccountInvoice(models.Model):
     next_recurrency_date = fields.Date(compute=_compute_next_recurrency_date, _string='Next Recurrency Date', copy=False, store=True)
 
     _sql_constraints = [
-        ('number_uniq', 'unique(number, company_id, journal_id, type)', 'The invoice number must be unique per company. varify on your journal its '
-            'sequence and make sure that the next sequence number is not already attributed.'),
+        ('number_uniq', 'unique(number, company_id, journal_id, type)', 'The Invoice Number must be unique. You may have to check if the next number defined in '
+        'your accounting journal is not already attributed.'),
     ]
 
     def _get_seq_number_next_stuff(self):
@@ -1272,6 +1272,7 @@ class AccountInvoice(models.Model):
                 moves += inv.move_id
             if inv.payment_move_line_ids:
                 raise UserError(_('You cannot cancel an invoice which is partially paid. You need to unreconcile related payment entries first.'))
+            #  do not decrease sequence if user cancel draft invoice
             if inv.date_invoice and inv.state != 'draft':
                 invoice_date = fields.Date.from_string(inv.date_invoice)
                 fiscal_dates = inv.company_id.compute_fiscalyear_dates(invoice_date)
