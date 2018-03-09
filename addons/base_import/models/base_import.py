@@ -496,8 +496,7 @@ class Import(models.TransientModel):
                 'headers_type': header_types or False,
                 'preview': preview,
                 'options': options,
-                'advanced_mode': any([len(models.fix_import_export_id_paths(col)) > 1 for col in headers or []]),
-                # 'advanced_mode': True,
+                'advanced_mode': options.get('advanced') if options.get('keep_matches') else any([len(models.fix_import_export_id_paths(col)) > 1 for col in headers or []]),
                 'debug': self.user_has_groups('base.group_no_one'),
             }
         except Exception as error:
