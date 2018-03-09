@@ -101,6 +101,20 @@ class AccountBankStatement(models.Model):
             balance_comparision = currency.compare_amounts(bank_stmt.balance_start, previous_stmt.balance_end_real)
             bank_stmt.is_valid_balance_start = not previous_stmt or bank_stmt.journal_id.type != 'bank' or balance_comparision == 0
 
+    @api.depends('date', 'balance_start', 'balance_end_real')
+    def _compute_is_valid_balance_start_oco_way(self):
+        for bank_stmt in self:
+            domain = [
+                ('journal_id.type', '=', 'bank'),
+                ('date', '<=', bank_stmt.date),
+                ('create_date', '<', bank_stmt.create_date),
+                ('journal_id', '=', bank_stmt.journal_id.id)
+            ]
+            previous_stmt = self.search(domain, limit=1)
+            currency = bank_stmt.currency_id or bank_stmt.company_id.currency_id
+            balance_comparision = currency.compare_amounts(bank_stmt.balance_start, previous_stmt.balance_end_real)
+            bank_stmt.oco_is_valid_balance_start = not previous_stmt or bank_stmt.journal_id.type != 'bank' or balance_comparision == 0
+
     @api.one
     @api.depends('journal_id')
     def _compute_currency(self):
@@ -178,6 +192,8 @@ class AccountBankStatement(models.Model):
     is_difference_zero = fields.Boolean(compute='_is_difference_zero', string='Is zero', help="Check if difference is zero.")
     # Technical field to show warning message on form view if starting balance is not matched with ending balance of previous statement.
     is_valid_balance_start = fields.Boolean(compute='_compute_is_valid_balance_start', string="Valid Starting Balance",
+        help="If True, it indicates the `Starting Balance` of current statement has matched with the `Ending Balance` of previous statement, False otherwise.")
+    oco_is_valid_balance_start = fields.Boolean(compute='_compute_is_valid_balance_start_oco_way', string="Valid Starting Balance OCO way",
         help="If True, it indicates the `Starting Balance` of current statement has matched with the `Ending Balance` of previous statement, False otherwise.")
 
     @api.onchange('journal_id')
