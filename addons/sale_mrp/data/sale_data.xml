@@ -6,7 +6,7 @@
         <div class="alert alert-warning"> 
           Exception(s) occurred on the production order(s):
           <t t-foreach="prod_order_ids" t-as="production_order">
-              <a href="#" data-oe-model="purchase.order" t-att-data-oe-id="production_order.id"><t t-esc="purchase_order.name"/></a>.
+              <a href="#" data-oe-model="mrp.production" t-att-data-oe-id="production_order.id"><t t-esc="production_order.name"/></a>.
           </t>
           Manual actions may be needed.
           <div class="mt16">
