@@ -97,13 +97,9 @@ class AccountBankStatement(models.Model):
             else:
                 # Since you are here it simply means you have NewID() recordset in `bank_stmt` and you are in creation mode
                 previous_stmt = self.search(domain + [('date', '<=', bank_stmt.date)], limit=1)
-            precision = bank_stmt.currency_id.decimal_places or bank_stmt.company_id.currency_id.decimal_places
-            balance_start = float_repr(float_round(bank_stmt.balance_start, precision_digits=precision), precision_digits=precision)
-            previous_statement_balance_end_real = float_repr(float_round(previous_stmt.balance_end_real, precision_digits=precision), precision_digits=precision)
-            if not previous_stmt or bank_stmt.journal_id.type != 'bank' or previous_statement_balance_end_real == balance_start:
-                bank_stmt.is_valid_balance_start = True
-            else:
-                bank_stmt.is_valid_balance_start = False
+            currency = bank_stmt.currency_id or bank_stmt.company_id.currency_id
+            balance_comparision = currency.compare_amounts(bank_stmt.balance_start, previous_stmt.balance_end_real)
+            bank_stmt.is_valid_balance_start = not previous_stmt or bank_stmt.journal_id.type != 'bank' or balance_comparision == 0
 
     @api.one
     @api.depends('journal_id')
