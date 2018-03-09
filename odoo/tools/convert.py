@@ -258,6 +258,7 @@ form: module.record_id""" % (xml_id,)
                 assert modcnt == 1, """The ID "%s" refers to an uninstalled module""" % (xml_id,)
 
     def _tag_delete(self, rec, data_node=None, mode=None):
+        self.flush_records()
         d_model = rec.get("model")
         d_search = rec.get("search")
         d_id = rec.get("id")
@@ -281,6 +282,7 @@ form: module.record_id""" % (xml_id,)
             records.unlink()
 
     def _tag_report(self, rec, data_node=None, mode=None):
+        self.flush_records()
         res = {}
         for dest,f in (('name','string'),('model','model'),('report_name','name')):
             res[dest] = rec.get(f)
@@ -334,6 +336,7 @@ form: module.record_id""" % (xml_id,)
             report.unlink_action()
 
     def _tag_function(self, rec, data_node=None, mode=None):
+        self.flush_records()
         if self.isnoupdate(data_node) and self.mode != 'init':
             return
         context = self.get_context(data_node, rec, {'ref': self.id_get})
@@ -438,10 +441,7 @@ form: module.record_id""" % (xml_id,)
             res['multi'] = safe_eval(rec.get('multi', 'False'))
 
         xid = self.make_xml_id(xml_id)
-        action = self.env['ir.actions.act_window']._create_with_xmlid(
-            [(xid, res)], self.mode, self.isnoupdate(data_node),
-        )
-        self.idref[xml_id] = action.id
+        self.prepare_record('ir.actions.act_window', xid, res, self.isnoupdate(data_node), {})
 
     def _tag_menuitem(self, rec, data_node=None, mode=None):
         rec_id = rec.get("id")
@@ -504,11 +504,7 @@ form: module.record_id""" % (xml_id,)
                 values['web_icon'] = rec.get('web_icon')
 
         xid = self.make_xml_id(rec_id)
-        menu = self.env['ir.ui.menu']._create_with_xmlid(
-            [(xid, values)], self.mode, self.isnoupdate(data_node),
-        )
-        if rec_id and menu:
-            self.idref[rec_id] = menu.id
+        self.prepare_record('ir.ui.menu', xid, values, self.isnoupdate(data_node), {})
 
     def _assert_equals(self, f1, f2, prec=4):
         return not round(f1 - f2, prec)
@@ -516,6 +512,8 @@ form: module.record_id""" % (xml_id,)
     def _tag_assert(self, rec, data_node=None, mode=None):
         if self.isnoupdate(data_node) and self.mode != 'init':
             return
+
+        self.flush_records()
 
         rec_model = rec.get("model")
         rec_id = rec.get("id")
@@ -571,6 +569,35 @@ form: module.record_id""" % (xml_id,)
                     return
         else: # all tests were successful for this assertion tag (no break)
             self.assertion_report.record_success()
+
+    def prepare_record(self, model, xml_id, vals, noupdate, context):
+        """ Prepare a record for creation. """
+        if self._record_params != (model, noupdate, context):
+            self.flush_records()
+            self._record_params = (model, noupdate, context)
+        self._record_data.append((xml_id, vals))
+
+    def flush_records(self):
+        """ Create all the records prepared so far. """
+        if not self._record_data:
+            return
+
+        model_name, noupdate, context = self._record_params
+        model = self.env[model_name].with_context(context)
+        records = model._create_with_xmlid(self._record_data, self.mode, noupdate)
+
+        for record, (xml_id, vals) in pycompat.izip(records, self._record_data):
+            if xml_id:
+                prefix, suffix = xml_id.split('.')
+                self.idref[xml_id] = record.id
+                if prefix == self.module:
+                    self.idref[suffix] = record.id
+
+        if config.get('import_partial'):
+            self.cr.commit()
+
+        self._record_params = None
+        self._record_data = []
 
     def _tag_record(self, rec, data_node=None, mode=None):
         rec_model = rec.get("model")
@@ -657,13 +684,7 @@ form: module.record_id""" % (xml_id,)
             res[f_name] = f_val
 
         xid = self.make_xml_id(rec_id)
-        record = self.env(context=rec_context)[rec_model]._create_with_xmlid(
-            [(xid, res)], self.mode, self.isnoupdate(data_node),
-        )
-        if rec_id:
-            self.idref[rec_id] = record.id
-        if config.get('import_partial'):
-            self.cr.commit()
+        self.prepare_record(rec_model, xid, res, self.isnoupdate(data_node), rec_context)
 
     def _tag_template(self, el, data_node=None, mode=None):
         # This helper transforms a <template> element into a <record> and forwards it
@@ -729,6 +750,8 @@ form: module.record_id""" % (xml_id,)
         return self._tag_record(record, data_node)
 
     def id_get(self, id_str, raise_if_not_found=True):
+        if id_str not in self.idref:
+            self.flush_records()
         if id_str in self.idref:
             return self.idref[id_str]
         res = self.model_id_get(id_str, raise_if_not_found)
@@ -757,6 +780,7 @@ form: module.record_id""" % (xml_id,)
                         ParseError(ustr(e), etree.tostring(rec, encoding='unicode').rstrip(), rec.getroottree().docinfo.URL, rec.sourceline),
                         exc_info[2]
                     )
+        self.flush_records()
         return True
 
     def __init__(self, cr, module, idref, mode, report=None, noupdate=False, xml_filename=None):
@@ -766,6 +790,8 @@ form: module.record_id""" % (xml_id,)
         self.cr = cr
         self.uid = SUPERUSER_ID
         self.idref = idref
+        self._record_params = None
+        self._record_data = []
         if report is None:
             report = assertion_report.assertion_report()
         self.assertion_report = report
