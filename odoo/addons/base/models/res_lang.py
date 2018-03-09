@@ -213,10 +213,10 @@ class Lang(models.Model):
         langs = self.with_context(active_test=True).search([])
         return sorted([(lang.code, lang.name) for lang in langs], key=itemgetter(1))
 
-    @api.model
-    def create(self, vals):
+    @api.create_multi
+    def create(self, valses):
         self.clear_caches()
-        return super(Lang, self).create(vals)
+        return super(Lang, self).create(valses)
 
     @api.multi
     def write(self, vals):
