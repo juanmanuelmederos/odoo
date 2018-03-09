@@ -177,9 +177,3 @@ class TestTimesheet(TestCommonTimesheet):
         self.assertEquals(timesheet_count1, 0, "No timesheet in project 1")
         self.assertEquals(timesheet_count2, 1, "One timesheet in project 2")
         self.assertEquals(len(self.task1.timesheet_ids), 1, "The timesheet should be linked to task 1")
-
-        # it is forbidden to set a task with timesheet without project
-        with self.assertRaises(UserError):
-            self.task1.write({
-                'project_id': False
-            })
