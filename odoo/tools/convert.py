@@ -750,14 +750,13 @@ form: module.record_id""" % (xml_id,)
         return self._tag_record(record, data_node)
 
     def id_get(self, id_str, raise_if_not_found=True):
-        if id_str not in self.idref:
-            self.flush_records()
         if id_str in self.idref:
             return self.idref[id_str]
         res = self.model_id_get(id_str, raise_if_not_found)
         return res and res[1]
 
     def model_id_get(self, id_str, raise_if_not_found=True):
+        self.flush_records()
         if '.' not in id_str:
             id_str = '%s.%s' % (self.module, id_str)
         return self.env['ir.model.data'].xmlid_to_res_model_res_id(id_str, raise_if_not_found=raise_if_not_found)
