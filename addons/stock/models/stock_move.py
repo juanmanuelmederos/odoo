@@ -998,7 +998,6 @@ class StockMove(models.Model):
             'view_id': view.id,
             'target': 'new',
             'res_id': self.id}
-    show_picking = action_show_picking
 
     # Quants management
     # ----------------------------------------------------------------------
