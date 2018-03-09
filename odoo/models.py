@@ -3032,14 +3032,30 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
                 self.env[model_name].browse(parent_ids).write(parent_vals)
 
             if inverse_vals:
-                # put the values of inverse fields in cache, and inverse them
                 self.modified(set(inverse_vals) - set(store_vals))
-                for record in self:
-                    record._cache.update(record._convert_to_cache(inverse_vals, update=True))
 
                 # in case several fields use the same inverse method, call it once
                 for _inv, fields in groupby(inverse_fields, attrgetter('inverse')):
-                    fields[0].determine_inverse(self)
+                    inv_vals = {
+                        field.name: inverse_vals[field.name]
+                        for field in fields
+                    }
+                    if not all(field.store for field in fields):
+                        # The fields are not all stored. Their inverse method
+                        # will most probably write on its dependencies, which
+                        # will invalidate the field on all records. Therefore we
+                        # inverse the fields record per record.
+                        for record in self:
+                            record._cache.update(
+                                record._convert_to_cache(inv_vals, update=True)
+                            )
+                            fields[0].determine_inverse(record)
+                    else:
+                        for record in self:
+                            record._cache.update(
+                                record._convert_to_cache(inv_vals, update=True)
+                            )
+                        fields[0].determine_inverse(self)
 
                 self.modified(set(inverse_vals) - set(store_vals))
 
@@ -3247,15 +3263,23 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
         for names, inv_datas in groupby(datas, lambda data: frozenset(data.inversed)):
             recs = self.browse().concat(*(data.record for data in inv_datas))
             with self.env.protecting(inv_datas[0].protected, recs):
-                # put the values of inverse fields in cache, and inverse them
-                for data in inv_datas:
-                    record = data.record
-                    record._cache.update(record._convert_to_cache(data.inversed))
-
                 # in case several fields use the same inverse method, call it once
                 inv_fields = [self._fields[name] for name in names]
                 for _inv, fields in groupby(inv_fields, attrgetter('inverse')):
-                    fields[0].determine_inverse(recs)
+                    if not all(field.store for field in fields):
+                        # The fields are not all stored. Their inverse method
+                        # will most probably write on its dependencies, which
+                        # will invalidate the field on all records. Therefore we
+                        # inverse the fields record per record.
+                        for data in inv_datas:
+                            record = data.record
+                            record._cache.update(record._convert_to_cache(data.inversed))
+                            fields[0].determine_inverse(record)
+                    else:
+                        for data in inv_datas:
+                            record = data.record
+                            record._cache.update(record._convert_to_cache(data.inversed))
+                        fields[0].determine_inverse(recs)
 
                 # trick: no need to mark non-stored fields as modified, thanks
                 # to the transitive closure made over non-stored dependencies

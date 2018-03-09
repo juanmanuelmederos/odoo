@@ -278,6 +278,16 @@ class TestFields(common.TransactionCase):
         self.assertEqual(ewan.parent, cath)
         self.assertEqual(ewan.name, "Erwan")
 
+        # check create/write with several records
+        vals = {'name': 'Foo', 'display_name': 'Bar'}
+        one, two = Category.create([vals, vals])
+        self.assertEqual(one.name, 'Bar')
+        self.assertEqual(two.name, 'Bar')
+
+        (one + two).write({'display_name': 'Foo'})
+        self.assertEqual(one.name, 'Foo')
+        self.assertEqual(two.name, 'Foo')
+
         # create/write on 'foo' should only invoke the compute method
         log = []
         model = self.env['test_new_api.compute.inverse'].with_context(log=log)
