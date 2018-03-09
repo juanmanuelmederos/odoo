@@ -1619,6 +1619,15 @@
                 <span t-esc="line.name" />
             </t>
         </xpath>
+        <!-- for mobile responsive -->
+        <xpath expr="//div[@id='order_line']/table//span[hasclass('o_product_name')]" position="replace">
+            <a t-if="line.product_id.website_published" t-att-href="line.product_id.website_url">
+                <span t-esc="line.name" />
+            </a>
+            <t t-if="not line.product_id.website_published">
+                <span t-esc="line.name" />
+            </t>
+        </xpath>
     </template>
 
     <template id="terms" name="Terms &amp; Conditions">
