@@ -107,8 +107,8 @@ class AccountBankStatement(models.Model):
             domain = [
                 ('journal_id.type', '=', 'bank'),
                 ('date', '<=', bank_stmt.date),
-                ('create_date', '<', bank_stmt.create_date),
-                ('journal_id', '=', bank_stmt.journal_id.id)
+                ('journal_id', '=', bank_stmt.journal_id.id),
+                ('id', '!=', bank_stmt.id)
             ]
             previous_stmt = self.search(domain, limit=1)
             currency = bank_stmt.currency_id or bank_stmt.company_id.currency_id
@@ -346,11 +346,11 @@ class AccountBankStatement(models.Model):
                             FROM account_move_line aml
                                 JOIN account_account acc ON acc.id = aml.account_id
                                 JOIN account_bank_statement_line stl ON aml.ref = stl.name
-                            WHERE (aml.company_id = %s 
-                                AND aml.partner_id IS NOT NULL) 
+                            WHERE (aml.company_id = %s
+                                AND aml.partner_id IS NOT NULL)
                                 AND (
-                                    (aml.statement_id IS NULL AND aml.account_id IN %s) 
-                                    OR 
+                                    (aml.statement_id IS NULL AND aml.account_id IN %s)
+                                    OR
                                     (acc.internal_type IN ('payable', 'receivable') AND aml.reconciled = false)
                                     )
                                 AND aml.ref IN %s
@@ -824,7 +824,7 @@ class AccountBankStatementLine(models.Model):
             # company in currency A, statement in currency B and transaction in currency A
             # counterpart line must have currency B and amount is computed using the rate between A and B
             amount_currency = amount/st_line_currency_rate
-        
+
         # last case is company in currency A, statement in currency A and transaction in currency A
         # and in this case counterpart line does not need any second currency nor amount_currency
 
