@@ -783,7 +783,17 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
         ModelData.clear_caches()
         extracted = self._extract_records(fields, data, log=messages.append)
         converted = self._convert_records(extracted, log=messages.append)
-        for id, xid, record, info in converted:
+
+        # data for records to be created in batch
+        batch = []
+
+        def flush():
+            if not batch:
+                return
+
+            data = batch.copy()
+            batch.clear()
+
             try:
                 cr.execute('SAVEPOINT model_load_save')
             except psycopg2.InternalError as e:
@@ -791,10 +801,11 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
                 # already logged
                 if not any(message['type'] == 'error' for message in messages):
                     messages.append(dict(info, type='error',message=u"Unknown database error: '%s'" % e))
-                break
+                return
+
             try:
-                ids.append(ModelData._update(self._name, current_module, record, mode=mode,
-                                             xml_id=xid, noupdate=noupdate, res_id=id))
+                recs = self._create_with_xmlid(data, mode, noupdate)
+                ids.extend(recs.ids)
                 cr.execute('RELEASE SAVEPOINT model_load_save')
             except psycopg2.Warning as e:
                 messages.append(dict(info, type='warning', message=str(e)))
@@ -811,6 +822,17 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
                 # Failed for some reason, perhaps due to invalid data supplied,
                 # rollback savepoint and keep going
                 cr.execute('ROLLBACK TO SAVEPOINT model_load_save')
+
+        for id, xid, convert, info in converted:
+            xid = xid if '.' in xid else "%s.%s" % (current_module, xid)
+            try:
+                record = convert()
+            except Exception:
+                flush()
+                record = convert()
+            batch.append((xid, record))
+
+        flush()
         if any(message['type'] == 'error' for message in messages):
             cr.execute('ROLLBACK TO SAVEPOINT model_load')
             ids = False
@@ -905,7 +927,7 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
         self.create or (ir.model.data)._update)
 
         :returns: a list of triplets of (id, xid, record)
-        :rtype: list((int|None, str|None, dict))
+        :rtype: list((int|None, str|None, lambda: dict))
         """
         field_names = {name: field.string for name, field in self._fields.items()}
         if self.env.lang:
@@ -944,7 +966,7 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
                         message=_(u"Unknown database identifier '%s'") % dbid))
                     dbid = False
 
-            converted = convert(record, functools.partial(_log, extras, stream.index))
+            converted = functools.partial(convert, record, functools.partial(_log, extras, stream.index))
 
             yield dbid, xid, converted, dict(extras, record=stream.index)
 
