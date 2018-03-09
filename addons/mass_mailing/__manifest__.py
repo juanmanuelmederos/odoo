@@ -28,6 +28,7 @@
         'views/link_tracker_views.xml',
         'views/mass_mailing_template.xml',
         'views/mass_mailing_views.xml',
+        'views/mail_blacklist_views.xml',
         'views/res_config_settings_views.xml',
         'security/ir.model.access.csv',
         'views/editor_field_html.xml',
