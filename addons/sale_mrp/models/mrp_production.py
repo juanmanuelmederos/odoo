@@ -10,9 +10,6 @@ class MrpProduction(models.Model):
     def action_cancel(self):
         res = super(MrpProduction, self).action_cancel()
         if self.procurement_group_id:
-            dest = self.env['stock.move'].search(['|', ('created_production_id', 'in', self.mapped('move_finished_ids').mapped('production_id').ids), ('picking_id', 'in', self.mapped('move_finished_ids').mapped('picking_id').ids)])
-            created_production = dest.mapped('created_production_id')
-            stock_picking_id = dest.mapped('picking_id')
             self._log_production_order_changes({self: (self.product_qty, self.product_qty)})
         return res
 
@@ -47,8 +44,6 @@ class MrpProduction(models.Model):
                 'order_exceptions': order_exceptions.values(),
                 'impacted_pickings': impacted_pickings,
             }
-            if 'cancel' in prod_orders.mapped('state'):
-                return self.env.ref('sale_mrp.exception_cancelling_production_order').render(values=values)
             return self.env.ref('sale_mrp.exception_on_mrp').render(values=values)
 
         group_id = self.move_raw_ids.mapped('group_id')
@@ -66,5 +61,5 @@ class MrpProduction(models.Model):
                             if parent.state == 'cancel':
                                 continue
                         filtered_documents[(parent, responsible)] = rendering_context
-                    activity = self.env['stock.picking']._log_activity(_render_note_exception_quantity_po, filtered_documents)
+                    self.env['stock.picking']._log_activity(_render_note_exception_quantity_po, filtered_documents)
         return True
