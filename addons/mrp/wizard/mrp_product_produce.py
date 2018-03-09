@@ -22,8 +22,10 @@ class MrpProductProduce(models.TransientModel):
     def continue_production(self):
         production = self.env['mrp.production'].browse(self._context['active_id'])
         todo_quantity = self._get_todo(production)
-        if todo_quantity == 1:
+        # if serial/lot number is activated then wizard must be closed after last serial production/lot
+        if todo_quantity == 1 or todo_quantity == self.product_qty:
             return self.do_produce()
+        # keep wizard open until all production has been done
         else:
             self.do_produce()
             action = self.production_id.open_produce_product()
