@@ -1592,8 +1592,9 @@ var CropImageDialog = Dialog.extend({
      * @override
      */
     start: function () {
+        var cropBoxData = _.pick(this.$image.data(), 'aspect_ratio', 'x', 'y', 'category_id', 'width', 'height','rotate','scaleX','scaleY');
         this.$cropperImage = this.$el.find('.o_cropper_image');
-        this.$cropperImage.cropper({viewMode: 1});
+        this.$cropperImage.cropper({viewMode: 1, data: cropBoxData});
         return this._super.apply(this, arguments);
      },
 
@@ -1714,6 +1715,7 @@ var CropImageDialog = Dialog.extend({
             args: [args],
         }).then(function (attachmentID) {
             self.$image.attr('src', '/web/image/' + attachmentID);
+            self._setCropBoxData();
             self.$image.trigger('content_changed');
         });
     },
@@ -1733,8 +1735,22 @@ var CropImageDialog = Dialog.extend({
         .then(function() {
             self.$image.addClass('o_cropped_img');
             self.$image.attr('src', '/web/image/' + self.imageActualID + '?timestamp=' + new Date().getTime());
+            self._setCropBoxData();
             self.$image.trigger('content_changed');
         });
+    },
+    /**
+     * Set current cropimage data to image.
+     *
+     * @private
+     */
+    _setCropBoxData: function() {
+        var self = this;
+        var cropBoxData = this.$cropperImage.cropper('getData');
+        _.each(cropBoxData, function(value, key){
+            self.$image.attr('data-' + key, value);
+            self.$image.data(key, value);
+        })
     },
     //--------------------------------------------------------------------------
     // Handlers
@@ -1753,6 +1769,8 @@ var CropImageDialog = Dialog.extend({
         switch ($option.data('event')) {
             case 'ratio':
                 this.$cropperImage.cropper('setAspectRatio', value);
+                this.$image.data('aspect_ratio', value);
+                this.$image.attr('data-aspect_ratio', value);
                 break;
             case 'zoom':
                 this.$cropperImage.cropper('zoom', value);
