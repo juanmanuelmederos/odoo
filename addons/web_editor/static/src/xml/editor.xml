@@ -303,42 +303,42 @@
     <!-- Crop Image Dialog (allows to crop image on the page) -->
     <div t-name="web_editor.dialog.crop_image" class="o_crop_image_dialog">
         <div class="row">
-           <div class="o_crop_options col-md-12 text-center mb16">
+           <div class="o_crop_area col-md-12">
+                <img class="img img-responsive o_cropper_image" t-att-src="widget.imageSrc" />
+           </div>
+           <div class="o_crop_options col-md-12 text-center mt16">
                <div class="btn-group" title="Aspect Ratio" data-toggle="buttons">
-                   <a href="#" class="btn btn-sm btn-primary active" data-event="ratio" data-value="">
+                   <a href="#" class="btn btn-default active" data-event="ratio" data-value="">
                        <input type="radio" name="aspect_ratio_option" checked="checked"/> Free
                    </a>
-                   <a href="#" class="btn btn-sm btn-primary" data-event="ratio" data-value="1.77">
+                   <a href="#" class="btn btn-default" data-event="ratio" data-value="1.77">
                        <input type="radio" name="aspect_ratio_option" /> 16:9
                    </a>
-                   <a href="#" class="btn btn-sm btn-primary" data-event="ratio" data-value="1.33">
+                   <a href="#" class="btn btn-default" data-event="ratio" data-value="1.33">
                        <input type="radio" name="aspect_ratio_option" /> 4:3
                    </a>
-                   <a href="#" class="btn btn-sm btn-primary" data-event="ratio" data-value="1.00">
+                   <a href="#" class="btn btn-default" data-event="ratio" data-value="1.00">
                        <input type="radio" name="aspect_ratio_option" /> 1:1
                    </a>
-                   <a href="#" class="btn btn-sm btn-primary" data-event="ratio" data-value="0.66">
+                   <a href="#" class="btn btn-default" data-event="ratio" data-value="0.66">
                        <input type="radio" name="aspect_ratio_option" /> 2:3
                    </a>
                </div>
                <div class="btn-group" role="group">
-                   <a href="#" class="btn btn-sm btn-primary" title="Zoom In" data-event="zoom" data-value="0.1"><i class="fa fa-search-plus"/></a>
-                   <a href="#" class="btn btn-sm btn-primary" title="Zoom Out" data-event="zoom" data-value="-0.1"><i class="fa fa-search-minus"/></a>
+                   <a href="#" class="btn btn-default" title="Zoom In" data-event="zoom" data-value="0.1"><i class="fa fa-search-plus"/></a>
+                   <a href="#" class="btn btn-default" title="Zoom Out" data-event="zoom" data-value="-0.1"><i class="fa fa-search-minus"/></a>
                </div>
                <div class="btn-group" role="group">
-                   <a href="#" class="btn btn-sm btn-primary" title="Rotate Left" data-event="rotate" data-value="45"><i class="fa fa-rotate-left"/></a>
-                   <a href="#" class="btn btn-sm btn-primary" title="Rotate Right" data-event="rotate" data-value="-45"><i class="fa fa-rotate-right"/></a>
+                   <a href="#" class="btn btn-default" title="Rotate Left" data-event="rotate" data-value="45"><i class="fa fa-rotate-left"/></a>
+                   <a href="#" class="btn btn-default" title="Rotate Right" data-event="rotate" data-value="-45"><i class="fa fa-rotate-right"/></a>
                </div>
                <div class="btn-group" role="group">
-                   <a href="#" class="btn btn-sm btn-primary" Title="Flip Horizontal" data-event="flip" data-value="horizontal" data-x="1"><i class="fa fa-arrows-h"/></a>
-                   <a href="#" class="btn btn-sm btn-primary" Title="Flip Vertical" data-event="flip" data-value="vertical" data-y="1"><i class="fa fa-arrows-v"/></a>
+                   <a href="#" class="btn btn-default" Title="Flip Horizontal" data-event="flip" data-value="horizontal" data-x="1"><i class="fa fa-arrows-h"/></a>
+                   <a href="#" class="btn btn-default" Title="Flip Vertical" data-event="flip" data-value="vertical" data-y="1"><i class="fa fa-arrows-v"/></a>
                </div>
-               <div class="btn-group" title="Reset" role="group">
-                   <a href="#" class="btn btn-sm btn-default" data-event="reset"><i class="fa fa-refresh"/> Reset</a>
+               <div class="btn-group" title="Reset Image" role="group">
+                   <a href="#" class="btn btn-default" data-event="reset"><i class="fa fa-refresh"/> Reset Image</a>
                </div>
-           </div>
-           <div class="o_crop_area col-md-12">
-                <img class="img img-responsive o_cropper_image" t-att-src="widget.imageSrc" />
            </div>
         </div>
     </div>

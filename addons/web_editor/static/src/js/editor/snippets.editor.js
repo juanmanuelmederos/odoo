@@ -637,6 +637,11 @@ var SnippetsMenu = Widget.extend({
         _.each(this.snippetEditors, function (snippetEditor) {
             snippetEditor.cleanForSave();
         });
+        this.$editable.find('.o_cropped_img').each(function () {
+            var src = $(this).attr('src').split('?')[0];
+            $(this).attr('src', src);
+            $(this).removeClass('o_cropped_img');
+        });
         this.$editable.find('[contentEditable]')
             .removeAttr('contentEditable')
             .removeProp('contentEditable');

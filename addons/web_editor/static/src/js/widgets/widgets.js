@@ -1558,15 +1558,20 @@ var CropImageDialog = Dialog.extend({
                 close: true
             }],
         };
+        this.data = data;
+        this.imageSrc = this.data.image.attr('src');
         this.$image = data.image;
-        var imageSrc = data.image.attr('src');
-        // If image from cross origin then get it from controller
-        var host = window.location.host;
-        var isExternalURL = imageSrc.match(/^https?:\/\//);
-        if (isExternalURL && imageSrc.indexOf(host) === -1) {
-            imageSrc = '/web_editor/get_cross_origin_img?url=' + imageSrc;
+        this.isCropedImage = false;
+        // TO-check
+        var isLocalURL = this.imageSrc.match(/web\/image\/(\d+?)(\?timestamp=|\/|$)/) || false;
+        if (isLocalURL) {
+            this.imageActualID = parseInt(isLocalURL[1]);
         }
-        this.imageSrc = imageSrc;
+        this.xmlID = this.imageSrc.match(/web\/image\/(.+?)(\/|$)/) || false;
+        // If image from cross origin then get it from controller
+        if (this._isCrossOriginUrl(this.imageSrc)) {
+            this.imageSrc = '/web_editor/get_cross_origin_img?url=' + this.imageSrc;
+        }
         this._super(parent, options);
     },
     /**
@@ -1575,7 +1580,13 @@ var CropImageDialog = Dialog.extend({
      * @override
      */
     willStart: function () {
-        return $.when(ajax.loadLibs(this), this._super.apply(this, arguments));
+        var defs = [ajax.loadLibs(this), this._super.apply(this, arguments)];
+        if (this.imageActualID) {
+            defs.push(this._setParentImage());
+        } else if (this.xmlID) {
+            defs.push(this._getRecordID(this.xmlID));
+        }
+        return $.when.apply($, defs);
     },
     /**
      * @override
@@ -1613,6 +1624,33 @@ var CropImageDialog = Dialog.extend({
         return canvas.toDataURL().split(',')[1];
     },
     /**
+     * Get RecordID from xmlID
+     *
+     * @private
+     * @param {string} xmlID
+     * @returns {Deferred}
+     */
+    _getRecordID: function (xmlID) {
+        var self = this;
+        return this._rpc({
+            model: 'ir.model.data',
+            method: 'get_object_reference',
+            args: [xmlID[1].split('.')[0], xmlID[1].split('.')[1]],
+        }).then(function(data) {
+            self.imageActualID = data[1];
+        });
+    },
+    /**
+     * To-check url is cross-origin
+     *
+     * @private
+     * @param {string} url
+     * @returns {boolean}
+     */
+    _isCrossOriginUrl: function (url) {
+        return url.match(/^https?:\/\//) && url.indexOf(window.location.host) === -1 || false;
+    },
+    /**
      * Create a new image
      *
      * @private
@@ -1620,20 +1658,84 @@ var CropImageDialog = Dialog.extend({
      */
     _onSave: function () {
         var self = this;
+        if (this.isCropedImage) {
+            return this._updateImage();
+        } else {
+            return this._createImage();
+        }
+    },
+    /**
+     * Set parent image to dialog
+     *
+     * @private
+     * @returns {Deferred}
+     */
+    _setParentImage: function() {
+        var self = this;
+        return this._rpc({
+            model: 'ir.attachment',
+            method: 'search_read',
+            domain: [['id', '=', this.imageActualID]],
+            fields: ['res_id', 'url', 'res_model'],
+        }).then(function (data) {
+            if (data[0].res_id) {
+                self.isCropedImage = true;
+                self.imageSrc = 'web/image/'+ data[0].res_id;
+            } else if (data[0].url) {
+                var src = data[0].url;
+                self.imageSrc = self._isCrossOriginUrl(src) ? '/web_editor/get_cross_origin_img?url=' + src : data[0].url;
+                self.isCropedImage = !data[0].res_model;
+            } else {
+                self.imageSrc = 'web/image/'+ data[0].id;
+            }
+        });
+    },
+    /**
+     * Create a new image
+     *
+     * @private
+     * @returns {Deferred}
+     */
+    _createImage: function() {
+        var self = this;
+        var args = {
+            name: 'crop_image',
+            datas: this._getImageBase64(),
+            public: true
+        };
+        if (this.imageActualID) {
+            args['res_id'] = this.imageActualID;
+        } else {
+            args['url'] = this.data.image.attr('src');
+        }
         return this._rpc({
             model: 'ir.attachment',
             method: 'create',
-            args: [{
-                name: 'crop_image',
-                datas: this._getImageBase64(),
-                public: true
-            }],
+            args: [args],
         }).then(function (attachmentID) {
             self.$image.attr('src', '/web/image/' + attachmentID);
             self.$image.trigger('content_changed');
         });
     },
-
+    /**
+     * Update image
+     *
+     * @private
+     * @returns {Deferred}
+     */
+    _updateImage: function() {
+        var self = this;
+        return this._rpc({
+            model: 'ir.attachment',
+            method: 'write',
+            args: [[this.imageActualID], {'datas': this._getImageBase64()}],
+        })
+        .then(function() {
+            self.$image.addClass('o_cropped_img');
+            self.$image.attr('src', '/web/image/' + self.imageActualID + '?timestamp=' + new Date().getTime());
+            self.$image.trigger('content_changed');
+        });
+    },
     //--------------------------------------------------------------------------
     // Handlers
     //--------------------------------------------------------------------------
