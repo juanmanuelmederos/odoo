@@ -167,7 +167,7 @@ class TestAdvMailPerformance(TransactionCase):
                 'activity_type_id': self.env.ref('mail.mail_activity_data_todo').id,
             })
 
-        with self.assertQueryCount(admin=84, emp=115):  # com runbot 84 - 115 // test_mail only: 68 - 97
+        with self.assertQueryCount(admin=84, emp=115):  # com runbot 84 - 115 // test_mail only: 68 - 96
             activity.action_feedback(feedback='Zizisse Done !')
 
     @mute_logger('odoo.addons.mail.models.mail_mail', 'odoo.models.unlink')
@@ -518,8 +518,8 @@ class TestHeavyMailPerformance(TransactionCase):
         self.assertEqual(rec.message_ids[0].subtype_id, self.env.ref('test_mail.st_mail_test_full_umbrella_upd'))
         self.assertEqual(rec.message_ids[0].needaction_partner_ids, self.partners | self.user_portal.partner_id)
         # create tracking message
-        self.assertEqual(rec.message_ids[1].subtype_id, self.env.ref('test_mail.st_mail_test_full_umbrella_upd'))
-        self.assertEqual(rec.message_ids[1].needaction_partner_ids, self.user_portal.partner_id)
+        self.assertEqual(rec.message_ids[1].subtype_id, self.env.ref('mail.mt_note'))
+        self.assertEqual(rec.message_ids[1].needaction_partner_ids, self.env['res.partner'])
         # creation message
         self.assertEqual(rec.message_ids[2].subtype_id, self.env.ref('mail.mt_note'))
         self.assertEqual(rec.message_ids[2].needaction_partner_ids, self.env['res.partner'])
