@@ -800,73 +800,19 @@ class Message(models.Model):
         """ Compute recipients to notify based on specified recipients and document
         followers. Delegate notification to partners to send emails and bus notifications
         and to channels to broadcast messages on channels """
-
-        # have a sudoed copy to manipulate partners (public can go here with website modules like forum / blog / ... )
-        self_sudo = self.sudo()
-
-        msg_pids, msg_cids = self_sudo.partner_ids.ids, self_sudo.channel_ids.ids
-
-        # email_pids = list()
-        # inbox_pids = list()
-        email_cids = list()
-        inbox_cids = list()
+        self_sudo = self.sudo()  # speedup and avoid access rights issues on partner
+        email_cids, inbox_cids = list(), list()
         recipient_data = list()
 
-        # subtype on a record, check for followers (partners and channels)
-        if self_sudo.subtype_id and self_sudo.model and self_sudo.res_id:
-            query = """
-WITH sub_followers AS (
-    SELECT id, partner_id, channel_id
-    FROM mail_followers fol
-    RIGHT JOIN mail_followers_mail_message_subtype_rel subrel ON subrel.mail_followers_id = fol.id
-    WHERE subrel.mail_message_subtype_id = %s AND fol.res_model = %s AND fol.res_id = %s
-)
-SELECT NULL AS channel_id, partner.id as partner_id, partner.partner_share as partner_share, users.notification_type AS notification_type, array_agg(groups.id) AS groups
-    FROM res_partner partner
-    LEFT JOIN res_users users ON users.partner_id = partner.id
-    LEFT JOIN res_groups_users_rel groups_rel ON groups_rel.uid = users.id
-    LEFT JOIN res_groups groups ON groups.id = groups_rel.gid
-    WHERE partner.id = ANY(%s)
-    OR EXISTS (
-        SELECT partner_id FROM sub_followers WHERE sub_followers.channel_id IS NULL AND sub_followers.partner_id = partner.id
-    )
-    GROUP BY partner.id, users.notification_type
-UNION
-SELECT channel.id AS channel_id, NULL AS partner_id, NULL AS partner_share, CASE when channel.email_send = TRUE then 'email' else 'inbox' end AS notification_type, NULL AS groups
-    FROM mail_channel channel
-    WHERE channel.id = ANY (%s)
-    OR EXISTS (
-        SELECT channel_id FROM sub_followers WHERE partner_id IS NULL AND sub_followers.channel_id = channel.id
-    )
-"""
-            self.env.cr.execute(query, (self_sudo.subtype_id.id, self_sudo.model, self_sudo.res_id, msg_pids, msg_cids,))
+        res = self.env['mail.followers']._get_follower_info(record, self_sudo.subtype_id.id, self_sudo.partner_ids.ids, self_sudo.channel_ids.ids)
 
-        # discussion, notification: no record and/or no subtype, only specified recipients are checked
-        else:
-            query = """
-SELECT NULL AS channel_id, partner.id as partner_id, partner.partner_share as partner_share, users.notification_type AS notification_type, NULL AS groups
-    FROM res_partner partner
-    LEFT JOIN res_users users ON users.partner_id = partner.id
-    WHERE partner.id = ANY(%s)
-UNION
-SELECT channel.id AS channel_id, NULL AS partner_id, NULL AS partner_share, CASE when channel.email_send = TRUE then 'email' else 'inbox' end AS notification_type, NULL AS groups
-    FROM mail_channel channel
-    WHERE channel.id = ANY (%s)
-"""
-            self.env.cr.execute(query, (msg_pids, msg_cids,))
-
-        # Fetch and organize results in a structure to propagate to other submethods
-        res = self.env.cr.fetchall()
-        # print(res)
         for cid, pid, share, notif, groups in res:
             if pid and pid == self_sudo.author_id.id:  # do not notify the author of its own messages
                 continue
 
             if pid and notif == 'inbox':
-                # inbox_pids.append(pid)
                 recipient_data.append((pid, 'inbox', 'user', groups))
             elif pid:
-                # email_pids.append(pid)
                 if not share and notif:  # has an user and is not shared, is therefore user
                     recipient_data.append((pid, 'email', 'user', groups))
                 elif share and notif:  # has an user, is therefore portal
@@ -878,7 +824,6 @@ SELECT channel.id AS channel_id, NULL AS partner_id, NULL AS partner_share, CASE
             elif cid:
                 inbox_cids.append(cid)
 
-        # notify partners and channels
         # those methods are called as SUPERUSER because portal users posting messages
         # have no access to partner model. Maybe propagating a real uid could be necessary.
         if email_cids:
@@ -890,12 +835,10 @@ SELECT channel.id AS channel_id, NULL AS partner_id, NULL AS partner_share, CASE
                 recipient_data.append((pid, 'email', 'customer', []))
 
         if recipient_data:
-            self.env['res.partner'].sudo()._notify(
+            self.env['res.partner']._notify(
                 self, record, recipient_data,
-                layout=layout,
-                force_send=force_send,
-                send_after_commit=send_after_commit,
-                values=values)
+                layout=layout, force_send=force_send,
+                send_after_commit=send_after_commit, values=values)
 
         cids = email_cids + inbox_cids
         if cids:

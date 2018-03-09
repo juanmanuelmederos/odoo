@@ -82,22 +82,6 @@ class Partner(models.Model):
         }
 
     @api.model
-    def _notify_send(self, message, record, body, recipient_ids, **mail_values):
-        emails = self.env['mail.mail']
-        for email_chunk in split_every(50, recipient_ids):
-            if record and hasattr(record, '_notify_email_recipients'):
-                recipient_values = record._notify_email_recipients(message, email_chunk)
-            else:
-                recipient_values = self.env['mail.thread']._notify_email_recipients(message, email_chunk)
-            create_values = {
-                'body_html': body,
-            }
-            create_values.update(mail_values)
-            create_values.update(recipient_values)
-            emails |= self.env['mail.mail'].sudo().create(create_values)
-        return emails
-
-    @api.model
     def _notify_udpate_notifications(self, message, record, recipient_data):
         for r in recipient_data:
             if r[1] == 'email':
@@ -117,15 +101,13 @@ class Partner(models.Model):
                 })
 
     @api.model
-    def _notify(self, message, record, recipient_data, layout=False, add_sign=True, force_send=False, send_after_commit=True, values=None):
-        """ Method to notify partners of a message. Notification is done based
-        on given structure, allowing Inbox or Email notification.
+    def _notify(self, message, record, recipient_data, layout=False, force_send=False, send_after_commit=True, values=None):
+        """ Notify partners of a message either by email either by Inbox and by chat.
 
-        UPDATE ME
-
-        :param boolean force_send: send notification emails now instead of letting the scheduler handle the email queue
-        :param boolean send_after_commit: send notification emails after the transaction end instead of durign the
-                                          transaction; this option is used only if force_send is True
+        :param recipient_data: list of (pid, DD, FF, GG)
+        :param layout: xml_id of layout to use to encapusulate notification emails
+        :param force_send: send notification emails now or use the email scheduler
+        :param send_after_commit: if force_send, send emails after the tx end instead of during the tx
         :param dict values: values used to compute the notification process, containing
 
          * add_sign: add user signature to notification email, default is True
@@ -166,19 +148,24 @@ class Partner(models.Model):
         else:
             recipients = self.env['mail.thread']._notify_classify_recipients(message, email_rdata)
 
-        emails = self.env['mail.mail']
+        emails, MailSudo = self.env['mail.mail'].sudo(), self.env['mail.mail'].sudo()
+        for rvals in recipients.values():
+            template_values = {**render_values, **rvals, **values}  # fixme: set button_unfollow to none
+            # 'subject': message.subject or (message.record_name and 'Re: %s' % message.record_name),
+            body = base_template.render(template_values, engine='ir.qweb'),
+            body = self.env['mail.thread']._replace_local_links(body)
+            # send email
+            mail_mail_values = {'body_html': body}
+            mail_mail_values.update(base_mail_values)
+            # new_emails = self._notify_send(message, record, body, rvals['recipients'], **base_mail_values)
 
-        for rtype, rvals in recipients.items():
-            if rvals['recipients']:
-                # generate notification email content
-                template_values = {**render_values, **rvals, **values}  # fixme: set button_unfollow to none
-                # 'subject': message.subject or (message.record_name and 'Re: %s' % message.record_name),
-                body = base_template.render(template_values, engine='ir.qweb'),
-                body = self.env['mail.thread']._replace_local_links(body)
-                # send email
-                new_emails = self._notify_send(message, record, body, rvals['recipients'], **base_mail_values)
-
-                emails |= new_emails
+            for email_chunk in split_every(50, rvals['recipients']):
+                if record and hasattr(record, '_notify_email_recipients'):
+                    recipient_values = record._notify_email_recipients(message, email_chunk)
+                else:
+                    recipient_values = self.env['mail.thread']._notify_email_recipients(message, email_chunk)
+                mail_mail_values.update(recipient_values)
+                emails |= MailSudo.create(mail_mail_values)
 
         # update notifications - ZIZISSE TEMPORARY
         if record and hasattr(record, '_notify_create_notifications'):
