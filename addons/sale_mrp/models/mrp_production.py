@@ -34,8 +34,14 @@ class MrpProduction(models.Model):
             group_id = self.env['procurement.group'].search([('name', '=', order_line_ids.mapped('order_id').name)])
             prod_orders = self.env['mrp.production'].search([('procurement_group_id', '=', group_id.id)])
             purchase_order_ids = order_line_ids.mapped('order_id')
-            move_ids = self.env['stock.move'].concat(*rendering_context.keys())
-            impacted_pickings = move_ids.mapped('picking_id')
+            move_ids = self.env['stock.move'].search([('group_id', '=', group_id.id)])
+            impacted_moves = []
+            for move in move_ids:
+                dest = self.env['stock.move'].search(['|', ('created_production_id', 'in', move.mapped('production_id').ids), ('picking_id', 'in', move.mapped('picking_id').ids)])
+                if dest:
+                    impacted_moves.append(dest.id)
+                    moves = self.env['stock.move'].browse(impacted_moves)
+            impacted_pickings = moves.mapped('picking_id')
             values = {
                 'prod_order_ids': prod_orders,
                 'order_exceptions': order_exceptions.values(),
