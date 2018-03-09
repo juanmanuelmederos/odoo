@@ -207,7 +207,7 @@ class TestAdvMailPerformance(TransactionCase):
     def test_message_log_with_post(self):
         record = self.env['mail.test.simple'].create({'name': 'Test'})
 
-        with self.assertQueryCount(admin=31, emp=43):  # test_mail only: 29 - 41
+        with self.assertQueryCount(admin=31, emp=43):  # test_mail only: 29 - 40
             record.message_post(
                 body='<p>Test message_post as log</p>',
                 subtype='mail.mt_note',
@@ -218,7 +218,7 @@ class TestAdvMailPerformance(TransactionCase):
     def test_message_post_no_notification(self):
         record = self.env['mail.test.simple'].create({'name': 'Test'})
 
-        with self.assertQueryCount(admin=31, emp=43):  # test_mail only: 29 - 41
+        with self.assertQueryCount(admin=31, emp=43):  # test_mail only: 29 - 40
             record.message_post(
                 body='<p>Test Post Performances basic</p>',
                 partner_ids=[],
@@ -507,7 +507,7 @@ class TestHeavyMailPerformance(TransactionCase):
         })
         self.assertEqual(rec.message_partner_ids, self.user_portal.partner_id | self.env.user.partner_id)
 
-        with self.assertQueryCount(admin=777, emp=888):  # test_mail only: 777 - 888
+        with self.assertQueryCount(admin=777, emp=888):  # test_mail only: 230 - 268
             rec.write({
                 'name': 'Test2',
                 'umbrella_id': self.umbrella.id,
