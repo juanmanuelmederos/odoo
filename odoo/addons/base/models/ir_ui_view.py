@@ -374,27 +374,28 @@ actual arch.
             values.setdefault('mode', 'extension' if values['inherit_id'] else 'primary')
         return values
 
-    @api.model
-    def create(self, values):
-        if not values.get('type'):
-            if values.get('inherit_id'):
-                values['type'] = self.browse(values['inherit_id']).type
-            else:
+    @api.create_multi
+    def create(self, valses):
+        for vals in valses:
+            if not vals.get('type'):
+                if vals.get('inherit_id'):
+                    vals['type'] = self.browse(vals['inherit_id']).type
+                else:
 
-                try:
-                    if not values.get('arch') and not values.get('arch_base'):
-                        raise ValidationError(_('Missing view architecture.'))
-                    values['type'] = etree.fromstring(values.get('arch') or values.get('arch_base')).tag
-                except LxmlError:
-                    # don't raise here, the constraint that runs `self._check_xml` will
-                    # do the job properly.
-                    pass
-
-        if not values.get('name'):
-            values['name'] = "%s %s" % (values.get('model'), values['type'])
+                    try:
+                        if not vals.get('arch') and not vals.get('arch_base'):
+                            raise ValidationError(_('Missing view architecture.'))
+                        vals['type'] = etree.fromstring(vals.get('arch') or vals.get('arch_base')).tag
+                    except LxmlError:
+                        # don't raise here, the constraint that runs `self._check_xml` will
+                        # do the job properly.
+                        pass
+            if not vals.get('name'):
+                vals['name'] = "%s %s" % (vals.get('model'), vals['type'])
+            vals.update(self._compute_defaults(vals))
 
         self.clear_caches()
-        return super(View, self).create(self._compute_defaults(values))
+        return super(View, self).create(valses)
 
     @api.multi
     def write(self, vals):
