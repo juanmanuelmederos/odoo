@@ -6,7 +6,7 @@ var BasicController = require('web.BasicController');
 
 var DashboardController = AbstractController.extend({
 	custom_events: _.extend({}, BasicController.prototype.custom_events, {
-	        button_clicked: '_onButtonClicked',
+	    button_clicked: '_onButtonClicked',
     }),
 
     //--------------------------------------------------------------------------
@@ -73,7 +73,6 @@ var DashboardController = AbstractController.extend({
         var def = this._callButtonAction(event.data.attrs);
 	    def.always(this._enableButtons.bind(this));
     },
-
 });
 
 return DashboardController;

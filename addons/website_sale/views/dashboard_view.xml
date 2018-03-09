@@ -6,19 +6,18 @@
             <field name="mode">primary</field>
             <field name="arch" type="xml">
                 <dashboard>
-                        <group col="12">
-                            <group string="At a glance" colspan="8">
-                                <field name="price_total"/>
-                                <field name="qty_delivered"/>
-                                <field name="product_uom_qty"/>
-                                <field name="qty_delivered"/>
-                                <field name="qty_to_invoice"/>
-                                <field name="qty_invoiced"/>
-                            </group>
-                            <group string="Average order" colspan="4">
-                                <field name="categ_id"/>
-                            </group> 
+                    <group col="12">
+                        <group string="At a glance" colspan="8">
+                            <field name="price_total"/>
+                            <field name="product_uom_qty"/>
+                            <field name="qty_delivered"/>
+                            <field name="qty_invoiced"/>
+                            <field name="qty_to_invoice"/>
                         </group>
+                        <group string="Average order" colspan="4">
+                            <field name="categ_id"/>
+                        </group>
+                    </group>
                 </dashboard>
             </field>
         </record>
@@ -26,6 +25,6 @@
             <field name="name">Dashboard</field>
             <field name="res_model">sale.report</field>
             <field name="view_mode">dashboard</field>
-        </record>     
+        </record>
     </data>
 </odoo>

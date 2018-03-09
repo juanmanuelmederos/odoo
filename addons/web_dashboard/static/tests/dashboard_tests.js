@@ -151,17 +151,17 @@ QUnit.module('Views', {
         assert.strictEqual(dashboard.$('.o_field_widget').length, 1, "there should be a node with field_widget class");
     });
 
-    QUnit.only('Rendering of a inner group field tag', function (assert) {
+    QUnit.test('Rendering of a inner group field tag', function (assert) {
         assert.expect(1);
 
         var dashboard = createView({
             View: DashboardView,
             model: 'sale_report',
             data: this.data,
-            debug: 1,
+            // debug: 1,
             arch: '<dashboard>' +
                         '<group string="At a glance">' +
-                            '<field name="sold"/>' + 
+                            '<field name="sold" widget="float_time"/>' +
                         '</group>' +
                     '</dashboard>',
         });

@@ -1,5 +1,5 @@
 odoo.define('web_dashboard.DashboardRenderer', function (require) {
-    "use strict";
+"use strict";
 
 var FormRenderer = require('web.FormRenderer');
 
