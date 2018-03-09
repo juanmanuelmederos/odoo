@@ -502,7 +502,7 @@ class Task(models.Model):
         copy=False,
         readonly=True)
     project_id = fields.Many2one('project.project',
-        string='Project',
+        string='Project', required=True,
         default=lambda self: self.env.context.get('default_project_id'),
         index=True,
         track_visibility='onchange',
