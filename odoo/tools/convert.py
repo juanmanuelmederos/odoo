@@ -91,6 +91,7 @@ def _eval_xml(self, node, env):
             f_name = node.get("name")
             idref2 = {}
             if f_search:
+                self.flush_records()
                 idref2 = _get_idref(self, env, f_model, self.idref)
             q = safe_eval(f_search, idref2)
             ids = env[f_model].search(q).ids
@@ -107,6 +108,7 @@ def _eval_xml(self, node, env):
             return f_val
         a_eval = node.get('eval')
         if a_eval:
+            self.flush_records()
             idref2 = _get_idref(self, env, f_model, self.idref)
             try:
                 return safe_eval(a_eval, idref2)
@@ -123,6 +125,7 @@ def _eval_xml(self, node, env):
                     continue
                 done.add(found)
                 id = m.groups()[0]
+                self.flush_records()
                 if not id in self.idref:
                     self.idref[id] = self.id_get(id)
                 # So funny story: in Python 3, bytes(n: int) returns a
@@ -181,6 +184,7 @@ def _eval_xml(self, node, env):
         a_eval = node.get('eval')
         # FIXME: should probably be exclusive
         if a_eval:
+            self.flush_records()
             self.idref['ref'] = self.id_get
             args = safe_eval(a_eval, self.idref)
         for n in node:
@@ -649,6 +653,7 @@ form: module.record_id""" % (xml_id,)
             f_val = False
 
             if f_search:
+                self.flush_records()
                 context = self.get_context(data_node, rec, {'ref': self.id_get})
                 uid = self.get_uid(data_node, rec)
                 env = self.env(user=uid, context=context)
