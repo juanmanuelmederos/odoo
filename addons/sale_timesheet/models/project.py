@@ -9,8 +9,10 @@ class Project(models.Model):
     _inherit = 'project.project'
 
     sale_line_id = fields.Many2one('sale.order.line', 'Sales Order Line', domain="[('is_service', '=', True), ('order_partner_id', '=', partner_id), ('is_expense', '=', False)]", readonly=True, help="Sale order line from which the project has been created. Used for tracability.")
+    sale_order_id = fields.Many2one('sale.order', 'Sales Order', domain="[('partner_id', '=', partner_id)]")
     billable_type = fields.Selection([
         ('task_rate', 'At Task Rate'),
+        ('employee_rate', 'At Employee Rate'),
         ('no', 'No Billable')
     ], string="Billable Type", default='no', required=True, help='Billable type implies:\n'
         ' - At task rate: each time spend on a task is billed at task rate.\n'
@@ -27,8 +29,22 @@ class Project(models.Model):
     @api.constrains('billable_type', 'sale_line_id')
     def _check_billable_type(self):
         for project in self:
-            if not project.sale_line_id and project.billable_type != 'no':
-                raise ValidationError(_("A billable project should be linked to a Sales Order Item."))
+            if project.billable_type == 'task_rate' and (not project.sale_line_id or project.sale_order_id):
+                raise ValidationError(_("A billable project (at task rate) should be linked to a Sales Order Item with a deliverable product."))
+            if project.billable_type == 'employee_rate' and (not project.sale_order_id or project.sale_line_id):
+                raise ValidationError(_("A billable project (at employee rate) should be linked to a Sales Order."))
+            if project.billable_type == 'no' and (project.sale_line_id or project.sale_order_id):
+                raise ValidationError(_("A none billable project should not be linked to a Sales Order Item or Sales Order."))
+
+    @api.onchange('billable_type')
+    def _onchange_billable_type(self):
+        if self.billable_type == 'no':
+            self.sale_order_id = False
+            self.sale_line_id = False
+        elif self.billable_type == 'task_rate':
+            self.sale_order_id = False
+        elif self.billable_type == 'employee_rate':
+            self.sale_line_id = False
 
     @api.multi
     def action_view_timesheet(self):
@@ -94,16 +110,16 @@ class ProjectTask(models.Model):
     sale_order_id = fields.Many2one('sale.order', 'Sales Order', related='sale_line_id.order_id', store=True, readonly=True)
     billable_type = fields.Selection([
         ('task_rate', 'At Task Rate'),
+        ('employee_rate', 'At Employee Rate'),
         ('no', 'No Billable')
     ], string="Billable Type", default='no', required=True, readonly=True)
 
     @api.onchange('project_id')
     def _onchange_project(self):
         result = super(ProjectTask, self)._onchange_project()
-        if self.project_id:
-            self.sale_line_id = self.project_id.sale_line_id
-            if not self.partner_id:
-                self.partner_id = self.sale_line_id.order_partner_id
+        self.sale_line_id = self.project_id.sale_line_id
+        if not self.partner_id:
+            self.partner_id = self.sale_line_id.order_partner_id
         return result
 
     @api.multi
