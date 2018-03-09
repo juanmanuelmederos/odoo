@@ -108,15 +108,3 @@ class Task(models.Model):
     def _compute_subtask_effective_hours(self):
         for task in self:
             task.subtask_effective_hours = sum(child_task.effective_hours + child_task.subtask_effective_hours for child_task in task.child_ids)
-
-    @api.multi
-    def write(self, values):
-        result = super(Task, self).write(values)
-        # reassign project_id on related timesheet lines
-        if 'project_id' in values:
-            project_id = values.get('project_id')
-            self.sudo().mapped('timesheet_ids').write({
-                'project_id': project_id,
-                'account_id': self.env['project.project'].browse(project_id).sudo().analytic_account_id.id
-            })
-        return result
