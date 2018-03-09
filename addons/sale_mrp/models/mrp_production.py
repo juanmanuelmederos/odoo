@@ -63,3 +63,15 @@ class MrpProduction(models.Model):
                         filtered_documents[(parent, responsible)] = rendering_context
                     self.env['stock.picking']._log_activity(_render_note_exception_quantity_po, filtered_documents)
         return True
+
+
+class ChangeProductionQty(models.TransientModel):
+    _inherit = 'change.production.qty'
+
+    @api.multi
+    def change_prod_qty(self):
+        prev_qty = self.mo_id.product_qty
+        res = super(ChangeProductionQty, self).change_prod_qty()
+        if self.procurement_group_id:
+            self.mo_id._log_production_order_changes({self.mo_id: (prev_qty, self.mo_id.product_qty)})
+        return res
