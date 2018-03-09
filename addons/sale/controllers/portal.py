@@ -216,7 +216,7 @@ class CustomerPortal(CustomerPortal):
 
         # print report as sudo, since it require access to taxes, payment term, ... and portal
         # does not have those access rights.
-        pdf = request.env.ref('sale.action_report_portal_saleorder').sudo().render_qweb_pdf([order_sudo.id])[0]
+        pdf = request.env.ref('sale.action_report_portal_saleorder').sudo().with_context(set_viewport_size=True).render_qweb_pdf([order_sudo.id])[0]
         pdfhttpheaders = [
             ('Content-Type', 'application/pdf'),
             ('Content-Length', len(pdf)),
