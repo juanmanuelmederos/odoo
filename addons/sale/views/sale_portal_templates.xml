@@ -555,10 +555,6 @@
                                 <span t-field="order.amount_total" t-field-options='{"widget": "monetary", "display_currency": order.pricelist_id.currency_id}'/>
                             </strong></h2>
                         </div>
-                        <hr class="visible-xs visible-sm mt0 mb0"/>
-                        <div class="visible-xs visible-sm mb8 ml16 mr16 mb8">
-                            <a class="btn btn-primary btn-block" target="_blank" t-att-href="'/my/orders/pdf/%s?%s' % (order.id, keep_query())" title="Download"><i class="fa fa-download"/> Dowanload</a>
-                        </div>
                         <hr class="mt0 mb0" t-if="order.state == 'sent' and portal_confirmation == 'sign'"/>
                         <div class="o_portal_action mt4">
                             <div class="ml16 mr16 mb8" id="o_portal_order_actions">
