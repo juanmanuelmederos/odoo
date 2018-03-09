@@ -47,6 +47,8 @@ class MrpProduction(models.Model):
                 'order_exceptions': order_exceptions.values(),
                 'impacted_pickings': impacted_pickings,
             }
+            if 'cancel' in prod_orders.mapped('state'):
+                return self.env.ref('sale_mrp.exception_cancelling_production_order').render(values=values)
             return self.env.ref('sale_mrp.exception_on_mrp').render(values=values)
 
         group_id = self.move_raw_ids.mapped('group_id')
