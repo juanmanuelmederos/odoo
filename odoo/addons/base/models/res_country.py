@@ -75,11 +75,12 @@ class Country(models.Model):
 
     name_search = location_name_search
 
-    @api.model
-    def create(self, vals):
-        if vals.get('code'):
-            vals['code'] = vals['code'].upper()
-        return super(Country, self).create(vals)
+    @api.create_multi
+    def create(self, valses):
+        for vals in valses:
+            if vals.get('code'):
+                vals['code'] = vals['code'].upper()
+        return super(Country, self).create(valses)
 
     @api.multi
     def write(self, vals):
