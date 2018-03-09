@@ -14,13 +14,33 @@ var DashboardModel = BasicModel.extend({
      *
      * @returns {Object}
      */
-    // get: function () {
-    // 	return {};
-    // },
-
-    // load: function (params) {
-    // },
-
+    load: function (params) {
+        params.type = 'record';
+        var dataPoint = this._makeDataPoint(params);
+        return this._load(dataPoint, params).then(function () {
+            return dataPoint.id;
+        });
+    },
+    _load: function (dataPoint) {
+        var self = this;
+        var kpis = dataPoint.fieldsInfo.dashboard;
+        var kpisNames = _.map(kpis, function(kpi) {return kpi.name;});
+        var def = self._rpc(
+            {
+                model: dataPoint.model,
+                method: 'read_group',
+                fields: kpisNames,
+                domain: dataPoint.domain,
+                groupBy: [],
+                orderBy: [],
+                lazy: true,
+            }).then(function (result) {
+                _.each(kpisNames, function(kpiName) {
+                    dataPoint.data[kpiName] = result.kpiName;
+                });
+            });
+        return $.when.apply($, def).then(function () {return ;});
+    },
 });
 
 return DashboardModel;

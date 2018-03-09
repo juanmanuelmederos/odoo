@@ -278,7 +278,7 @@
         </record>
 
         <!-- Dashboard -->
-        <record id="backend_dashboard" model="ir.actions.act_window">
+        <record id="website_dashboard" model="ir.actions.act_window">
             <field name="name">Dashboard</field>
             <field name="res_model">website</field>
             <field name="view_mode">dashboard</field>

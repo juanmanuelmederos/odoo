@@ -1,5 +1,5 @@
 odoo.define('web_dashboard.DashboardView', function (require) {
-"use strict";
+"use strict";		
 
 var DashboardController = require('web_dashboard.DashboardController');
 var DashboardModel = require('web_dashboard.DashboardModel');
@@ -18,6 +18,8 @@ var DashboardView = BasicView.extend({
         Controller: DashboardController,
         Renderer: DashboardRenderer,
     },
+    groupable: false,
+    viewType: 'dashboard',
     
 });
 

@@ -522,7 +522,6 @@ var BasicRenderer = AbstractRenderer.extend({
      * @returns {jQueryElement}
      */
     _renderFieldWidget: function (node, record, options) {
-        debugger
         options = options || {};
         var fieldName = node.attrs.name;
         // Register the node-associated modifiers

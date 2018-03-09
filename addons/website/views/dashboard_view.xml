@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record model="ir.ui.view" id="default_dashboard_view">
-        <field name="name">Default Dashboard View</field>
+    <record model="ir.ui.view" id="website_dashboard_view">
+        <field name="name">Website Dashboard View</field>
         <field name="model">website</field>
         <field name="mode">primary</field>
         <field name="arch" type="xml">
             <dashboard>
-            	<field name="google_analytics_key"/> 
+            	<field name="name"/> 
             </dashboard>
         </field>
     </record>

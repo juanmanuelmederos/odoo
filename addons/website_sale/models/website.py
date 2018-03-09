@@ -325,5 +325,5 @@ class Website(models.Model):
     @api.model
     def action_dashboard_redirect(self):
         if self.env.user.has_group('sales_team.group_sale_salesman'):
-            return self.env.ref('website.backend_dashboard').read()[0]
+            return self.env.ref('website_sale.sale_dashboard').read()[0]
         return super(Website, self).action_dashboard_redirect()

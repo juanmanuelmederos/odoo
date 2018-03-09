@@ -131,7 +131,6 @@ var AbstractView = Class.extend({
         } else if ('withControlPanel' in params) {
             this.controllerParams.withControlPanel = params.withControlPanel;
         }
-
         this.loadParams = {
             context: params.context,
             count: params.count || ((this.controllerParams.ids !== undefined) &&
@@ -142,6 +141,7 @@ var AbstractView = Class.extend({
             res_id: params.currentId,
             res_ids: params.ids,
         };
+        // Useful???
         if (params.modelName) {
             this.loadParams.modelName = params.modelName;
         }
@@ -184,9 +184,8 @@ var AbstractView = Class.extend({
         // check if a model already exists, as if not, one will be created and
         // we'll have to set the controller as its parent
         var alreadyHasModel = !!this.model;
-        return $.when(this._loadData(parent), ajax.loadLibs(this)).then(function (resId) {
-            
-            var state = self.model.get(resId);
+        return $.when(this._loadData(parent), ajax.loadLibs(this)).then(function (localId) {
+            var state = self.model.get(localId);
             var renderer = self.getRenderer(parent, state);
             var Controller = self.Controller || self.config.Controller;
             var controllerParams = _.extend({

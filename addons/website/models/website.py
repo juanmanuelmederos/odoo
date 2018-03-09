@@ -573,7 +573,7 @@ class Website(models.Model):
     @api.model
     def action_dashboard_redirect(self):
         if self.env.user.has_group('base.group_system') or self.env.user.has_group('website.group_website_designer'):
-            return self.env.ref('website.backend_dashboard').read()[0]
+            return self.env.ref('website.website_dashboard').read()[0]
         return self.env.ref('website.action_website').read()[0]
 
 
