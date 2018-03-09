@@ -5,12 +5,12 @@
     </t>
 
     <form class="form-inline" t-name="mrp.report_bom_search">
-        <div class="form-group">
-            <label>Quantity : <t t-if="is_uom_applied" t-esc="bom_uom_name"/></label>
+        <div class="form-group col-md-6">
+            <label>Quantity: <t t-if="is_uom_applied" t-esc="bom_uom_name"/></label>
             <input type="number" t-att-value="bom_qty" min="1" class="o_input o_mrp_bom_report_qty"/>
         </div>
-        <div t-if="is_variant_applied" class="form-group">
-            <label>Product Variants :</label>
+        <div t-if="is_variant_applied" class="form-group col-md-6">
+            <label>Product Variants:</label>
             <select class="o_input o_mrp_bom_report_variants">
                 <option t-foreach="variants" t-as="variant" t-att-value="variant">
                     <t t-esc="variants[variant]"/>
