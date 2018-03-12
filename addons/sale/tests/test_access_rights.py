@@ -47,6 +47,11 @@ class TestAccessRights(TestCommonSaleNoChart):
             'groups_id': [(6, 0, [self.env.ref('base.group_user').id])]
         })
 
+        # Create a sales channel
+        self.sales_channel = self.env['crm.team'].with_context(tracking_disable=True).create({
+            'name': 'Test Channel',
+        })
+
         # Create the SO with a specific salesperson
         self.order = self.env['sale.order'].with_context(tracking_disable=True).create({
             'partner_id': self.partner_customer_usd.id,
@@ -57,19 +62,19 @@ class TestAccessRights(TestCommonSaleNoChart):
         """ Test sales manager's access rights """
         # Manager can see the SO which is assigned to another salesperson
         self.order.sudo(self.user_manager).read()
+        # Manager can change a salesperson of the SO
+        self.order.sudo(self.user_manager).write({'user_id': self.user_salesperson_1.id})
         # Manager can create the SO for other salesperson
         sale_order = self.env['sale.order'].with_context(tracking_disable=True).sudo(self.user_manager).create({
             'partner_id': self.partner_customer_usd.id,
             'user_id': self.user_salesperson_1.id
         })
         self.assertIn(sale_order.id, self.env['sale.order'].search([]).ids, 'Sales manager should be able to create the SO of other salesperson')
-
-        # Manager can change a salesperson of the SO
-        with Form(sale_order) as order:
-            order.user_id = self.user_salesperson
-        # Manager can delete the SO of other salesperson
-        sale_order.sudo(self.user_manager).unlink()
-        self.assertNotIn(sale_order.id, self.env['sale.order'].search([]).ids, 'Sales manager should be able to delete the SO')
+        # Manager can confirm the SO
+        sale_order.sudo(self.user_manager).action_confirm()
+        # Manager can delete the SO of other salesperson if SO is in 'draft' or 'cancel' state
+        self.order.sudo(self.user_manager).unlink()
+        self.assertNotIn(self.order.id, self.env['sale.order'].search([]).ids, 'Sales manager should be able to delete the SO')
 
         # Manager can create a sales channel
         india_channel = self.env['crm.team'].with_context(tracking_disable=True).sudo(self.user_manager).create({
@@ -77,8 +82,7 @@ class TestAccessRights(TestCommonSaleNoChart):
         })
         self.assertIn(india_channel.id, self.env['crm.team'].search([]).ids, 'Sales manager should be able to create a sales channel')
         # Manager can edit a sales channel
-        with Form(india_channel) as team:
-            team.dashboard_graph_group = 'week'
+        india_channel.sudo(self.user_manager).write({'dashboard_graph_group': 'week'})
         self.assertEquals(india_channel.dashboard_graph_group, 'week', 'Sales manager should be able to edit a sales channel')
         # Manager can delete a sales channel
         india_channel.sudo(self.user_manager).unlink()
@@ -87,28 +91,24 @@ class TestAccessRights(TestCommonSaleNoChart):
     def test_access_sales_person(self):
         """ Test Salesperson's access rights """
         # Salesperson can see only his/her sale order
-        self.assertRaises(AccessError, self.order.sudo(self.user_salesperson_1).read, ['user_id'])
-
+        with self.assertRaises(AccessError):
+            self.order.sudo(self.user_salesperson_1).read()
+        # Now assign the SO to himself/herself
+        self.order.write({'user_id': self.user_salesperson_1.id})
+        self.order.sudo(self.user_salesperson_1).read()
+        # Salesperson can change a sales channel of SO
+        self.order.sudo(self.user_salesperson_1).write({'team_id': self.sales_channel.id})
         # Salesperson cann't create the SO of other salesperson
         with self.assertRaises(AccessError):
             self.env['sale.order'].sudo(self.user_salesperson_1).create({
                 'partner_id': self.partner_customer_usd.id,
                 'user_id': self.user_salesperson.id
             })
-
-        # Now assign SO to himself/herself
-        sale_order_1 = self.env['sale.order'].sudo(self.user_salesperson_1).create({
-            'partner_id': self.partner_customer_usd.id,
-        })
         # Salesperson cann't delete the SO
         with self.assertRaises(AccessError):
-            sale_order_1.unlink()
-
-        # Salesperson can see a sales channel
-        sale_order_1.team_id.read
-        # Salesperson can change a sales channel of SO
-        with Form(sale_order_1) as order:
-            order.team_id = self.env.ref('sales_team.crm_team_1')
+            self.order.sudo(self.user_salesperson_1).unlink()
+        # Salesperson can confirm the SO
+        self.order.sudo(self.user_salesperson_1).action_confirm()
 
     def test_access_portal_user(self):
         """ Test portal user's access rights """
