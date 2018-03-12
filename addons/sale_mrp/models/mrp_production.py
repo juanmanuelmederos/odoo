@@ -10,7 +10,7 @@ class MrpProduction(models.Model):
     def action_cancel(self):
         res = super(MrpProduction, self).action_cancel()
         if self.procurement_group_id:
-            self._log_production_order_changes({self: (self.product_qty, self.product_qty)})
+            self._log_production_order_changes(self.product_qty)
         return res
 
     def _log_production_order_changes(self, product_qty):
@@ -72,6 +72,6 @@ class ChangeProductionQty(models.TransientModel):
     def change_prod_qty(self):
         prev_qty = self.mo_id.product_qty
         res = super(ChangeProductionQty, self).change_prod_qty()
-        if self.procurement_group_id:
-            self.mo_id._log_production_order_changes({self.mo_id: (prev_qty, self.mo_id.product_qty)})
+        if self.mo_id.procurement_group_id:
+            self.mo_id._log_production_order_changes(self.mo_id.product_qty)
         return res
