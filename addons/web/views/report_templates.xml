@@ -58,6 +58,11 @@
                 <t t-call-assets="web.assets_common" t-js="false"/>
                 <t t-call-assets="web.report_assets_common" t-js="false"/>
                 <t t-if="editable">
+                    <script type="text/javascript">
+                        var odoo = {
+                            csrf_token: "<t t-esc="request.csrf_token(None)"/>",
+                        };
+                    </script>
                     <t t-call-assets="web_editor.summernote" t-js="false"/>
                     <t t-call-assets="web_editor.assets_editor" t-js="false"/>
                     <t t-call-assets="web.report_assets_editor" t-js="false"/>
