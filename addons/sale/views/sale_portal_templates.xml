@@ -129,6 +129,7 @@
     </template>
 
     <template id="quote_expire_detail" name="Expiry details">
+        <hr t-if="quotation.validity_date" class="mt0 mb0"/>
         <div t-if="order_valid and quotation.state in ['draft', 'sent']" class="text-center">
             <input type="hidden" t-att-value="quotation.validity_date" id="validity_date"/>
             <div class="mt8" t-if="days_valid &gt; 0" name="days_valid">
@@ -140,7 +141,7 @@
                     <t t-if="days_valid &lt;= 1"> day</t>
                 </div>
             </div>
-            </div>
+        </div>
     </template>
 
     <template id="pricing" name="Price">
@@ -412,7 +413,7 @@
     </template>
 
     <template id="quotation_content" name="sale order content">
-        <div id="introduction" class="page-header mt0">
+        <div id="introduction" class="container page-header mt0">
             <h1>
                 <t t-if="not (env.context.get('proforma', False) or is_pro_forma)">
                     <span t-if="order.state in ('draft','sent','cancel')">Your Quotation</span>
@@ -588,7 +589,6 @@
                                 <li><a href="#introduction">Introduction</a></li>
                             </ul>
                         </div>
-                        <hr class="mt0 mb0"/>
                         <div class="o_expiry_detail">
                             <t t-call="sale.quote_expire_detail">
                                 <t t-set="quotation" t-value="order"/>

@@ -184,12 +184,14 @@ class CustomerPortal(CustomerPortal):
             return request.redirect('/my')
 
         values = self._order_get_page_view_values(order_sudo, access_token, **kw)
+        days = 0
         if order_sudo.validity_date:
-            values.update({
-                'days_valid': (fields.Date.from_string(order_sudo.validity_date) - fields.Date.from_string(fields.Date.today())).days + 1,
-                'order_valid': (not order_sudo.validity_date) or (fields.Date.today() <= order_sudo.validity_date),
-            })
-        values['reject_url'] = '/my/orders/%s/%s/decline' % (order_sudo.id, order_sudo.access_token)
+            days = (fields.Date.from_string(order_sudo.validity_date) - fields.Date.from_string(fields.Date.today())).days + 1
+        values.update({
+            'days_valid': days,
+            'order_valid': (not order_sudo.validity_date) or (fields.Date.today() <= order_sudo.validity_date),
+            'reject_url': '/my/orders/%s/%s/decline' % (order_sudo.id, order_sudo.access_token),
+        })
         return request.render("sale.portal_order_page", values)
 
     @http.route(['/my/orders/<int:order_id>/<token>/decline'], type='http', auth="public", methods=['POST'], website=True)
