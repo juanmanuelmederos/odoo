@@ -26,18 +26,18 @@ class MrpProduction(models.Model):
             """
             return (move.picking_id, move.product_id.responsible_id)
 
-        def _render_note_exception_quantity_po(order_exceptions):
+        def _render_note_exception_quantity_production_order(order_exceptions):
+            Move = self.env['stock.move']
             order_line_ids = self.env['sale.order.line'].browse([order_line.id for order in order_exceptions.values() for order_line in order[0]])
             group_id = self.env['procurement.group'].search([('name', '=', order_line_ids.mapped('order_id').name)])
             prod_orders = self.env['mrp.production'].search([('procurement_group_id', '=', group_id.id)])
-            purchase_order_ids = order_line_ids.mapped('order_id')
-            move_ids = self.env['stock.move'].search([('group_id', '=', group_id.id)])
             impacted_moves = []
-            for move in move_ids:
-                dest = self.env['stock.move'].search(['|', ('created_production_id', 'in', move.mapped('production_id').ids), ('picking_id', 'in', move.mapped('picking_id').ids)])
+            for move in Move.search([('group_id', '=', group_id.id)]):
+                dest = Move.search(['|', ('created_production_id', 'in', move.mapped('production_id').ids),
+                                         ('picking_id', 'in', move.mapped('picking_id').ids)])
                 if dest:
                     impacted_moves.append(dest.id)
-                    moves = self.env['stock.move'].browse(impacted_moves)
+                    moves = Move.browse(impacted_moves)
             impacted_pickings = moves.mapped('picking_id')
             values = {
                 'prod_order_ids': prod_orders,
@@ -46,6 +46,7 @@ class MrpProduction(models.Model):
             }
             return self.env.ref('sale_mrp.exception_on_mrp').render(values=values)
 
+        Picking = self.env['stock.picking']
         group_id = self.move_raw_ids.mapped('group_id')
         sale_order = self.env['sale.order'].search([('name', '=', group_id.name)])
         if sale_order:
@@ -54,14 +55,14 @@ class MrpProduction(models.Model):
                 for order_line in order.order_line:
                     to_log[order_line] = (order_line.product_uom_qty, product_qty)
                 if to_log:
-                    documents = self.env['stock.picking']._log_activity_get_documents(to_log, 'move_ids', 'DOWN', _keys_in_sorted, _keys_in_groupby)
+                    documents = Picking._log_activity_get_documents(to_log, 'move_ids', 'DOWN', _keys_in_sorted, _keys_in_groupby)
                     filtered_documents = {}
                     for (parent, responsible), rendering_context in documents.items():
                         if parent._name == 'stock.picking':
                             if parent.state == 'cancel':
                                 continue
                         filtered_documents[(parent, responsible)] = rendering_context
-                    self.env['stock.picking']._log_activity(_render_note_exception_quantity_po, filtered_documents)
+                    Picking._log_activity(_render_note_exception_quantity_production_order, filtered_documents)
         return True
 
 
@@ -70,7 +71,6 @@ class ChangeProductionQty(models.TransientModel):
 
     @api.multi
     def change_prod_qty(self):
-        prev_qty = self.mo_id.product_qty
         res = super(ChangeProductionQty, self).change_prod_qty()
         if self.mo_id.procurement_group_id:
             self.mo_id._log_production_order_changes(self.mo_id.product_qty)
