@@ -296,6 +296,11 @@ class Import(models.TransientModel):
         # If all values are either True or False, type is boolean
         if all(val.lower() in ('true', 'false', 't', 'f', '') for val in preview_values):
             return ['boolean']
+
+        # Always make boolean fields apprear in suggested column labels when it's a string
+        if all(val.isalpha() for val in preview_values if val):
+            field_type.append('boolean')
+            return field_type
         # If all values can be cast to float, type is either float or monetary
         # Or a date/datetime if it matches the pattern
         results = []
@@ -622,9 +627,16 @@ class Import(models.TransientModel):
                     for num, line in enumerate(data):
                         if line[index]:
                             try:
-                                line[index] = dt.strftime(dt.strptime(pycompat.to_native(line[index].strip()), user_format), server_format)
+                                line[index] = dt.strftime(dt.strptime(pycompat.to_native(line[index].strip()), user_format if user_format else server_format), user_format if user_format else server_format)
                             except ValueError as e:
-                                raise ValueError(_("Column %s contains incorrect values. Error in line %d: %s") % (name, num + 1, e))
+                                # Adding Default time in datetime field to avoid validation errors.
+                                if field['type'] == 'datetime' and len(line[index]) <= 10:
+                                    for newLine in data:
+                                        if newLine[index]:
+                                            newLine[index] += ' 00:00:00'
+                                    self._parse_import_data_recursive(model, prefix, data, import_fields, options)
+                                else:
+                                    raise ValueError(_("Column %s contains incorrect values. Error in line %d: %s") % (name, num + 1, e))
                             except Exception as e:
                                 raise ValueError(_("Error Parsing Date [%s:L%d]: %s") % (name, num + 1, e))
             # Check if the field is in import_field and is a relational (followed by /)
