@@ -2,10 +2,11 @@ import collections
 import unittest
 from lxml import etree as ET
 from lxml.builder import E
+from datetime import datetime
 
 from openerp.tests import common
 
-from openerp.tools.convert import _eval_xml
+from openerp.tools.convert import _eval_xml, _get_idref
 
 Field = E.field
 Value = E.value
@@ -13,6 +14,16 @@ class TestEvalXML(common.TransactionCase):
     def eval_xml(self, node, obj=None, idref=None):
         return _eval_xml(obj, node, pool=None, cr=self.cr, uid=self.uid,
                          idref=idref, context=None)
+
+    def get_idref(self, cr, uid, model_str, context=None, idref=None):
+        return _get_idref(self, cr, uid, model_str, context, idref)
+
+    def test_get_idref(self):
+        model_str = 'ir.values'
+
+        with self.assertRaises(ValueError):
+            idref2 = self.get_idref(self.cr, self.uid, model_str, context={}, idref={datetime.now(), 'Asia/Calcutta'})
+
 
     def test_char(self):
         self.assertEqual(
