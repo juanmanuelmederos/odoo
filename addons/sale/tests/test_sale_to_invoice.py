@@ -15,7 +15,7 @@ class TestSaleToInvoice(TestCommonSaleNoChart):
         cls.setUpAdditionalAccounts()
         cls.setUpAccountJournal()
 
-        # Create the sale order with four order lines
+        # Create the SO with four order lines
         cls.sale_order = cls.env['sale.order'].create({
             'partner_id': cls.partner_customer_usd.id,
             'order_line': [
@@ -35,105 +35,99 @@ class TestSaleToInvoice(TestCommonSaleNoChart):
         }
 
     def test_downpayment(self):
-        """ Test invoice with downpayment """
+        """ Test invoice with a way of downpayment and check downpayment's SO line is created
+            and also check a total amount of invoice is equal to a respective sale order's total amount
+        """
         # Confirm the SO
         self.sale_order.action_confirm()
         # Let's do an invoice for a deposit of 100
-        payment_form = Form(self.env['sale.advance.payment.inv'].with_context(self.context))
-        payment_form.advance_payment_method = 'fixed'
-        payment_form.amount = 100
-        payment_form.deposit_account_id = self.account_income
-        payment = payment_form.save()
+        payment = self.env['sale.advance.payment.inv'].with_context(self.context).create({
+            'advance_payment_method': 'fixed',
+            'amount': 100,
+            'deposit_account_id': self.account_income.id
+        })
         payment.create_invoices()
 
-        # Check that an invoice created or not
-        assert self.sale_order.invoice_ids, "An invoice should be created for this sales order"
+        self.assertEquals(len(self.sale_order.invoice_ids), 1, 'Invoice should be created for the SO')
         downpayment_line = self.sale_order.order_line.filtered(lambda l: l.is_downpayment)
         self.assertEquals(len(downpayment_line), 1, 'SO line downpayment should be created on SO')
 
-        with Form(self.sale_order) as order:
-            with order.order_line.edit(1) as line:
-                line.qty_delivered = 4
-            with order.order_line.edit(3) as line:
-                line.qty_delivered = 2
+        # Update delivered quantity of SO lines
+        self.sale_order.order_line[1].write({'qty_delivered': 4.0})
+        self.sale_order.order_line[3].write({'qty_delivered': 2.0})
 
         # Let's do an invoice with refunds
-        payment_form = Form(self.env['sale.advance.payment.inv'].with_context(self.context))
-        payment_form.advance_payment_method = 'all'
-        payment_form.deposit_account_id = self.account_income
-        payment = payment_form.save()
+        payment = self.env['sale.advance.payment.inv'].with_context(self.context).create({
+            'advance_payment_method': 'all',
+            'deposit_account_id': self.account_income.id
+        })
         payment.create_invoices()
 
-        assert self.sale_order.invoice_ids, "An invoice should be created for this sales order"
+        self.assertEquals(len(self.sale_order.invoice_ids), 2, 'Invoice should be created for the SO')
 
         invoice = self.sale_order.invoice_ids[0]
         self.assertEquals(len(invoice.invoice_line_ids), len(self.sale_order.order_line), 'All lines should be invoiced')
         self.assertEquals(invoice.amount_total, self.sale_order.amount_total - downpayment_line.price_unit, 'Downpayment should be applied')
 
     def test_invoice_with_discount(self):
-        """ Test invoice with discount """
-        with Form(self.sale_order) as order:
-            with order.order_line.edit(0) as line:
-                line.discount = 20
-            with order.order_line.edit(1) as line:
-                line.discount = 20
-                line.qty_delivered = 4
-            with order.order_line.edit(2) as line:
-                line.discount = -10
-            with order.order_line.edit(3) as line:
-                line.qty_delivered = 2
+        """ Test invoice with a discount and check discount applied on both SO lines and an invoice lines """
+        # Update discount and delivered quantity on SO lines
+        self.sale_order.order_line[0].write({'discount': 20.0})
+        self.sale_order.order_line[1].write({'discount': 20.0, 'qty_delivered': 4.0})
+        self.sale_order.order_line[2].write({'discount': -10.0})
+        self.sale_order.order_line[3].write({'qty_delivered': 2.0})
 
         for line in self.sale_order.order_line.filtered(lambda l: l.discount):
             product_price = line.price_unit * line.product_uom_qty
-            self.assertEquals(line.discount, (product_price - line.price_subtotal)/product_price*100, 'Discount should be applied on order line')
+            self.assertEquals(line.discount, (product_price - line.price_subtotal) / product_price * 100, 'Discount should be applied on order line')
 
         self.sale_order.action_confirm()
         # Let's do an invoice with invoiceable lines
-        payment_form = Form(self.env['sale.advance.payment.inv'].with_context(self.context))
-        payment_form.advance_payment_method = 'delivered'
-        payment = payment_form.save()
+        payment = self.env['sale.advance.payment.inv'].with_context(self.context).create({
+            'advance_payment_method': 'delivered'
+        })
         payment.create_invoices()
 
         invoice = self.sale_order.invoice_ids[0]
         invoice.action_invoice_open()
-
+        # Check discount appeared on both SO lines and invoice lines
         for line, inv_line in pycompat.izip(self.sale_order.order_line, invoice.invoice_line_ids):
             self.assertEquals(line.discount, inv_line.discount, 'Discount on lines of order and invoice should be same')
 
     def test_invoice_refund(self):
-        """ Test invoice with refund """
+        """ Test invoice with a refund and check customer invoices credit note is created from respective invoice """
+        # Confirm the SO
         self.sale_order.action_confirm()
         # Take only invoicable line
         order_line = self.sale_order.order_line.filtered(lambda l: l.product_id.invoice_policy == 'order')
-
+        # Check ordered quantity, quantity to invoice and invoiced quantity of SO lines
         for line in order_line:
             self.assertEquals(line.qty_to_invoice, line.product_uom_qty, 'Quantity to invoice should be same as ordered quantity')
             self.assertEquals(line.qty_invoiced, 0.0, 'Invoiced quantity should be zero as no any invoice created for SO')
 
         # Let's do an invoice with invoiceable lines
-        payment_form = Form(self.env['sale.advance.payment.inv'].with_context(self.context))
-        payment_form.advance_payment_method = 'delivered'
-        payment = payment_form.save()
+        payment = self.env['sale.advance.payment.inv'].with_context(self.context).create({
+            'advance_payment_method': 'delivered'
+        })
         payment.create_invoices()
 
         invoice = self.sale_order.invoice_ids[0]
-
-        with Form(invoice) as inv:
-            with inv.invoice_line_ids.edit(0) as line:
-                line.quantity = 3
-            with inv.invoice_line_ids.edit(1) as line:
-                line.quantity = 2
+        # Update quantity of an invoice lines
+        invoice.invoice_line_ids[0].write({'quantity': 3.0})
+        invoice.invoice_line_ids[1].write({'quantity': 2.0})
 
         invoice.action_invoice_open()
+        # Check quantity to invoice on SO lines
         for line in order_line:
             self.assertEquals(line.qty_to_invoice, line.product_uom_qty - line.qty_invoiced, 'Quantity to invoice should be a difference between ordered quantity and invoiced quantity')
 
         # Make a credit note
-        credit_note_form = Form(self.env['account.invoice.refund'].with_context({'active_ids': [invoice.id], 'active_id': invoice.id}))
-        credit_note_form.filter_refund = 'refund'
-        credit_note_form.description = 'test'
-        credit_note = credit_note_form.save()
+        credit_note = self.env['account.invoice.refund'].with_context({'active_ids': [invoice.id], 'active_id': invoice.id}).create({
+            'filter_refund': 'refund',
+            'description': 'test'
+        })
         credit_note.invoice_refund()
-
-        invoice_1 = self.sale_order.invoice_ids[0]
-        invoice_1.action_invoice_open()
+        invoice_credit_note = self.sale_order.invoice_ids[1]
+        # Check invoice's type and number
+        self.assertEquals(invoice_credit_note.type, 'out_refund', 'Invoice type should be a customer credit note')
+        self.assertEquals(invoice.number, invoice_credit_note.origin, 'Customer invoices credit note should be created from respective invoice')
