@@ -11,61 +11,54 @@ class TestAccessRights(TestCommonSaleNoChart):
 
     def setUp(self):
         super(TestAccessRights, self).setUp()
+
+        Users = self.env['res.users'].with_context(no_reset_password=True, tracking_disable=True)
+
         group_user = self.env.ref('sales_team.group_sale_salesman')
         # Create a users
-        self.user_manager = self.env['res.users'].create({
+        self.user_manager = Users.create({
             'name': 'Andrew Manager',
             'login': 'manager',
             'email': 'a.m@example.com',
-            'signature': '--\nAndreww',
-            'notification_type': 'email',
             'groups_id': [(6, 0, [self.env.ref('sales_team.group_sale_manager').id])]
         })
-        self.user_salesperson = self.env['res.users'].create({
+        self.user_salesperson = Users.create({
             'name': 'Mark User',
             'login': 'user',
             'email': 'm.u@example.com',
-            'signature': '--\nMark',
-            'notification_type': 'email',
             'groups_id': [(6, 0, [group_user.id])]
         })
-        self.user_salesperson_1 = self.env['res.users'].create({
+        self.user_salesperson_1 = Users.create({
             'name': 'Noemie User',
             'login': 'noemie',
             'email': 'n.n@example.com',
-            'signature': '--\nNoemie',
-            'notification_type': 'email',
             'groups_id': [(6, 0, [group_user.id])]
         })
-        self.user_portal = self.env['res.users'].create({
+        self.user_portal = Users.create({
             'name': 'Chell Gladys',
             'login': 'chell',
             'email': 'chell@gladys.portal',
-            'signature': 'SignChell',
-            'notification_type': 'email',
             'groups_id': [(6, 0, [self.env.ref('base.group_portal').id])]
         })
-        self.user_employee = self.env['res.users'].create({
+        self.user_employee = Users.create({
             'name': 'Bert Tartignole',
             'login': 'bert',
             'email': 'b.t@example.com',
-            'signature': 'SignBert',
-            'notification_type': 'email',
             'groups_id': [(6, 0, [self.env.ref('base.group_user').id])]
         })
 
-        # Create the SO
-        self.order = self.env['sale.order'].create({
+        # Create the SO with a specific salesperson
+        self.order = self.env['sale.order'].with_context(tracking_disable=True).create({
             'partner_id': self.partner_customer_usd.id,
             'user_id': self.user_salesperson.id
         })
 
     def test_access_sales_manager(self):
         """ Test sales manager's access rights """
-        # Manager can see the SO of other salesperson
-        self.order.sudo(self.user_manager).read
-        # Manager can create the SO of other salesperson
-        sale_order = self.env['sale.order'].sudo(self.user_manager).create({
+        # Manager can see the SO which is assigned to another salesperson
+        self.order.sudo(self.user_manager).read()
+        # Manager can create the SO for other salesperson
+        sale_order = self.env['sale.order'].with_context(tracking_disable=True).sudo(self.user_manager).create({
             'partner_id': self.partner_customer_usd.id,
             'user_id': self.user_salesperson_1.id
         })
@@ -75,11 +68,11 @@ class TestAccessRights(TestCommonSaleNoChart):
         with Form(sale_order) as order:
             order.user_id = self.user_salesperson
         # Manager can delete the SO of other salesperson
-        sale_order.unlink()
+        sale_order.sudo(self.user_manager).unlink()
         self.assertNotIn(sale_order.id, self.env['sale.order'].search([]).ids, 'Sales manager should be able to delete the SO')
 
         # Manager can create a sales channel
-        india_channel = self.env['crm.team'].sudo(self.user_manager).create({
+        india_channel = self.env['crm.team'].with_context(tracking_disable=True).sudo(self.user_manager).create({
             'name': 'India',
         })
         self.assertIn(india_channel.id, self.env['crm.team'].search([]).ids, 'Sales manager should be able to create a sales channel')
@@ -88,7 +81,7 @@ class TestAccessRights(TestCommonSaleNoChart):
             team.dashboard_graph_group = 'week'
         self.assertEquals(india_channel.dashboard_graph_group, 'week', 'Sales manager should be able to edit a sales channel')
         # Manager can delete a sales channel
-        india_channel.unlink()
+        india_channel.sudo(self.user_manager).unlink()
         self.assertNotIn(india_channel.id, self.env['crm.team'].search([]).ids, 'Sales manager should be able to delete a sales channel')
 
     def test_access_sales_person(self):
