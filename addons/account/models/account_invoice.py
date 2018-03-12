@@ -1412,7 +1412,15 @@ class AccountInvoiceTax(models.Model):
 
     # DO NOT FORWARD-PORT!!! ONLY FOR v10
     def create(self, vals):
-        if 'amount' in vals:
+        # Workaround to make sure the tax amount is rounded to the currency precision since the ORM
+        # won't round it automatically at creation.
+        company = False
+        if 'company_id' in vals:
+            company = self.env['res.company'].sudo().browse(vals['company_id'])
+        elif 'account_id' in vals:
+            company = self.env['account.account'].sudo().browse(vals['account_id']).company_id
+
+        if company and company.tax_calculation_rounding_method == 'round_globally' and 'amount' in vals:
             currency = False
             if 'currency_id' in vals:
                 currency = self.env['res.currency'].browse(vals['currency_id'])
