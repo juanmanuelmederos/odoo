@@ -1,10 +1,10 @@
 id,name,applicability
-tag_uk_01,Net VAT to be paid/reclaimed,taxes
-tag_uk_02,VAT on Sales and other outputs,taxes
-tag_uk_03,VAT on acquisitions from other EC Member states,taxes
-tag_uk_04,VAT reclaimed on purchases (EC included),taxes
-tag_uk_05,VAT reclaimed on purchases (EC included) bis,taxes
-tag_uk_06,Total value of sales ex VAT (box 8 included),taxes
-tag_uk_07,Total value of EC sales ex VAT,taxes
-tag_uk_08,Total value of purchases ex VAT,taxes
-tag_uk_09,Total value of EC purchases ex VAT,taxes
+vat_tag_0100,Net VAT to be paid/reclaimed,taxes
+vat_tag_0101,VAT on Sales and other outputs,taxes
+vat_tag_0102,VAT on acquisitions from other EC Member states,taxes
+vat_tag_0103,VAT reclaimed on purchases (EC included),taxes
+vat_tag_0104,VAT reclaimed on purchases (EC included) bis,taxes
+vat_tag_0105,Total value of sales ex VAT (box 8 included),taxes
+vat_tag_0106,Total value of EC sales ex VAT,taxes
+vat_tag_0107,Total value of purchases ex VAT,taxes
+vat_tag_0108,Total value of EC purchases ex VAT,taxes
